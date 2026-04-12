@@ -178,18 +178,20 @@ function HealthDetailModal({ record, goat, logs, onUpdate, onClose, onFinalize, 
   const [closeReason, setCloseReason] = useState("");
   const [closeNote,   setCloseNote]   = useState("");
   const [tab, setTab] = useState("detay");
+  const [treatmentChanged, setTreatmentChanged] = useState(false);
 
   const recLogs = logs.filter(l=>l.healthRecordId===record.id).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
 
   const save = async () => {
     setSaving(true);
     const changes = [];
-    if (status!==record.status) changes.push(`Durum: ${record.status} → ${status}`);
-    if (treatment!==record.treatment) changes.push("Tedavi güncellendi");
-    if (cost!==record.cost) changes.push(`Maliyet: ${cost}₺`);
+    if (status!==record.status) changes.push(`Durum değişti: "${record.status}" → "${status}"`);
+    if (treatment!==record.treatment) changes.push(`Tedavi güncellendi`);
+    if (cost!==record.cost && cost) changes.push(`Maliyet: ${cost}₺`);
+    if (notes!==record.notes && notes) changes.push(`Not eklendi`);
     const { error } = await sb.from("health_records").update({ status, treatment, notes, cost }).eq("id", record.id);
     if (!error) {
-      const detail = changes.length>0 ? changes.join(", ") : "Kayıt güncellendi";
+      const detail = changes.length>0 ? changes.join(" · ") : "Kayıt güncellendi";
       await addLog(record.id, goat.id, goat.breed, "güncelleme", detail, currentUser);
       const newLog = { id:"l"+Date.now(), healthRecordId:record.id, goatId:goat.id, breed:goat.breed, action:"güncelleme", actionDetail:detail, userName:currentUser, createdAt:new Date().toISOString() };
       onLogsUpdate(newLog);
@@ -235,7 +237,7 @@ function HealthDetailModal({ record, goat, logs, onUpdate, onClose, onFinalize, 
       <b>{goat.name}</b> · 🏷 {goat.earTag} · Başlangıç: {fmt(record.date)}
     </div>
     <div style={{display:"flex",background:"#F2F0EA",borderRadius:8,overflow:"hidden",marginTop:4}}>
-      {[["detay","Detay"],["gecmis","Geçmiş"]].map(([k,l])=>(
+      {[["detay","✏️ Güncelle"],["gecmis","📋 Geçmiş"]].map(([k,l])=>(
         <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"8px 0",border:"none",fontWeight:700,fontSize:12,cursor:"pointer",background:tab===k?"#4A7C3F":"transparent",color:tab===k?"#fff":"#8c8c7e"}}>{l}</button>
       ))}
     </div>
@@ -244,7 +246,18 @@ function HealthDetailModal({ record, goat, logs, onUpdate, onClose, onFinalize, 
       <FL>Durum</FL>
       <StatusPicker value={status} onChange={setStatus}/>
       <FL>Tedavi / Yapılan İşlem</FL>
-      <textarea value={treatment} onChange={e=>setTreatment(e.target.value)} rows={3} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
+      {/* Aynı tedavi devam ediyorsa checkbox */}
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,padding:"6px 10px",background:"#F5FAF0",borderRadius:8,border:"1px solid #D4E8C2"}}>
+        <input type="checkbox" id="sameTreatment" checked={!treatmentChanged}
+          onChange={e=>setTreatmentChanged(!e.target.checked)}
+          style={{width:16,height:16,cursor:"pointer"}}/>
+        <label htmlFor="sameTreatment" style={{fontSize:12,color:"#3D5A25",fontWeight:600,cursor:"pointer"}}>
+          Aynı tedavi devam ediyor (değişiklik yok)
+        </label>
+      </div>
+      <textarea value={treatment} onChange={e=>{setTreatment(e.target.value);setTreatmentChanged(true);}} rows={3}
+        style={{...S.input,resize:"vertical",lineHeight:1.5,opacity:treatmentChanged?1:.7}}
+        placeholder="İlaç, doz, işlem..."/>
       <FL>Maliyet (₺)</FL>
       <input type="number" value={cost} onChange={e=>setCost(e.target.value)} style={S.input} placeholder="0"/>
       <FL>Notlar</FL>
@@ -258,14 +271,16 @@ function HealthDetailModal({ record, goat, logs, onUpdate, onClose, onFinalize, 
     {tab==="gecmis" && <div>
       {recLogs.length===0 && <Empty text="Henüz işlem geçmişi yok"/>}
       {recLogs.map((l,i)=>(
-        <div key={l.id} style={{display:"flex",gap:8,padding:"8px 0",borderBottom:i<recLogs.length-1?"1px solid #F2F0EA":"none"}}>
+        <div key={l.id} style={{display:"flex",gap:8,padding:"10px 0",borderBottom:i<recLogs.length-1?"1px solid #F2F0EA":"none"}}>
           <div style={{width:32,height:32,borderRadius:"50%",background:l.action==="sonlandırma"?"#FFF0EE":l.action==="açılış"?"#E3F0DC":"#EEF6FC",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>
             {l.action==="sonlandırma"?"✅":l.action==="açılış"?"🆕":"✏️"}
           </div>
           <div style={{flex:1}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#1e1e1e"}}>{l.userName}</div>
-            <div style={{fontSize:11,color:"#555"}}>{l.actionDetail}</div>
-            <div style={{fontSize:10,color:"#aaa",marginTop:2}}>{fmtDT(l.createdAt)}</div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#1e1e1e"}}>{l.userName}</div>
+              <div style={{fontSize:10,color:"#aaa",textAlign:"right"}}>{fmtDT(l.createdAt)}</div>
+            </div>
+            <div style={{fontSize:11,color:"#555",marginTop:2,background:"#F9F9F6",padding:"4px 8px",borderRadius:6}}>{l.actionDetail}</div>
           </div>
         </div>
       ))}
@@ -446,14 +461,69 @@ function StatusPicker({value,onChange}){return <div style={{display:"flex",gap:6
 function Stat({v,l,bg,c}){return <div style={{background:bg,borderRadius:10,padding:"10px 8px",textAlign:"center",flex:1}}><div style={{fontSize:20,fontWeight:900,color:c}}>{v}</div><div style={{fontSize:10,color:c,fontWeight:600,opacity:.75}}>{l}</div></div>;}
 function Badge({bg,color,text}){return <span style={{background:bg,color,fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:10,whiteSpace:"nowrap"}}>{text}</span>;}
 function StatusBadge({status}){const m={"tedavi_altında":["#FFF8EC","#B8750A","Tedavide"],"iyileşti":["#E3F0DC","#3D5A25","İyileşti"],"kronik":["#F0E6F6","#7B2D8E","Kronik"],"öldü":["#FFF0EE","#BE3B31","Öldü"]};const [bg,c,t]=m[status]||["#F2F0EA","#8c8c7e",status];return <span style={{background:bg,color:c,fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10}}>{t}</span>;}
+function AnnouncementBox({ announcements, setAnnouncements, currentUser }) {
+  const [newMsg, setNewMsg] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [expanded, setExpanded] = useState(true);
+  const isVet = currentUser === "Veteriner Hekim";
+
+  const save = async () => {
+    if (!newMsg.trim()) return;
+    setSaving(true);
+    const ann = { id:"a"+Date.now(), message:newMsg.trim(), user_name:currentUser };
+    const { error } = await sb.from("announcements").insert(ann);
+    if (!error) {
+      setAnnouncements(p=>[{...ann, created_at:new Date().toISOString()},...p]);
+      setNewMsg("");
+    }
+    setSaving(false);
+  };
+
+  const del = async (id) => {
+    await sb.from("announcements").delete().eq("id", id);
+    setAnnouncements(p=>p.filter(a=>a.id!==id));
+  };
+
+  return (
+    <div style={{...S.card,marginBottom:12,background:"#FFFDF5",border:"1.5px solid #F0D49A"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:expanded?10:0}}>
+        <div style={{fontWeight:800,fontSize:14,color:"#B8750A"}}>📢 Duyurular {announcements.length>0&&`(${announcements.length})`}</div>
+        <button onClick={()=>setExpanded(!expanded)} style={{...S.ghost,fontSize:12,color:"#8c8c7e"}}>{expanded?"▲ Gizle":"▼ Göster"}</button>
+      </div>
+      {expanded && <>
+        <div style={{display:"flex",gap:6,marginBottom:10}}>
+          <input value={newMsg} onChange={e=>setNewMsg(e.target.value)} onKeyDown={e=>e.key==="Enter"&&save()}
+            placeholder="Duyuru yaz..." style={{...S.input,flex:1,fontSize:13,padding:"8px 12px"}}/>
+          <button onClick={save} disabled={saving||!newMsg.trim()} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13,opacity:(!newMsg.trim()||saving)?.5:1}}>
+            {saving?"...":"Gönder"}
+          </button>
+        </div>
+        {announcements.length===0 && <div style={{fontSize:12,color:"#aaa",textAlign:"center",padding:"8px 0"}}>Henüz duyuru yok</div>}
+        {announcements.map(a=>(
+          <div key={a.id} style={{display:"flex",alignItems:"start",gap:8,padding:"8px 10px",background:"#FFF8EC",borderRadius:8,marginBottom:6,border:"1px solid #F5E0A0"}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,color:"#1e1e1e",fontWeight:500,marginBottom:3}}>{a.message}</div>
+              <div style={{fontSize:10,color:"#B8750A",fontWeight:600}}>{a.user_name} · {fmtDT(a.created_at)}</div>
+            </div>
+            {isVet && (
+              <button onClick={()=>del(a.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:11,padding:"3px 8px",flexShrink:0}}>✕</button>
+            )}
+          </div>
+        ))}
+      </>}
+    </div>
+  );
+}
+
 function Empty({text}){return <div style={{textAlign:"center",padding:30,color:"#8c8c7e",fontSize:13}}>{text}</div>;}
 function MiniPill({label,val,color}){return <div style={{display:"flex",alignItems:"center",gap:4}}><span style={{fontSize:13,fontWeight:900,color}}>{val}</span><span style={{fontSize:10,color:"#8c8c7e"}}>{label}</span></div>;}
 function PillTag({bg,color,text}){return <span style={{background:bg,color,fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:8,whiteSpace:"nowrap"}}>{text}</span>;}
 
 // ── Raporlar ──
-function ReportsPage({reports, goats, onDeleteReport}) {
+function ReportsPage({reports, goats, logs, onDeleteReport}) {
   const [selBreed, setSelBreed] = useState("all");
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [expandedReport, setExpandedReport] = useState(null);
   const filtered = selBreed==="all" ? reports : reports.filter(r=>r.breed===selBreed);
   const sorted = [...filtered].sort((a,b)=>new Date(b.dateClosed)-new Date(a.dateClosed));
   const stats = {
@@ -496,6 +566,8 @@ function ReportsPage({reports, goats, onDeleteReport}) {
       {sorted.map(r=>{
         const b=BREEDS.find(x=>x.id===r.breed);
         const isDeath=r.closeReason==="Hayvan Öldü";
+        const rLogs=logs.filter(l=>l.goatId===r.goatId).sort((a,c)=>new Date(a.createdAt)-new Date(c.createdAt));
+        const isExpanded=expandedReport===r.id;
         return (
           <div key={r.id} style={{...S.card,padding:12,marginBottom:6,border:`1.5px solid ${isDeath?"#F5C0BA":b?.color+"22"}`}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:6}}>
@@ -511,7 +583,33 @@ function ReportsPage({reports, goats, onDeleteReport}) {
             </div>
             {r.treatment&&<div style={{fontSize:12,color:"#333",marginBottom:4}}>💊 {r.treatment}</div>}
             {r.closeNote&&<div style={{fontSize:12,color:"#555",fontStyle:"italic",marginBottom:4}}>📝 {r.closeNote}</div>}
-            <div style={{fontSize:10,color:"#aaa"}}>Ekleyen: {r.createdByName}{r.cost?` · 💰 ${r.cost}₺`:""}</div>
+            <div style={{fontSize:10,color:"#aaa",marginBottom:8}}>Ekleyen: {r.createdByName}{r.cost?` · 💰 ${r.cost}₺`:""}</div>
+
+            {/* İşlem geçmişi toggle */}
+            <button onClick={()=>setExpandedReport(isExpanded?null:r.id)}
+              style={{...S.btnSm,background:"#F2F0EA",color:"#555",fontSize:11,width:"100%",padding:"6px 0",textAlign:"center"}}>
+              {isExpanded?"▲ Geçmişi Gizle":"▼ İşlem Geçmişini Göster"} ({rLogs.length})
+            </button>
+
+            {isExpanded && (
+              <div style={{marginTop:8,borderTop:"1px solid #F2F0EA",paddingTop:8}}>
+                {rLogs.length===0 && <div style={{fontSize:11,color:"#aaa",textAlign:"center",padding:8}}>Geçmiş kaydı bulunamadı</div>}
+                {rLogs.map((l,i)=>(
+                  <div key={l.id} style={{display:"flex",gap:8,padding:"6px 0",borderBottom:i<rLogs.length-1?"1px dashed #F2F0EA":"none"}}>
+                    <div style={{width:26,height:26,borderRadius:"50%",background:l.action==="sonlandırma"?"#FFF0EE":l.action==="açılış"?"#E3F0DC":"#EEF6FC",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,flexShrink:0}}>
+                      {l.action==="sonlandırma"?"✅":l.action==="açılış"?"🆕":"✏️"}
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{display:"flex",justifyContent:"space-between"}}>
+                        <div style={{fontSize:11,fontWeight:700,color:"#333"}}>{l.userName}</div>
+                        <div style={{fontSize:10,color:"#aaa"}}>{fmtDT(l.createdAt)}</div>
+                      </div>
+                      <div style={{fontSize:11,color:"#555",marginTop:1}}>{l.actionDetail}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
       })}
@@ -891,34 +989,17 @@ function App(){
   const activeGoats=goats.filter(g=>!g.archived);
 
   const [announcements, setAnnouncements] = useState([]);
-  const [newAnnouncement, setNewAnnouncement] = useState("");
-  const [addingAnn, setAddingAnn] = useState(false);
   const [selUser, setSelUser] = useState(null);
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
 
   useEffect(()=>{
     const loadAnn = async()=>{
-      const {data} = await sb.from("announcements").select("*").order("created_at",{ascending:false}).limit(10);
+      const {data} = await sb.from("announcements").select("*").order("created_at",{ascending:false}).limit(20);
       setAnnouncements(data||[]);
     };
     loadAnn();
   },[]);
-
-  const saveAnnouncement = async()=>{
-    if(!newAnnouncement.trim()) return;
-    setAddingAnn(true);
-    const ann = { id:"a"+Date.now(), message:newAnnouncement.trim(), user_name:selUser||"Misafir" };
-    await sb.from("announcements").insert(ann);
-    setAnnouncements(p=>[{...ann,created_at:new Date().toISOString()},...p]);
-    setNewAnnouncement("");
-    setAddingAnn(false);
-  };
-
-  const deleteAnnouncement = async(id)=>{
-    await sb.from("announcements").delete().eq("id",id);
-    setAnnouncements(p=>p.filter(a=>a.id!==id));
-  };
 
   const handlePinSubmit = ()=>{
     const user = DEMO_USERS.find(u=>u.id===selUser);
@@ -944,43 +1025,21 @@ function App(){
           <p style={{color:"rgba(255,255,255,.6)",fontSize:12,margin:0}}>☁️ Bulut Tabanlı · 3 Irk · Çok Kullanıcılı</p>
         </div>
 
-        {/* Duyurular */}
+        {/* Duyurular - sadece okuma */}
         <div style={{background:"rgba(255,255,255,.12)",borderRadius:14,padding:14,marginBottom:16,backdropFilter:"blur(10px)"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-            <div style={{color:"#fff",fontWeight:800,fontSize:14}}>📢 Duyurular</div>
-          </div>
-
-          {/* Duyuru ekle */}
-          <div style={{display:"flex",gap:6,marginBottom:10}}>
-            <input
-              value={newAnnouncement}
-              onChange={e=>setNewAnnouncement(e.target.value)}
-              onKeyDown={e=>e.key==="Enter"&&saveAnnouncement()}
-              placeholder="Duyuru yaz..."
-              style={{...S.input,flex:1,background:"rgba(255,255,255,.9)",fontSize:13,padding:"8px 12px"}}
-            />
-            <button onClick={saveAnnouncement} disabled={addingAnn||!newAnnouncement.trim()}
-              style={{...S.btnPrimary,padding:"8px 14px",fontSize:13,background:"rgba(255,255,255,.25)",border:"1.5px solid rgba(255,255,255,.4)",opacity:(!newAnnouncement.trim()||addingAnn)?.5:1}}>
-              Gönder
-            </button>
-          </div>
-
-          {/* Duyuru listesi */}
-          <div style={{maxHeight:160,overflowY:"auto"}}>
+          <div style={{color:"#fff",fontWeight:800,fontSize:14,marginBottom:10}}>📢 Duyurular</div>
+          <div style={{maxHeight:140,overflowY:"auto"}}>
             {announcements.length===0 && (
               <div style={{color:"rgba(255,255,255,.5)",fontSize:12,textAlign:"center",padding:"10px 0"}}>Henüz duyuru yok</div>
             )}
             {announcements.map(a=>(
-              <div key={a.id} style={{background:"rgba(255,255,255,.1)",borderRadius:8,padding:"8px 10px",marginBottom:6,display:"flex",alignItems:"start",gap:8}}>
-                <div style={{flex:1}}>
-                  <div style={{color:"#fff",fontSize:13,fontWeight:500,marginBottom:2}}>{a.message}</div>
-                  <div style={{color:"rgba(255,255,255,.6)",fontSize:10}}>{a.user_name} · {fmtDT(a.created_at)}</div>
-                </div>
-                <button onClick={()=>deleteAnnouncement(a.id)}
-                  style={{background:"rgba(255,255,255,.15)",border:"none",borderRadius:6,color:"rgba(255,255,255,.7)",fontSize:12,cursor:"pointer",padding:"2px 6px",flexShrink:0}}>✕</button>
+              <div key={a.id} style={{background:"rgba(255,255,255,.1)",borderRadius:8,padding:"8px 10px",marginBottom:6}}>
+                <div style={{color:"#fff",fontSize:13,fontWeight:500,marginBottom:2}}>{a.message}</div>
+                <div style={{color:"rgba(255,255,255,.6)",fontSize:10}}>{a.user_name} · {fmtDT(a.created_at)}</div>
               </div>
             ))}
           </div>
+          <div style={{color:"rgba(255,255,255,.4)",fontSize:10,textAlign:"center",marginTop:6}}>Duyuru eklemek için giriş yapın</div>
         </div>
 
         {/* Giriş kutusu */}
@@ -1092,6 +1151,14 @@ function App(){
               <h2 style={S.title}>Merhaba, {currentUser} 👋</h2>
               <p style={{margin:0,fontSize:12,color:"#8c8c7e"}}>Sürü Yönetim Sistemi</p>
             </div>
+
+            {/* Duyurular */}
+            <AnnouncementBox
+              announcements={announcements}
+              setAnnouncements={setAnnouncements}
+              currentUser={currentUser}
+            />
+
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:12}}>
               <Stat v={activeGoats.length} l="Toplam" bg="#E8E5DC" c="#444"/>
               <Stat v={activeGoats.filter(g=>g.category==="anac").length} l="Anaç" bg="#E3F0DC" c="#3D5A25"/>
@@ -1315,7 +1382,7 @@ function App(){
 
         {page==="vaccines" && <GlobalVaccinePage goats={goats} vaccines={vaccines} upcomingAll={upcomingAll} onAddVaccine={breedId=>setVModal(breedId)}/>}
 
-        {page==="reports" && <ReportsPage reports={reports} goats={goats} onDeleteReport={deleteReport}/>}
+        {page==="reports" && <ReportsPage reports={reports} goats={goats} logs={logs} onDeleteReport={deleteReport}/>}
 
         {/* PROFILE */}
         {page==="profile" && (
