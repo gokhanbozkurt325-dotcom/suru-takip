@@ -692,7 +692,6 @@ function GroupVaccineModal({ group, goats, onSave, onClose, currentUser }) {
 
   const save = async () => {
     if (!vaccineType){setErr("Aşı türü seçiniz");return;}
-    if (groupGoats.length===0){setErr("Bu grupta henüz hayvan yok. Önce 👥 Hayvanlar butonundan hayvan ekleyin.");return;}
     setSaving(true);
     const report = {
       id:"vr"+Date.now(),
@@ -702,7 +701,7 @@ function GroupVaccineModal({ group, goats, onSave, onClose, currentUser }) {
       vaccine_type: vaccineType,
       date, batch_no: batchNo||null,
       goat_ids: groupGoats.map(g=>g.id).join(","),
-      goat_names: groupGoats.map(g=>g.name).join(", "),
+      goat_names: groupGoats.length>0 ? groupGoats.map(g=>g.name).join(", ") : "—",
       goat_count: groupGoats.length,
       created_by: currentUser,
       notes: notes||null,
@@ -714,13 +713,10 @@ function GroupVaccineModal({ group, goats, onSave, onClose, currentUser }) {
 
   return <ModalWrap title={`💉 ${group.name} — Aşı Uygula`} onClose={onClose}>
     {err&&<ErrBox msg={err}/>}
-    {/* Grup özeti */}
     <div style={{background:"#F5FAF0",borderRadius:10,padding:10,marginBottom:4}}>
-      <div style={{fontSize:12,fontWeight:700,color:"#3D5A25",marginBottom:4}}>👥 {group.name}</div>
-      {groupGoats.length===0
-        ? <div style={{fontSize:12,color:"#BE3B31"}}>⚠️ Grupta hayvan yok — önce hayvan ekleyin</div>
-        : <div style={{fontSize:12,color:"#555"}}>{groupGoats.length} hayvan: {groupGoats.map(g=>g.name).join(", ")}</div>
-      }
+      <div style={{fontSize:12,fontWeight:700,color:"#3D5A25",marginBottom:2}}>👥 {group.name}</div>
+      {group.description&&<div style={{fontSize:11,color:"#8c8c7e"}}>{group.description}</div>}
+      {groupGoats.length>0&&<div style={{fontSize:11,color:"#555",marginTop:2}}>{groupGoats.length} hayvan: {groupGoats.map(g=>g.name).join(", ")}</div>}
     </div>
     <FL>Aşı Türü *</FL>
     <select value={vaccineType} onChange={e=>setVaccineType(e.target.value)} style={S.select}>
@@ -735,8 +731,8 @@ function GroupVaccineModal({ group, goats, onSave, onClose, currentUser }) {
     <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
-      <button onClick={save} disabled={saving||groupGoats.length===0} style={{...S.btnPrimary,flex:2,padding:12,opacity:(saving||groupGoats.length===0)?.5:1}}>
-        {saving?"Kaydediliyor...`":`💉 ${groupGoats.length} Hayvana Uygula`}
+      <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>
+        {saving?"Kaydediliyor...":"💉 Uygula"}
       </button>
     </div>
   </ModalWrap>;
