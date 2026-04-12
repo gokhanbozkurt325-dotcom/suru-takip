@@ -687,17 +687,13 @@ function GroupVaccineModal({ group, goats, onSave, onClose, currentUser }) {
   const [date, setDate] = useState(todayISO());
   const [batchNo, setBatchNo] = useState("");
   const [notes, setNotes] = useState("");
-  const [selected, setSelected] = useState(new Set(groupGoats.map(g=>g.id)));
   const [err, setErr] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const toggle = id => setSelected(prev=>{const s=new Set(prev);s.has(id)?s.delete(id):s.add(id);return s;});
-
   const save = async () => {
     if (!vaccineType){setErr("Aşı türü seçiniz");return;}
-    if (selected.size===0){setErr("En az bir hayvan seçin");return;}
+    if (groupGoats.length===0){setErr("Bu grupta henüz hayvan yok. Önce 👥 Hayvanlar butonundan hayvan ekleyin.");return;}
     setSaving(true);
-    const selGoats = groupGoats.filter(g=>selected.has(g.id));
     const report = {
       id:"vr"+Date.now(),
       group_id: group.id,
@@ -705,9 +701,9 @@ function GroupVaccineModal({ group, goats, onSave, onClose, currentUser }) {
       breed: group.breed,
       vaccine_type: vaccineType,
       date, batch_no: batchNo||null,
-      goat_ids: selGoats.map(g=>g.id).join(","),
-      goat_names: selGoats.map(g=>g.name).join(", "),
-      goat_count: selGoats.length,
+      goat_ids: groupGoats.map(g=>g.id).join(","),
+      goat_names: groupGoats.map(g=>g.name).join(", "),
+      goat_count: groupGoats.length,
       created_by: currentUser,
       notes: notes||null,
     };
@@ -718,6 +714,14 @@ function GroupVaccineModal({ group, goats, onSave, onClose, currentUser }) {
 
   return <ModalWrap title={`💉 ${group.name} — Aşı Uygula`} onClose={onClose}>
     {err&&<ErrBox msg={err}/>}
+    {/* Grup özeti */}
+    <div style={{background:"#F5FAF0",borderRadius:10,padding:10,marginBottom:4}}>
+      <div style={{fontSize:12,fontWeight:700,color:"#3D5A25",marginBottom:4}}>👥 {group.name}</div>
+      {groupGoats.length===0
+        ? <div style={{fontSize:12,color:"#BE3B31"}}>⚠️ Grupta hayvan yok — önce hayvan ekleyin</div>
+        : <div style={{fontSize:12,color:"#555"}}>{groupGoats.length} hayvan: {groupGoats.map(g=>g.name).join(", ")}</div>
+      }
+    </div>
     <FL>Aşı Türü *</FL>
     <select value={vaccineType} onChange={e=>setVaccineType(e.target.value)} style={S.select}>
       <option value="">— Seçin —</option>
@@ -727,23 +731,13 @@ function GroupVaccineModal({ group, goats, onSave, onClose, currentUser }) {
     <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={S.input}/>
     <FL>Parti / Seri No</FL>
     <input value={batchNo} onChange={e=>setBatchNo(e.target.value)} style={S.input} placeholder="örn. VAK-2026-A1"/>
-    <FL>Hayvanlar ({selected.size}/{groupGoats.length} seçili)</FL>
-    {groupGoats.length===0 && <div style={{fontSize:12,color:"#aaa",textAlign:"center",padding:8}}>Bu grupta hayvan yok</div>}
-    {groupGoats.map(g=>{
-      const sel=selected.has(g.id);
-      return <div key={g.id} onClick={()=>toggle(g.id)} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,background:sel?"#E3F0DC":"#F9F9F6",border:`1.5px solid ${sel?"#4A7C3F44":"#E8E5DC"}`,cursor:"pointer",marginBottom:4}}>
-        <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${sel?"#4A7C3F":"#ccc"}`,background:sel?"#4A7C3F":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          {sel&&<span style={{color:"#fff",fontSize:11,fontWeight:900}}>✓</span>}
-        </div>
-        <span style={{fontSize:13,fontWeight:sel?700:400,color:sel?"#3D5A25":"#444"}}>{g.name}</span>
-        <span style={{fontSize:10,color:"#8c8c7e",marginLeft:"auto"}}>{g.earTag}</span>
-      </div>;
-    })}
     <FL>Notlar</FL>
     <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
-      <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💉 Uygula"}</button>
+      <button onClick={save} disabled={saving||groupGoats.length===0} style={{...S.btnPrimary,flex:2,padding:12,opacity:(saving||groupGoats.length===0)?.5:1}}>
+        {saving?"Kaydediliyor...`":`💉 ${groupGoats.length} Hayvana Uygula`}
+      </button>
     </div>
   </ModalWrap>;
 }
