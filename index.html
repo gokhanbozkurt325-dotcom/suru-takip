@@ -2,10 +2,20 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Sürü Takip"/>
+  <meta name="theme-color" content="#4A7C3F"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234A7C3F'/><text y='.9em' font-size='80' x='10'>🐐</text></svg>"/>
   <title>Sürü Takip Sistemi 🐐</title>
-  <style>* { margin:0; padding:0; box-sizing:border-box; } body { background:#FAFAF5; font-family:system-ui,-apple-system,sans-serif; } #root { max-width:480px; margin:0 auto; }</style>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#FAFAF5; font-family:system-ui,-apple-system,sans-serif; overflow-x:hidden; }
+    #root { max-width:480px; margin:0 auto; min-height:100vh; }
+  </style>
 </head>
 <body>
 <div id="root"></div>
@@ -40,12 +50,12 @@ const CONDITION_OPTIONS = ["Mastitis","Topallık","İshal","Parazit","Abort","Pn
 const CLOSE_REASONS = ["İyileşti","Tedavi Tamamlandı","Kronik Hastalık","Hayvan Öldü","Başka Tesise Nakil","Diğer"];
 
 const DEMO_USERS = [
-  { id:"u1", name:"Veteriner Hekim", role:"veteriner", emoji:"👨‍⚕️", members:"" },
-  { id:"u2", name:"Şef",             role:"sef",       emoji:"👤",    members:"" },
-  { id:"u3", name:"Vardiya 1",       role:"vardiya",   emoji:"👷",    members:"Uğur · Erdem · Hakan" },
-  { id:"u4", name:"Vardiya 2",       role:"vardiya",   emoji:"👷",    members:"Mehmet · Zafer · Turan" },
-  { id:"u5", name:"Vardiya 3",       role:"vardiya",   emoji:"👷",    members:"İsmail · Süleyman · Ramazan" },
-  { id:"u6", name:"Vardiya 4",       role:"vardiya",   emoji:"👷",    members:"M. Ali · Mustafa · Hüseyin" },
+  { id:"u1", name:"Veteriner Hekim", role:"veteriner", emoji:"👨‍⚕️", members:"", pin:"0000" },
+  { id:"u2", name:"Şef",             role:"sef",       emoji:"👤",    members:"", pin:"1111" },
+  { id:"u3", name:"Vardiya 1",       role:"vardiya",   emoji:"👷",    members:"Uğur · Erdem · Hakan", pin:"1453" },
+  { id:"u4", name:"Vardiya 2",       role:"vardiya",   emoji:"👷",    members:"Mehmet · Zafer · Turan", pin:"2222" },
+  { id:"u5", name:"Vardiya 3",       role:"vardiya",   emoji:"👷",    members:"İsmail · Süleyman · Ramazan", pin:"3333" },
+  { id:"u6", name:"Vardiya 4",       role:"vardiya",   emoji:"👷",    members:"M. Ali · Mustafa · Hüseyin", pin:"4444" },
 ];
 
 // Supabase dönüşümleri
@@ -880,27 +890,158 @@ function App(){
 
   const activeGoats=goats.filter(g=>!g.archived);
 
+  const [announcements, setAnnouncements] = useState([]);
+  const [newAnnouncement, setNewAnnouncement] = useState("");
+  const [addingAnn, setAddingAnn] = useState(false);
+  const [selUser, setSelUser] = useState(null);
+  const [pinInput, setPinInput] = useState("");
+  const [pinError, setPinError] = useState("");
+
+  useEffect(()=>{
+    const loadAnn = async()=>{
+      const {data} = await sb.from("announcements").select("*").order("created_at",{ascending:false}).limit(10);
+      setAnnouncements(data||[]);
+    };
+    loadAnn();
+  },[]);
+
+  const saveAnnouncement = async()=>{
+    if(!newAnnouncement.trim()) return;
+    setAddingAnn(true);
+    const ann = { id:"a"+Date.now(), message:newAnnouncement.trim(), user_name:selUser||"Misafir" };
+    await sb.from("announcements").insert(ann);
+    setAnnouncements(p=>[{...ann,created_at:new Date().toISOString()},...p]);
+    setNewAnnouncement("");
+    setAddingAnn(false);
+  };
+
+  const deleteAnnouncement = async(id)=>{
+    await sb.from("announcements").delete().eq("id",id);
+    setAnnouncements(p=>p.filter(a=>a.id!==id));
+  };
+
+  const handlePinSubmit = ()=>{
+    const user = DEMO_USERS.find(u=>u.id===selUser);
+    if(!user) return;
+    if(pinInput===user.pin){
+      setCurrentUser(user.name);
+      setShowLogin(false);
+      setPinError("");
+    } else {
+      setPinError("Hatalı PIN! Tekrar deneyin.");
+      setPinInput("");
+    }
+  };
+
   if(showLogin) return (
     <div style={S.loginWrap}><style>{css}</style>
-      <div style={{animation:"fadeUp .6s ease",width:"100%",maxWidth:380,padding:"0 20px"}}>
-        <div style={{textAlign:"center",marginBottom:28}}>
-          <div style={{fontSize:56,animation:"pulse 2s infinite"}}>🐐</div>
-          <h1 style={{color:"#fff",fontSize:24,fontWeight:800,margin:"8px 0 4px"}}>Sürü Takip Sistemi</h1>
-          <p style={{color:"rgba(255,255,255,.6)",fontSize:13,margin:0}}>☁️ Bulut Tabanlı · 3 Irk · Çok Kullanıcılı</p>
+      <div style={{width:"100%",maxWidth:420,padding:"0 16px",paddingBottom:20}}>
+
+        {/* Başlık */}
+        <div style={{textAlign:"center",marginBottom:20,paddingTop:20}}>
+          <div style={{fontSize:48,animation:"pulse 2s infinite"}}>🐐</div>
+          <h1 style={{color:"#fff",fontSize:22,fontWeight:800,margin:"8px 0 2px"}}>Sürü Takip Sistemi</h1>
+          <p style={{color:"rgba(255,255,255,.6)",fontSize:12,margin:0}}>☁️ Bulut Tabanlı · 3 Irk · Çok Kullanıcılı</p>
         </div>
-        <div style={{background:"rgba(255,255,255,.95)",borderRadius:18,padding:24,boxShadow:"0 20px 60px rgba(0,0,0,.25)"}}>
-          <h2 style={{margin:"0 0 14px",fontSize:17,fontWeight:700,color:"#1e1e1e"}}>Giriş Yapın</h2>
-          {DEMO_USERS.map(u=>(
-            <button key={u.id} onClick={()=>{setCurrentUser(u.name);setShowLogin(false);}}
-              style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:u.id==="u1"?"2px solid #4A7C3F":"1px solid #E0DDD4",background:u.id==="u1"?"#F3F8F0":"#fff",cursor:"pointer",width:"100%",marginBottom:6}}>
-              <span style={{fontSize:18}}>{u.emoji}</span>
-              <div style={{textAlign:"left",flex:1}}>
-                <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{u.name}</div>
-                {u.members && <div style={{fontSize:10,color:"#8c8c7e"}}>{u.members}</div>}
-                {!u.members && <div style={{fontSize:10,color:"#8c8c7e"}}>{u.role==="veteriner"?"Veteriner Hekim":"Şef"}</div>}
-              </div>
+
+        {/* Duyurular */}
+        <div style={{background:"rgba(255,255,255,.12)",borderRadius:14,padding:14,marginBottom:16,backdropFilter:"blur(10px)"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+            <div style={{color:"#fff",fontWeight:800,fontSize:14}}>📢 Duyurular</div>
+          </div>
+
+          {/* Duyuru ekle */}
+          <div style={{display:"flex",gap:6,marginBottom:10}}>
+            <input
+              value={newAnnouncement}
+              onChange={e=>setNewAnnouncement(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&saveAnnouncement()}
+              placeholder="Duyuru yaz..."
+              style={{...S.input,flex:1,background:"rgba(255,255,255,.9)",fontSize:13,padding:"8px 12px"}}
+            />
+            <button onClick={saveAnnouncement} disabled={addingAnn||!newAnnouncement.trim()}
+              style={{...S.btnPrimary,padding:"8px 14px",fontSize:13,background:"rgba(255,255,255,.25)",border:"1.5px solid rgba(255,255,255,.4)",opacity:(!newAnnouncement.trim()||addingAnn)?.5:1}}>
+              Gönder
             </button>
-          ))}
+          </div>
+
+          {/* Duyuru listesi */}
+          <div style={{maxHeight:160,overflowY:"auto"}}>
+            {announcements.length===0 && (
+              <div style={{color:"rgba(255,255,255,.5)",fontSize:12,textAlign:"center",padding:"10px 0"}}>Henüz duyuru yok</div>
+            )}
+            {announcements.map(a=>(
+              <div key={a.id} style={{background:"rgba(255,255,255,.1)",borderRadius:8,padding:"8px 10px",marginBottom:6,display:"flex",alignItems:"start",gap:8}}>
+                <div style={{flex:1}}>
+                  <div style={{color:"#fff",fontSize:13,fontWeight:500,marginBottom:2}}>{a.message}</div>
+                  <div style={{color:"rgba(255,255,255,.6)",fontSize:10}}>{a.user_name} · {fmtDT(a.created_at)}</div>
+                </div>
+                <button onClick={()=>deleteAnnouncement(a.id)}
+                  style={{background:"rgba(255,255,255,.15)",border:"none",borderRadius:6,color:"rgba(255,255,255,.7)",fontSize:12,cursor:"pointer",padding:"2px 6px",flexShrink:0}}>✕</button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Giriş kutusu */}
+        <div style={{background:"rgba(255,255,255,.95)",borderRadius:16,padding:20,boxShadow:"0 20px 60px rgba(0,0,0,.25)"}}>
+          {!selUser ? (
+            <>
+              <h2 style={{margin:"0 0 12px",fontSize:16,fontWeight:800,color:"#1e1e1e"}}>Kimsiniz?</h2>
+              {DEMO_USERS.map(u=>(
+                <button key={u.id} onClick={()=>{setSelUser(u.id);setPinInput("");setPinError("");}}
+                  style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:"1px solid #E0DDD4",background:"#fff",cursor:"pointer",width:"100%",marginBottom:6,textAlign:"left"}}>
+                  <span style={{fontSize:18}}>{u.emoji}</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{u.name}</div>
+                    {u.members && <div style={{fontSize:10,color:"#8c8c7e"}}>{u.members}</div>}
+                  </div>
+                  <span style={{color:"#ccc",fontSize:16}}>›</span>
+                </button>
+              ))}
+            </>
+          ) : (
+            <>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+                <button onClick={()=>{setSelUser(null);setPinInput("");setPinError("");}}
+                  style={{...S.ghost,fontSize:20,color:"#8c8c7e",padding:0}}>‹</button>
+                <div>
+                  <div style={{fontWeight:800,fontSize:15,color:"#1e1e1e"}}>{DEMO_USERS.find(u=>u.id===selUser)?.name}</div>
+                  <div style={{fontSize:11,color:"#8c8c7e"}}>{DEMO_USERS.find(u=>u.id===selUser)?.members||"Yönetici"}</div>
+                </div>
+              </div>
+              <div style={{fontSize:13,fontWeight:700,color:"#555",marginBottom:8,textAlign:"center"}}>PIN Kodunuzu Girin</div>
+              <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:12}}>
+                {[0,1,2,3].map(i=>(
+                  <div key={i} style={{width:44,height:52,borderRadius:10,border:`2px solid ${pinInput.length>i?"#4A7C3F":"#E8E5DC"}`,background:pinInput.length>i?"#E3F0DC":"#F9F9F6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:900,color:"#4A7C3F"}}>
+                    {pinInput.length>i?"●":""}
+                  </div>
+                ))}
+              </div>
+              {pinError && <div style={{background:"#FFF0EE",border:"1px solid #F5C0BA",borderRadius:8,padding:"6px 10px",fontSize:12,color:"#BE3B31",fontWeight:600,marginBottom:10,textAlign:"center"}}>{pinError}</div>}
+              {/* PIN klavyesi */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+                {[1,2,3,4,5,6,7,8,9,"",0,"⌫"].map((k,i)=>(
+                  <button key={i} onClick={()=>{
+                    if(k==="⌫"){setPinInput(p=>p.slice(0,-1));setPinError("");}
+                    else if(k===""){ }
+                    else{
+                      const next=pinInput+k;
+                      setPinInput(next);
+                      if(next.length===4){
+                        const user=DEMO_USERS.find(u=>u.id===selUser);
+                        if(next===user.pin){setCurrentUser(user.name);setShowLogin(false);setPinError("");}
+                        else{setPinError("Hatalı PIN! Tekrar deneyin.");setPinInput("");}
+                      }
+                    }
+                  }}
+                  style={{padding:"14px 0",borderRadius:10,border:"1px solid #E8E5DC",background:k===""?"transparent":"#fff",fontSize:k==="⌫"?18:20,fontWeight:700,color:"#1e1e1e",cursor:k===""?"default":"pointer",boxShadow:k===""?"none":"0 1px 3px rgba(0,0,0,.06)"}}>
+                    {k}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
