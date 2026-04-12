@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
   <title>Sürü Takip Sistemi 🐐</title>
   <style>* { margin:0; padding:0; box-sizing:border-box; } body { background:#FAFAF5; font-family:system-ui,-apple-system,sans-serif; } #root { max-width:480px; margin:0 auto; }</style>
 </head>
@@ -37,36 +37,37 @@ const VACCINE_DEFS = [
 ];
 
 const CONDITION_OPTIONS = ["Mastitis","Topallık","İshal","Parazit","Abort","Pnömoni","Eklem İltihabı","Göz Enfeksiyonu","Yaralanma","Diğer"];
-
 const CLOSE_REASONS = ["İyileşti","Tedavi Tamamlandı","Kronik Hastalık","Hayvan Öldü","Başka Tesise Nakil","Diğer"];
 
 const DEMO_USERS = [
-  { id:"u1", name:"Veteriner Hekim", role:"veteriner", emoji:"👨‍⚕️" },
-  { id:"u2", name:"Şef",             role:"sef",       emoji:"👤" },
-  { id:"u3", name:"Vardiya 1",       role:"vardiya",   emoji:"👷" },
-  { id:"u4", name:"Vardiya 2",       role:"vardiya",   emoji:"👷" },
-  { id:"u5", name:"Vardiya 3",       role:"vardiya",   emoji:"👷" },
-  { id:"u6", name:"Vardiya 4",       role:"vardiya",   emoji:"👷" },
+  { id:"u1", name:"Veteriner Hekim", role:"veteriner", emoji:"👨‍⚕️", members:"" },
+  { id:"u2", name:"Şef",             role:"sef",       emoji:"👤",    members:"" },
+  { id:"u3", name:"Vardiya 1",       role:"vardiya",   emoji:"👷",    members:"Uğur · Erdem · Hakan" },
+  { id:"u4", name:"Vardiya 2",       role:"vardiya",   emoji:"👷",    members:"Mehmet · Zafer · Turan" },
+  { id:"u5", name:"Vardiya 3",       role:"vardiya",   emoji:"👷",    members:"İsmail · Süleyman · Ramazan" },
+  { id:"u6", name:"Vardiya 4",       role:"vardiya",   emoji:"👷",    members:"M. Ali · Mustafa · Hüseyin" },
 ];
 
 // Supabase dönüşümleri
-const toGoat = r => ({ id:r.id, name:r.name, earTag:r.ear_tag, gender:r.gender, breed:r.breed, category:r.category, birthDate:r.birth_date, weight:r.weight, color:r.color, motherTag:r.mother_tag||"", fatherTag:r.father_tag||"", abortHistory:r.abort_history||"hayır", reproductionStatus:r.reproduction_status||"", lastBirthDate:r.last_birth_date||"", kidCount:r.kid_count||"0", notes:r.notes||"", abortDetails:r.abort_details||"" });
-const fromGoat = g => ({ id:g.id, name:g.name, ear_tag:g.earTag, gender:g.gender, breed:g.breed, category:g.category, birth_date:g.birthDate||null, weight:g.weight||null, color:g.color, mother_tag:g.motherTag||null, father_tag:g.fatherTag||null, abort_history:g.abortHistory||"hayır", reproduction_status:g.reproductionStatus||null, last_birth_date:g.lastBirthDate||null, kid_count:g.kidCount||"0", notes:g.notes||null, abort_details:g.abortDetails||null });
-const toHealth = r => ({ id:r.id, goatId:r.goat_id, breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false });
-const fromHealth = h => ({ id:h.id, goat_id:h.goatId, breed:h.breed, date:h.date, condition:h.condition, treatment:h.treatment||null, status:h.status, veterinarian:h.veterinarian||null, cost:h.cost||null, created_by_name:h.createdByName||null, notes:h.notes||null, closed:false });
+const toGoat    = r => ({ id:r.id, name:r.name, earTag:r.ear_tag, gender:r.gender, breed:r.breed, category:r.category, birthDate:r.birth_date||"", weight:r.weight||"", color:r.color||"", motherTag:r.mother_tag||"", fatherTag:r.father_tag||"", abortHistory:r.abort_history||"hayır", reproductionStatus:r.reproduction_status||"", lastBirthDate:r.last_birth_date||"", kidCount:r.kid_count||"0", notes:r.notes||"", abortDetails:r.abort_details||"", archived:r.archived||false, archiveReason:r.archive_reason||"" });
+const fromGoat  = g => ({ id:g.id, name:g.name, ear_tag:g.earTag, gender:g.gender, breed:g.breed, category:g.category, birth_date:g.birthDate||null, weight:g.weight||null, color:g.color||null, mother_tag:g.motherTag||null, father_tag:g.fatherTag||null, abort_history:g.abortHistory||"hayır", reproduction_status:g.reproductionStatus||null, last_birth_date:g.lastBirthDate||null, kid_count:g.kidCount||"0", notes:g.notes||null, abort_details:g.abortDetails||null, archived:false });
+const toHealth  = r => ({ id:r.id, goatId:r.goat_id, breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false });
+const fromHealth= h => ({ id:h.id, goat_id:h.goatId, breed:h.breed, date:h.date, condition:h.condition, treatment:h.treatment||null, status:h.status, veterinarian:h.veterinarian||null, cost:h.cost||null, created_by_name:h.createdByName||null, notes:h.notes||null, closed:false });
 const toVaccine = r => ({ id:r.id, goatId:r.goat_id, breed:r.breed, date:r.date, vaccineType:r.vaccine_type, batchNo:r.batch_no||"", createdByName:r.created_by_name||"" });
-const fromVaccine = v => ({ id:v.id, goat_id:v.goatId, breed:v.breed, date:v.date, vaccine_type:v.vaccineType, batch_no:v.batchNo||null, created_by_name:v.createdByName||null });
-const toReport = r => ({ id:r.id, goatId:r.goat_id, goatName:r.goat_name, breed:r.breed, dateStarted:r.date_started, dateClosed:r.date_closed, condition:r.condition, treatment:r.treatment||"", closeReason:r.close_reason, closeNote:r.close_note||"", veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"" });
-const fromReport = r => ({ id:r.id, goat_id:r.goatId, goat_name:r.goatName, breed:r.breed, date_started:r.dateStarted, date_closed:r.dateClosed, condition:r.condition, treatment:r.treatment||null, close_reason:r.closeReason, close_note:r.closeNote||null, veterinarian:r.veterinarian||null, cost:r.cost||null, created_by_name:r.createdByName||null, notes:r.notes||null });
+const fromVaccine=v => ({ id:v.id, goat_id:v.goatId, breed:v.breed, date:v.date, vaccine_type:v.vaccineType, batch_no:v.batchNo||null, created_by_name:v.createdByName||null });
+const toReport  = r => ({ id:r.id, goatId:r.goat_id, goatName:r.goat_name, goatEarTag:r.goat_ear_tag||"", breed:r.breed, dateStarted:r.date_started, dateClosed:r.date_closed, condition:r.condition, treatment:r.treatment||"", closeReason:r.close_reason, closeNote:r.close_note||"", veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"" });
+const fromReport= r => ({ id:r.id, goat_id:r.goatId, goat_name:r.goatName, goat_ear_tag:r.goatEarTag||null, breed:r.breed, date_started:r.dateStarted, date_closed:r.dateClosed, condition:r.condition, treatment:r.treatment||null, close_reason:r.closeReason, close_note:r.closeNote||null, veterinarian:r.veterinarian||null, cost:r.cost||null, created_by_name:r.createdByName||null, notes:r.notes||null });
+const toLog     = r => ({ id:r.id, healthRecordId:r.health_record_id, goatId:r.goat_id, breed:r.breed, action:r.action, actionDetail:r.action_detail||"", userName:r.user_name||"", createdAt:r.created_at });
 
-const fmt      = d => d ? new Date(d).toLocaleDateString("tr-TR") : "—";
-const todayISO = () => new Date().toISOString().split("T")[0];
-const daysUntil= d => d ? Math.ceil((new Date(d)-new Date())/86400000) : Infinity;
-const getAge   = bd => {
+const fmt       = d => d ? new Date(d).toLocaleDateString("tr-TR") : "—";
+const fmtDT     = d => d ? new Date(d).toLocaleString("tr-TR", {day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—";
+const todayISO  = () => new Date().toISOString().split("T")[0];
+const daysUntil = d => d ? Math.ceil((new Date(d)-new Date())/86400000) : Infinity;
+const getAge    = bd => {
   if (!bd) return "—";
   const d = Math.floor((new Date()-new Date(bd))/86400000);
   if (d>365) return `${Math.floor(d/365)}y ${Math.floor((d%365)/30)}a`;
-  if (d>30) return `${Math.floor(d/30)} ay`;
+  if (d>30)  return `${Math.floor(d/30)} ay`;
   return `${d} gün`;
 };
 const nextVaccineDate = (goatId, vaccineTypeId, vaccines) => {
@@ -77,20 +78,25 @@ const nextVaccineDate = (goatId, vaccineTypeId, vaccines) => {
   return d.toISOString().split("T")[0];
 };
 
+// Log kaydet
+const addLog = async (healthRecordId, goatId, breed, action, actionDetail, userName) => {
+  const log = { id:"l"+Date.now()+Math.random().toString(36).slice(2), health_record_id:healthRecordId, goat_id:goatId, breed, action, action_detail:actionDetail, user_name:userName };
+  await sb.from("health_logs").insert(log);
+};
+
 function Loading(){
   return <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"linear-gradient(155deg,#2D4A20 0%,#4A7C3F 40%,#6B9F5B 100%)"}}>
     <div style={{fontSize:56,marginBottom:16}}>🐐</div>
     <div style={{color:"#fff",fontSize:16,fontWeight:700}}>Yükleniyor...</div>
-    <div style={{color:"rgba(255,255,255,.6)",fontSize:12,marginTop:4}}>Veriler alınıyor</div>
   </div>;
 }
 
-// ── Küpe Okuma (OCR via Claude API) ──
+// ── Küpe Okuma ──
 function EarTagScanner({ onResult, onClose }) {
   const [scanning, setScanning] = useState(false);
-  const [preview, setPreview] = useState(null);
-  const [result, setResult]   = useState("");
-  const [err, setErr]         = useState("");
+  const [preview,  setPreview]  = useState(null);
+  const [result,   setResult]   = useState("");
+  const [err,      setErr]      = useState("");
   const fileRef = useRef();
   const camRef  = useRef();
 
@@ -111,36 +117,39 @@ function EarTagScanner({ onResult, onClose }) {
               role:"user",
               content:[
                 { type:"image", source:{ type:"base64", media_type:file.type||"image/jpeg", data:base64 } },
-                { type:"text", text:"Bu görselde bir küpe etiketi veya numara var. Sadece küpe numarasını yaz, başka hiçbir şey yazma. Örnek format: TR-15-0042 veya 0042 gibi. Numara göremiyorsan sadece 'bulunamadı' yaz." }
+                { type:"text", text:"Bu görselde bir hayvan küpe etiketi var. Küpe üzerindeki numaranın son 4 rakamını bul ve sadece şu formatta yaz: TR-15-XXXX (son 4 hane). Eğer tam numarayı okuyabiliyorsan TR-XX-XXXX formatında yaz. Sadece numarayı yaz, başka hiçbir şey yazma. Numara göremiyorsan sadece 'bulunamadı' yaz." }
               ]
             }]
           })
         });
         const data = await res.json();
-        const text = data.content?.[0]?.text?.trim()||"";
-        if (text && text!=="bulunamadı") { setResult(text); }
-        else { setErr("Küpe numarası okunamadı, lütfen tekrar deneyin"); }
-      } catch(e) { setErr("Okuma hatası: "+e.message); }
+        const text = (data.content?.[0]?.text||"").trim();
+        if (text && text!=="bulunamadı" && text.length>=4) {
+          setResult(text);
+        } else {
+          setErr("Numara okunamadı. Daha yakından veya net bir fotoğraf deneyin.");
+        }
+      } catch(e) { setErr("Bağlantı hatası. İnternet bağlantınızı kontrol edin."); }
       setScanning(false);
     };
     reader.readAsDataURL(file);
   };
 
   return <ModalWrap title="📷 Küpe Numarası Oku" onClose={onClose}>
-    <div style={{textAlign:"center",padding:"8px 0"}}>
-      <div style={{fontSize:12,color:"#8c8c7e",marginBottom:12}}>Kamera ile çekin veya galeriden seçin</div>
-      <div style={{display:"flex",gap:8,marginBottom:12}}>
+    <div style={{textAlign:"center",padding:"4px 0"}}>
+      <div style={{fontSize:12,color:"#8c8c7e",marginBottom:10}}>Kamera ile çekin veya galeriden seçin</div>
+      <div style={{display:"flex",gap:8,marginBottom:10}}>
         <button onClick={()=>camRef.current.click()} style={{...S.btnPrimary,flex:1,fontSize:13}}>📷 Kamera</button>
         <button onClick={()=>fileRef.current.click()} style={{...S.btnOutline,flex:1,fontSize:13}}>🖼 Galeri</button>
       </div>
       <input ref={camRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>e.target.files[0]&&processImage(e.target.files[0])}/>
       <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={e=>e.target.files[0]&&processImage(e.target.files[0])}/>
       {preview && <img src={preview} style={{width:"100%",borderRadius:10,marginBottom:8,maxHeight:180,objectFit:"cover"}} alt="preview"/>}
-      {scanning && <div style={{color:"#4A7C3F",fontWeight:700,fontSize:13,padding:10}}>🔍 Okunuyor...</div>}
+      {scanning && <div style={{color:"#4A7C3F",fontWeight:700,fontSize:13,padding:10}}>🔍 Numara okunuyor...</div>}
       {err && <ErrBox msg={err}/>}
       {result && <div style={{background:"#E3F0DC",borderRadius:10,padding:12,marginTop:8}}>
         <div style={{fontSize:11,color:"#3D5A25",marginBottom:4}}>✅ Okunan numara:</div>
-        <div style={{fontSize:18,fontWeight:900,color:"#3D5A25"}}>{result}</div>
+        <div style={{fontSize:20,fontWeight:900,color:"#3D5A25",letterSpacing:1}}>{result}</div>
         <button onClick={()=>onResult(result)} style={{...S.btnPrimary,width:"100%",marginTop:10,fontSize:13}}>Bu numarayı kullan</button>
       </div>}
     </div>
@@ -148,8 +157,8 @@ function EarTagScanner({ onResult, onClose }) {
   </ModalWrap>;
 }
 
-// ── Sağlık Kaydı Detay & Düzenleme ──
-function HealthDetailModal({ record, goat, onUpdate, onClose, onFinalize, currentUser }) {
+// ── Sağlık Kaydı Detay & Log ──
+function HealthDetailModal({ record, goat, logs, onUpdate, onClose, onFinalize, currentUser, onLogsUpdate }) {
   const [status,    setStatus]    = useState(record.status);
   const [treatment, setTreatment] = useState(record.treatment||"");
   const [notes,     setNotes]     = useState(record.notes||"");
@@ -158,26 +167,38 @@ function HealthDetailModal({ record, goat, onUpdate, onClose, onFinalize, curren
   const [showClose, setShowClose] = useState(false);
   const [closeReason, setCloseReason] = useState("");
   const [closeNote,   setCloseNote]   = useState("");
+  const [tab, setTab] = useState("detay");
+
+  const recLogs = logs.filter(l=>l.healthRecordId===record.id).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
 
   const save = async () => {
     setSaving(true);
-    const updated = { ...record, status, treatment, notes, cost };
+    const changes = [];
+    if (status!==record.status) changes.push(`Durum: ${record.status} → ${status}`);
+    if (treatment!==record.treatment) changes.push("Tedavi güncellendi");
+    if (cost!==record.cost) changes.push(`Maliyet: ${cost}₺`);
     const { error } = await sb.from("health_records").update({ status, treatment, notes, cost }).eq("id", record.id);
-    if (!error) onUpdate(updated);
+    if (!error) {
+      const detail = changes.length>0 ? changes.join(", ") : "Kayıt güncellendi";
+      await addLog(record.id, goat.id, goat.breed, "güncelleme", detail, currentUser);
+      const newLog = { id:"l"+Date.now(), healthRecordId:record.id, goatId:goat.id, breed:goat.breed, action:"güncelleme", actionDetail:detail, userName:currentUser, createdAt:new Date().toISOString() };
+      onLogsUpdate(newLog);
+      onUpdate({ ...record, status, treatment, notes, cost });
+    }
     setSaving(false);
   };
 
   const finalize = async () => {
     if (!closeReason) return;
     setSaving(true);
-    const b = BREEDS.find(x=>x.id===goat.breed);
     const report = {
-      id:"r"+Date.now(), goatId:goat.id, goatName:goat.name, breed:goat.breed,
+      id:"r"+Date.now(), goatId:goat.id, goatName:goat.name, goatEarTag:goat.earTag, breed:goat.breed,
       dateStarted:record.date, dateClosed:todayISO(), condition:record.condition,
       treatment, closeReason, closeNote, veterinarian:record.veterinarian, cost, createdByName:currentUser, notes
     };
-    await sb.from("health_records").update({ closed:true, status:closeReason==="Hayvan Öldü"?"öldü":"iyileşti" }).eq("id",record.id);
+    await sb.from("health_records").update({ closed:true, status:closeReason==="Hayvan Öldü"?"öldü":"iyileşti" }).eq("id", record.id);
     await sb.from("reports").insert(fromReport(report));
+    await addLog(record.id, goat.id, goat.breed, "sonlandırma", `Neden: ${closeReason}${closeNote?" — "+closeNote:""}`, currentUser);
     onFinalize(record.id, report);
     setSaving(false);
   };
@@ -195,32 +216,56 @@ function HealthDetailModal({ record, goat, onUpdate, onClose, onFinalize, curren
     <textarea value={closeNote} onChange={e=>setCloseNote(e.target.value)} rows={3} style={{...S.input,resize:"vertical",lineHeight:1.5}} placeholder="Sonuç hakkında not..."/>
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={()=>setShowClose(false)} style={{...S.btnOutline,flex:1,padding:12}}>Geri</button>
-      <button onClick={finalize} disabled={!closeReason||saving} style={{...S.btnPrimary,flex:2,padding:12,background:"#BE3B31",borderColor:"#BE3B31",opacity:(!closeReason||saving)?.5:1}}>{saving?"Kaydediliyor...":"✅ Sonlandır"}</button>
+      <button onClick={finalize} disabled={!closeReason||saving} style={{...S.btnPrimary,flex:2,padding:12,background:"#BE3B31",opacity:(!closeReason||saving)?.5:1}}>{saving?"Kaydediliyor...":"✅ Sonlandır"}</button>
     </div>
   </ModalWrap>;
 
   return <ModalWrap title={`🩺 ${record.condition}`} onClose={onClose}>
     <div style={{background:"#F5F3ED",borderRadius:10,padding:10,fontSize:12}}>
-      <b>{goat.name}</b> · {fmt(record.date)} · Ekleyen: {record.createdByName}
+      <b>{goat.name}</b> · 🏷 {goat.earTag} · Başlangıç: {fmt(record.date)}
     </div>
-    <FL>Durum</FL>
-    <StatusPicker value={status} onChange={setStatus}/>
-    <FL>Tedavi / Yapılan İşlem</FL>
-    <textarea value={treatment} onChange={e=>setTreatment(e.target.value)} rows={3} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
-    <FL>Maliyet (₺)</FL>
-    <input type="number" value={cost} onChange={e=>setCost(e.target.value)} style={S.input} placeholder="0"/>
-    <FL>Notlar</FL>
-    <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
-    <div style={{display:"flex",gap:8,marginTop:4}}>
-      <button onClick={()=>setShowClose(true)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",padding:"10px 14px",fontSize:12}}>📋 Sonlandır</button>
-      <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:1,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Güncelle"}</button>
+    <div style={{display:"flex",background:"#F2F0EA",borderRadius:8,overflow:"hidden",marginTop:4}}>
+      {[["detay","Detay"],["gecmis","Geçmiş"]].map(([k,l])=>(
+        <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"8px 0",border:"none",fontWeight:700,fontSize:12,cursor:"pointer",background:tab===k?"#4A7C3F":"transparent",color:tab===k?"#fff":"#8c8c7e"}}>{l}</button>
+      ))}
     </div>
+
+    {tab==="detay" && <>
+      <FL>Durum</FL>
+      <StatusPicker value={status} onChange={setStatus}/>
+      <FL>Tedavi / Yapılan İşlem</FL>
+      <textarea value={treatment} onChange={e=>setTreatment(e.target.value)} rows={3} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
+      <FL>Maliyet (₺)</FL>
+      <input type="number" value={cost} onChange={e=>setCost(e.target.value)} style={S.input} placeholder="0"/>
+      <FL>Notlar</FL>
+      <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
+      <div style={{display:"flex",gap:8,marginTop:4}}>
+        <button onClick={()=>setShowClose(true)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",padding:"10px 14px",fontSize:12}}>📋 Sonlandır</button>
+        <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:1,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Güncelle"}</button>
+      </div>
+    </>}
+
+    {tab==="gecmis" && <div>
+      {recLogs.length===0 && <Empty text="Henüz işlem geçmişi yok"/>}
+      {recLogs.map((l,i)=>(
+        <div key={l.id} style={{display:"flex",gap:8,padding:"8px 0",borderBottom:i<recLogs.length-1?"1px solid #F2F0EA":"none"}}>
+          <div style={{width:32,height:32,borderRadius:"50%",background:l.action==="sonlandırma"?"#FFF0EE":l.action==="açılış"?"#E3F0DC":"#EEF6FC",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>
+            {l.action==="sonlandırma"?"✅":l.action==="açılış"?"🆕":"✏️"}
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:12,fontWeight:700,color:"#1e1e1e"}}>{l.userName}</div>
+            <div style={{fontSize:11,color:"#555"}}>{l.actionDetail}</div>
+            <div style={{fontSize:10,color:"#aaa",marginTop:2}}>{fmtDT(l.createdAt)}</div>
+          </div>
+        </div>
+      ))}
+    </div>}
   </ModalWrap>;
 }
 
 // ── Sağlık Kaydı Ekle ──
 function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUser }) {
-  const filtered = breedFilter ? goats.filter(g=>g.breed===breedFilter) : goats;
+  const filtered = breedFilter ? goats.filter(g=>g.breed===breedFilter&&!g.archived) : goats.filter(g=>!g.archived);
   const [goatId,setGoatId]=useState(preGoatId||"");
   const [date,setDate]=useState(todayISO());
   const [condition,setCondition]=useState("");
@@ -241,6 +286,7 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     const rec = { id:"h"+Date.now(), goatId, breed:g.breed, date, condition:cond, treatment, status, veterinarian:currentUser, cost, createdByName:currentUser, notes };
     const { error } = await sb.from("health_records").insert(fromHealth(rec));
     if (error){setErr("Kayıt hatası: "+error.message);setSaving(false);return;}
+    await addLog(rec.id, goatId, g.breed, "açılış", `${cond} — ${currentUser} tarafından açıldı`, currentUser);
     onSave(rec);
   };
 
@@ -276,7 +322,7 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
 
 // ── Toplu Aşı ──
 function VaccineModal({ breed, goats, onSave, onClose, currentUser }) {
-  const breedGoats=goats.filter(g=>g.breed===breed.id);
+  const breedGoats=goats.filter(g=>g.breed===breed.id&&!g.archived);
   const anacList=breedGoats.filter(g=>g.category==="anac");
   const oglakList=breedGoats.filter(g=>g.category==="oglak");
   const [vaccineType,setVaccineType]=useState("");
@@ -308,8 +354,20 @@ function VaccineModal({ breed, goats, onSave, onClose, currentUser }) {
     <FL>Tarih *</FL><input type="date" value={date} onChange={e=>setDate(e.target.value)} style={S.input}/>
     <FL>Parti / Seri No</FL><input value={batchNo} onChange={e=>setBatchNo(e.target.value)} style={S.input} placeholder="örn. ENT-2026-A12"/>
     <FL>Hayvan Seçimi ({selected.size}/{breedGoats.length} seçili)</FL>
-    {anacList.length>0&&<><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,fontWeight:700,color:"#3D5A25"}}>🐐 Anaçlar</span><button onClick={()=>toggleGroup(anacList)} style={{...S.btnSm,background:"#E3F0DC",color:"#3D5A25",fontSize:10}}>{anacList.every(g=>selected.has(g.id))?"Tümünü Kaldır":"Tümünü Seç"}</button></div>{anacList.map(g=><GoatRow key={g.id} g={g}/>)}</>}
-    {oglakList.length>0&&<div style={{marginTop:8}}><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:11,fontWeight:700,color:"#8B5A1B"}}>🍼 Oğlaklar</span><button onClick={()=>toggleGroup(oglakList)} style={{...S.btnSm,background:"#FFF4E6",color:"#8B5A1B",fontSize:10}}>{oglakList.every(g=>selected.has(g.id))?"Tümünü Kaldır":"Tümünü Seç"}</button></div>{oglakList.map(g=><GoatRow key={g.id} g={g}/>)}</div>}
+    {anacList.length>0&&<>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+        <span style={{fontSize:11,fontWeight:700,color:"#3D5A25"}}>🐐 Anaçlar</span>
+        <button onClick={()=>toggleGroup(anacList)} style={{...S.btnSm,background:"#E3F0DC",color:"#3D5A25",fontSize:10}}>{anacList.every(g=>selected.has(g.id))?"Tümünü Kaldır":"Tümünü Seç"}</button>
+      </div>
+      {anacList.map(g=><GoatRow key={g.id} g={g}/>)}
+    </>}
+    {oglakList.length>0&&<div style={{marginTop:8}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+        <span style={{fontSize:11,fontWeight:700,color:"#8B5A1B"}}>🍼 Oğlaklar</span>
+        <button onClick={()=>toggleGroup(oglakList)} style={{...S.btnSm,background:"#FFF4E6",color:"#8B5A1B",fontSize:10}}>{oglakList.every(g=>selected.has(g.id))?"Tümünü Kaldır":"Tümünü Seç"}</button>
+      </div>
+      {oglakList.map(g=><GoatRow key={g.id} g={g}/>)}
+    </div>}
     <div style={{display:"flex",gap:8,marginTop:12}}>
       <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
       <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💉 "+selected.size+" Hayvana Kaydet"}</button>
@@ -317,7 +375,7 @@ function VaccineModal({ breed, goats, onSave, onClose, currentUser }) {
   </ModalWrap>;
 }
 
-// ── Hayvan Ekle (OCR destekli) ──
+// ── Hayvan Ekle ──
 function AddGoatModal({ breed, onSave, onClose, currentUser }) {
   const [name,setName]=useState("");
   const [earTag,setEarTag]=useState("");
@@ -335,7 +393,7 @@ function AddGoatModal({ breed, onSave, onClose, currentUser }) {
     if(!name){setErr("İsim giriniz");return;}
     if(!earTag){setErr("Küpe no giriniz");return;}
     setSaving(true);
-    const g={id:"g"+Date.now(),name,earTag,gender,breed:breed.id,category,birthDate,weight,color,motherTag:"",fatherTag:"",abortHistory:"hayır",reproductionStatus:"",kidCount:"0",notes,abortDetails:""};
+    const g={id:"g"+Date.now(),name,earTag,gender,breed:breed.id,category,birthDate,weight,color,motherTag:"",fatherTag:"",abortHistory:"hayır",reproductionStatus:"",kidCount:"0",notes,abortDetails:"",archived:false,archiveReason:""};
     const {error}=await sb.from("goats").insert(fromGoat(g));
     if(error){setErr("Hata: "+error.message);setSaving(false);return;}
     onSave(g);
@@ -382,80 +440,136 @@ function Empty({text}){return <div style={{textAlign:"center",padding:30,color:"
 function MiniPill({label,val,color}){return <div style={{display:"flex",alignItems:"center",gap:4}}><span style={{fontSize:13,fontWeight:900,color}}>{val}</span><span style={{fontSize:10,color:"#8c8c7e"}}>{label}</span></div>;}
 function PillTag({bg,color,text}){return <span style={{background:bg,color,fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:8,whiteSpace:"nowrap"}}>{text}</span>;}
 
-// ── Raporlar Sayfası ──
-function ReportsPage({reports, goats, breeds}) {
+// ── Raporlar ──
+function ReportsPage({reports, goats, onDeleteReport}) {
   const [selBreed, setSelBreed] = useState("all");
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const filtered = selBreed==="all" ? reports : reports.filter(r=>r.breed===selBreed);
   const sorted = [...filtered].sort((a,b)=>new Date(b.dateClosed)-new Date(a.dateClosed));
-
   const stats = {
     total: reports.length,
-    iyilesti: reports.filter(r=>r.closeReason==="İyileşti"||r.closeReason==="Tedavi Tamamlandı").length,
+    iyilesti: reports.filter(r=>["İyileşti","Tedavi Tamamlandı"].includes(r.closeReason)).length,
     oldu: reports.filter(r=>r.closeReason==="Hayvan Öldü").length,
   };
 
-  return <div className="anim-fade">
-    <h2 style={{...S.title,marginBottom:12}}>📊 Raporlar</h2>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:12}}>
-      <Stat v={stats.total} l="Toplam" bg="#E8E5DC" c="#444"/>
-      <Stat v={stats.iyilesti} l="İyileşti" bg="#E3F0DC" c="#3D5A25"/>
-      <Stat v={stats.oldu} l="Öldü" bg="#FFF0EE" c="#BE3B31"/>
-    </div>
+  const handleDelete = async (id) => {
+    await sb.from("reports").delete().eq("id", id);
+    onDeleteReport(id);
+    setConfirmDelete(null);
+  };
 
-    {/* Irk filtresi */}
-    <div style={{display:"flex",gap:6,marginBottom:10,overflowX:"auto",paddingBottom:4}}>
-      <button onClick={()=>setSelBreed("all")} style={{...S.btnSm,background:selBreed==="all"?"#4A7C3F":"#F2F0EA",color:selBreed==="all"?"#fff":"#555",whiteSpace:"nowrap",padding:"6px 14px"}}>Tümü</button>
-      {BREEDS.map(b=><button key={b.id} onClick={()=>setSelBreed(b.id)} style={{...S.btnSm,background:selBreed===b.id?b.color:b.bg,color:selBreed===b.id?"#fff":b.color,whiteSpace:"nowrap",padding:"6px 14px"}}>{b.emoji} {b.name}</button>)}
-    </div>
-
-    {sorted.length===0&&<Empty text="Henüz sonlandırılmış kayıt yok"/>}
-    {sorted.map(r=>{
-      const b=BREEDS.find(x=>x.id===r.breed);
-      const isDeath=r.closeReason==="Hayvan Öldü";
-      return <div key={r.id} style={{...S.card,padding:12,marginBottom:6,border:`1.5px solid ${isDeath?"#F5C0BA":b?.color+"22"}`}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:6}}>
-          <div>
-            <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · {r.goatName}</div>
-            <div style={{fontWeight:800,fontSize:14,color:"#1e1e1e"}}>{r.condition}</div>
-            <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.dateStarted)} → {fmt(r.dateClosed)}</div>
+  return (
+    <div className="anim-fade">
+      {confirmDelete && (
+        <div onClick={()=>setConfirmDelete(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,padding:20,width:"100%",maxWidth:320}}>
+            <div style={{fontWeight:800,fontSize:16,color:"#1e1e1e",marginBottom:8}}>🗑 Raporu Sil</div>
+            <div style={{fontSize:13,color:"#555",marginBottom:16}}>Bu rapor kalıcı olarak silinecek. Emin misiniz?</div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setConfirmDelete(null)} style={{...S.btnOutline,flex:1,padding:10}}>İptal</button>
+              <button onClick={()=>handleDelete(confirmDelete)} style={{...S.btnPrimary,flex:1,padding:10,background:"#BE3B31"}}>Evet, Sil</button>
+            </div>
           </div>
-          <span style={{background:isDeath?"#FFF0EE":"#E3F0DC",color:isDeath?"#BE3B31":"#3D5A25",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8,whiteSpace:"nowrap"}}>{r.closeReason}</span>
         </div>
-        {r.treatment&&<div style={{fontSize:12,color:"#333",marginBottom:4}}>💊 {r.treatment}</div>}
-        {r.closeNote&&<div style={{fontSize:12,color:"#555",fontStyle:"italic",marginBottom:4}}>📝 {r.closeNote}</div>}
-        <div style={{fontSize:10,color:"#aaa"}}>Ekleyen: {r.createdByName}{r.cost?` · 💰 ${r.cost}₺`:""}</div>
-      </div>;
-    })}
-  </div>;
+      )}
+      <h2 style={{...S.title,marginBottom:12}}>📊 Raporlar</h2>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:12}}>
+        <Stat v={stats.total} l="Toplam" bg="#E8E5DC" c="#444"/>
+        <Stat v={stats.iyilesti} l="İyileşti" bg="#E3F0DC" c="#3D5A25"/>
+        <Stat v={stats.oldu} l="Öldü" bg="#FFF0EE" c="#BE3B31"/>
+      </div>
+      <div style={{display:"flex",gap:6,marginBottom:10,overflowX:"auto",paddingBottom:4}}>
+        <button onClick={()=>setSelBreed("all")} style={{...S.btnSm,background:selBreed==="all"?"#4A7C3F":"#F2F0EA",color:selBreed==="all"?"#fff":"#555",whiteSpace:"nowrap",padding:"6px 14px"}}>Tümü ({reports.length})</button>
+        {BREEDS.map(b=>{const cnt=reports.filter(r=>r.breed===b.id).length;return <button key={b.id} onClick={()=>setSelBreed(b.id)} style={{...S.btnSm,background:selBreed===b.id?b.color:b.bg,color:selBreed===b.id?"#fff":b.color,whiteSpace:"nowrap",padding:"6px 14px"}}>{b.emoji} {b.name} ({cnt})</button>;})}
+      </div>
+      {sorted.length===0 && <Empty text="Henüz sonlandırılmış kayıt yok"/>}
+      {sorted.map(r=>{
+        const b=BREEDS.find(x=>x.id===r.breed);
+        const isDeath=r.closeReason==="Hayvan Öldü";
+        return (
+          <div key={r.id} style={{...S.card,padding:12,marginBottom:6,border:`1.5px solid ${isDeath?"#F5C0BA":b?.color+"22"}`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:6}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · {r.goatName} {r.goatEarTag?`(${r.goatEarTag})`:""}</div>
+                <div style={{fontWeight:800,fontSize:14,color:"#1e1e1e"}}>{r.condition}</div>
+                <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.dateStarted)} → {fmt(r.dateClosed)}</div>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+                <span style={{background:isDeath?"#FFF0EE":"#E3F0DC",color:isDeath?"#BE3B31":"#3D5A25",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8,whiteSpace:"nowrap"}}>{r.closeReason}</span>
+                <button onClick={()=>setConfirmDelete(r.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>
+              </div>
+            </div>
+            {r.treatment&&<div style={{fontSize:12,color:"#333",marginBottom:4}}>💊 {r.treatment}</div>}
+            {r.closeNote&&<div style={{fontSize:12,color:"#555",fontStyle:"italic",marginBottom:4}}>📝 {r.closeNote}</div>}
+            <div style={{fontSize:10,color:"#aaa"}}>Ekleyen: {r.createdByName}{r.cost?` · 💰 ${r.cost}₺`:""}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 // ── Irk Aşı Sekmesi ──
 function BreedVaccineTab({breed,goats,vaccines,onAdd}){
-  const breedGoats=goats.filter(g=>g.breed===breed.id);
+  const breedGoats=goats.filter(g=>g.breed===breed.id&&!g.archived);
   const [viewTab,setViewTab]=useState("takvim");
   const calendar=useMemo(()=>VACCINE_DEFS.map(vd=>{
-    const rows=breedGoats.map(g=>{const last=vaccines.filter(v=>v.goatId===g.id&&v.vaccineType===vd.id).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];const nextD=last?(()=>{const d=new Date(last.date);d.setDate(d.getDate()+vd.intervalDays);return d.toISOString().split("T")[0];})():null;return{goat:g,last,nextD,days:nextD?daysUntil(nextD):null};});
+    const rows=breedGoats.map(g=>{
+      const last=vaccines.filter(v=>v.goatId===g.id&&v.vaccineType===vd.id).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+      const nextD=last?(()=>{const d=new Date(last.date);d.setDate(d.getDate()+vd.intervalDays);return d.toISOString().split("T")[0];})():null;
+      return{goat:g,last,nextD,days:nextD?daysUntil(nextD):null};
+    });
     return{vd,rows,hasAny:rows.some(r=>r.last)};
   }),[breedGoats,vaccines]);
   const history=[...vaccines].filter(v=>v.breed===breed.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
-  return <div>
-    <button onClick={onAdd} style={{...S.btnPrimary,width:"100%",marginBottom:10,fontSize:13}}>💉 Toplu Aşı Kaydı Ekle</button>
-    <div style={{display:"flex",background:"#fff",borderRadius:10,marginBottom:10,border:"1px solid #E8E5DC",overflow:"hidden"}}>
-      <button onClick={()=>setViewTab("takvim")} style={{...S.tabBtn,background:viewTab==="takvim"?breed.color:"transparent",color:viewTab==="takvim"?"#fff":"#8c8c7e",fontSize:12}}>📅 Takvim</button>
-      <button onClick={()=>setViewTab("gecmis")} style={{...S.tabBtn,background:viewTab==="gecmis"?breed.color:"transparent",color:viewTab==="gecmis"?"#fff":"#8c8c7e",fontSize:12}}>📋 Geçmiş</button>
+  return (
+    <div>
+      <button onClick={onAdd} style={{...S.btnPrimary,width:"100%",marginBottom:10,fontSize:13}}>💉 Toplu Aşı Kaydı Ekle</button>
+      <div style={{display:"flex",background:"#fff",borderRadius:10,marginBottom:10,border:"1px solid #E8E5DC",overflow:"hidden"}}>
+        <button onClick={()=>setViewTab("takvim")} style={{...S.tabBtn,background:viewTab==="takvim"?breed.color:"transparent",color:viewTab==="takvim"?"#fff":"#8c8c7e",fontSize:12}}>📅 Takvim</button>
+        <button onClick={()=>setViewTab("gecmis")} style={{...S.tabBtn,background:viewTab==="gecmis"?breed.color:"transparent",color:viewTab==="gecmis"?"#fff":"#8c8c7e",fontSize:12}}>📋 Geçmiş</button>
+      </div>
+      {viewTab==="takvim" && calendar.map(({vd,rows,hasAny})=>{
+        if(!hasAny) return <div key={vd.id} style={{...S.card,padding:"10px 14px",marginBottom:6,opacity:.6}}><div style={{fontWeight:700,fontSize:13,color:"#aaa"}}>💉 {vd.name}</div><div style={{fontSize:11,color:"#ccc"}}>Kayıt yok</div></div>;
+        const urgentCount=rows.filter(r=>r.days!==null&&r.days<=7).length;
+        const soonCount=rows.filter(r=>r.days!==null&&r.days<=30&&r.days>7).length;
+        return (
+          <div key={vd.id} style={{...S.card,padding:12,marginBottom:8,border:`1.5px solid ${vd.color}22`}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+              <div style={{fontWeight:800,fontSize:13,color:vd.color}}>💉 {vd.name}</div>
+              <div style={{display:"flex",gap:4}}>
+                {urgentCount>0&&<PillTag bg="#FFF0EE" color="#BE3B31" text={`⚠️ ${urgentCount} acil`}/>}
+                {soonCount>0&&<PillTag bg="#FFF8EC" color="#B8750A" text={`${soonCount} yakın`}/>}
+              </div>
+            </div>
+            {rows.filter(r=>r.last).map(r=>{
+              const d=r.days;const urgent=d!==null&&d<=7;const soon=d!==null&&d<=30;
+              return <div key={r.goat.id} style={{display:"flex",alignItems:"center",padding:"5px 0",borderBottom:"1px solid #F2F0EA"}}>
+                <span style={{fontSize:12,fontWeight:600,color:"#333",flex:"0 0 90px"}}>{r.goat.name}</span>
+                <span style={{fontSize:10,color:"#8c8c7e",flex:1}}>Son: {fmt(r.last.date)}</span>
+                <span style={{fontSize:11,fontWeight:700,color:urgent?"#BE3B31":soon?"#D4850A":"#4A7C3F"}}>{r.nextD?`${fmt(r.nextD)}${d<=30&&d>=0?` (${d}g)`:""}` : "—"}</span>
+              </div>;
+            })}
+            {rows.filter(r=>!r.last).length>0&&<div style={{fontSize:11,color:"#aaa",padding:"4px 0"}}>Kayıtsız: {rows.filter(r=>!r.last).map(r=>r.goat.name).join(", ")}</div>}
+          </div>
+        );
+      })}
+      {viewTab==="gecmis" && (
+        <div>
+          {history.length===0 && <Empty text="Aşı kaydı yok"/>}
+          {history.map(v=>{
+            const g=goats.find(x=>x.id===v.goatId);
+            const vd=VACCINE_DEFS.find(x=>x.id===v.vaccineType);
+            return <div key={v.id} style={{...S.card,padding:10,marginBottom:5}}>
+              <div style={{fontWeight:700,fontSize:13,color:vd?.color||"#333"}}>💉 {vd?.name}</div>
+              <div style={{fontSize:11,color:"#8c8c7e"}}>🐐 {g?.name} · 📅 {fmt(v.date)}</div>
+              {v.batchNo&&<div style={{fontSize:10,color:"#aaa"}}>Parti: {v.batchNo}</div>}
+            </div>;
+          })}
+        </div>
+      )}
     </div>
-    {viewTab==="takvim"&&calendar.map(({vd,rows,hasAny})=>{
-      if(!hasAny) return <div key={vd.id} style={{...S.card,padding:"10px 14px",marginBottom:6,opacity:.6}}><div style={{fontWeight:700,fontSize:13,color:"#aaa"}}>💉 {vd.name}</div><div style={{fontSize:11,color:"#ccc"}}>Kayıt yok</div></div>;
-      const urgentCount=rows.filter(r=>r.days!==null&&r.days<=7).length;
-      const soonCount=rows.filter(r=>r.days!==null&&r.days<=30&&r.days>7).length;
-      return <div key={vd.id} style={{...S.card,padding:12,marginBottom:8,border:`1.5px solid ${vd.color}22`}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}><div style={{fontWeight:800,fontSize:13,color:vd.color}}>💉 {vd.name}</div><div style={{display:"flex",gap:4}}>{urgentCount>0&&<PillTag bg="#FFF0EE" color="#BE3B31" text={`⚠️ ${urgentCount} acil`}/>}{soonCount>0&&<PillTag bg="#FFF8EC" color="#B8750A" text={`${soonCount} yakın`}/>}</div></div>
-        {rows.filter(r=>r.last).map(r=>{const d=r.days;const urgent=d!==null&&d<=7;const soon=d!==null&&d<=30;return <div key={r.goat.id} style={{display:"flex",alignItems:"center",padding:"5px 0",borderBottom:"1px solid #F2F0EA"}}><span style={{fontSize:12,fontWeight:600,color:"#333",flex:"0 0 90px"}}>{r.goat.name}</span><span style={{fontSize:10,color:"#8c8c7e",flex:1}}>Son: {fmt(r.last.date)}</span><span style={{fontSize:11,fontWeight:700,color:urgent?"#BE3B31":soon?"#D4850A":"#4A7C3F"}}>{r.nextD?`${fmt(r.nextD)}${d<=30&&d>=0?` (${d}g)`:""}` : "—"}</span></div>;})}
-        {rows.filter(r=>!r.last).length>0&&<div style={{fontSize:11,color:"#aaa",padding:"4px 0"}}>Kayıtsız: {rows.filter(r=>!r.last).map(r=>r.goat.name).join(", ")}</div>}
-      </div>;
-    })}
-    {viewTab==="gecmis"&&<div>{history.length===0&&<Empty text="Aşı kaydı yok"/>}{history.map(v=>{const g=goats.find(x=>x.id===v.goatId);const vd=VACCINE_DEFS.find(x=>x.id===v.vaccineType);return <div key={v.id} style={{...S.card,padding:10,marginBottom:5}}><div style={{fontWeight:700,fontSize:13,color:vd?.color||"#333"}}>💉 {vd?.name}</div><div style={{fontSize:11,color:"#8c8c7e"}}>🐐 {g?.name} · 📅 {fmt(v.date)}</div>{v.batchNo&&<div style={{fontSize:10,color:"#aaa"}}>Parti: {v.batchNo}</div>}</div>;})}</div>}
-  </div>;
+  );
 }
 
 // ── Global Aşı Sayfası ──
@@ -506,7 +620,7 @@ function GlobalVaccinePage({goats,vaccines,upcomingAll,onAddVaccine}){
       {activeTab==="takvim" && (
         <div>
           {BREEDS.map(b=>{
-            const bGoats=goats.filter(g=>g.breed===b.id);
+            const bGoats=goats.filter(g=>g.breed===b.id&&!g.archived);
             const upcoming=[];
             bGoats.forEach(g=>{
               VACCINE_DEFS.forEach(vd=>{
@@ -525,7 +639,7 @@ function GlobalVaccinePage({goats,vaccines,upcomingAll,onAddVaccine}){
                     <span style={{fontSize:11,fontWeight:700,color:x.d<=7?"#BE3B31":x.d<=30?"#D4850A":"#4A7C3F"}}>{fmt(x.nextStr)}{x.d<=30&&x.d>=0?` (${x.d}g)`:""}</span>
                   </div>
                 ))}
-                {upcoming.length>4 && <div style={{fontSize:11,color:"#aaa",marginTop:4}}>+{upcoming.length-4} daha</div>}
+                {upcoming.length>4&&<div style={{fontSize:11,color:"#aaa",marginTop:4}}>+{upcoming.length-4} daha</div>}
               </div>
             );
           })}
@@ -553,50 +667,89 @@ function GlobalVaccinePage({goats,vaccines,upcomingAll,onAddVaccine}){
 }
 
 // ── Keçi Detay ──
-function GoatDetail({goat,goats,healthRecs,vaccines,onAddHealth,onUpdateHealth,onFinalizeHealth,detailTab,setDetailTab,currentUser}){
+function GoatDetail({goat,goats,healthRecs,vaccines,logs,onAddHealth,onUpdateHealth,onFinalizeHealth,onLogsUpdate,detailTab,setDetailTab,currentUser}){
   const b=BREEDS.find(x=>x.id===goat.breed);
   const [selRecord,setSelRecord]=useState(null);
   const activeRecs=healthRecs.filter(h=>h.goatId===goat.id&&!h.closed);
   const selRecordObj=selRecord?healthRecs.find(h=>h.id===selRecord):null;
 
-  return <div className="anim-slide">
-    {selRecordObj&&<HealthDetailModal record={selRecordObj} goat={goat} currentUser={currentUser}
-      onUpdate={updated=>{onUpdateHealth(updated);setSelRecord(null);}}
-      onFinalize={(id,report)=>{onFinalizeHealth(id,report);setSelRecord(null);}}
-      onClose={()=>setSelRecord(null)}/>}
-    <div style={{...S.card,textAlign:"center",padding:18,marginBottom:8,background:b?.bgCard,border:`1.5px solid ${b?.color}20`}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:4}}>
-        <PillTag bg={b?.bg} color={b?.color} text={`${b?.emoji} ${b?.name}`}/>
-        <PillTag bg={goat.category==="anac"?"#E3F0DC":"#FFF4E6"} color={goat.category==="anac"?"#3D5A25":"#8B5A1B"} text={goat.category==="anac"?"Anaç":"Oğlak"}/>
-      </div>
-      <div style={{fontSize:40,margin:"4px 0"}}>{goat.category==="anac"?"🐐":"🍼"}</div>
-      <h2 style={{margin:"2px 0",fontSize:22,fontWeight:900,color:"#1e1e1e"}}>{goat.name}</h2>
-      <div style={{fontSize:12,color:"#8c8c7e"}}>🏷 {goat.earTag} · {goat.gender==="dişi"?"♀ Dişi":"♂ Erkek"} · {getAge(goat.birthDate)}</div>
-    </div>
-    <div style={{display:"flex",background:"#fff",borderRadius:10,marginBottom:8,border:"1px solid #E8E5DC",overflow:"hidden"}}>
-      {[["info","Bilgiler"],["health","Sağlık"],["vaccines","Aşılar"]].map(([k,l])=><button key={k} onClick={()=>setDetailTab(k)} style={{...S.tabBtn,background:detailTab===k?"#4A7C3F":"transparent",color:detailTab===k?"#fff":"#8c8c7e",fontSize:12}}>{l}</button>)}
-    </div>
-    {detailTab==="info"&&<div style={S.card}>
-      {[["Irk",b?.name],["Kategori",goat.category==="anac"?"Anaç":"Oğlak"],["Doğum",fmt(goat.birthDate)],["Yaş",getAge(goat.birthDate)],["Ağırlık",goat.weight?`${goat.weight} kg`:"—"],["Renk",goat.color||"—"],["Üreme",goat.reproductionStatus||"—"],["Oğlak Sayısı",goat.kidCount||"—"]].map(([l,v],i,arr)=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:i<arr.length-1?"1px solid #F2F0EA":"none"}}><span style={{fontSize:13,color:"#8c8c7e",fontWeight:500}}>{l}</span><span style={{fontSize:13,color:"#1e1e1e",textAlign:"right",maxWidth:"55%"}}>{v||"—"}</span></div>)}
-      {goat.notes&&<div style={{marginTop:4,padding:"8px 10px",background:"#F5F3ED",borderRadius:8,fontSize:12,color:"#555"}}><b>Not:</b> {goat.notes}</div>}
-    </div>}
-    {detailTab==="health"&&<div>
-      <button onClick={onAddHealth} style={{...S.btnPrimary,width:"100%",marginBottom:8,fontSize:13}}>+ Sağlık Kaydı Ekle</button>
-      {activeRecs.length===0&&<Empty text="Aktif sağlık kaydı yok"/>}
-      {activeRecs.sort((a,c)=>new Date(c.date)-new Date(a.date)).map(h=><div key={h.id} onClick={()=>setSelRecord(h.id)} style={{...S.card,padding:12,marginBottom:5,cursor:"pointer",border:"1.5px solid #E8E5DC"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
-          <div><div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{h.condition}</div><div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(h.date)}</div></div>
-          <StatusBadge status={h.status}/>
+  return (
+    <div className="anim-slide">
+      {selRecordObj && (
+        <HealthDetailModal
+          record={selRecordObj} goat={goat} logs={logs} currentUser={currentUser}
+          onUpdate={updated=>{onUpdateHealth(updated);setSelRecord(null);}}
+          onFinalize={(id,report)=>{onFinalizeHealth(id,report);setSelRecord(null);}}
+          onLogsUpdate={onLogsUpdate}
+          onClose={()=>setSelRecord(null)}
+        />
+      )}
+      <div style={{...S.card,textAlign:"center",padding:18,marginBottom:8,background:b?.bgCard,border:`1.5px solid ${b?.color}20`}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginBottom:4}}>
+          <PillTag bg={b?.bg} color={b?.color} text={`${b?.emoji} ${b?.name}`}/>
+          <PillTag bg={goat.category==="anac"?"#E3F0DC":"#FFF4E6"} color={goat.category==="anac"?"#3D5A25":"#8B5A1B"} text={goat.category==="anac"?"Anaç":"Oğlak"}/>
+          {goat.archived && <PillTag bg="#FFF0EE" color="#BE3B31" text="ARŞİVLENDİ"/>}
         </div>
-        {h.treatment&&<div style={{fontSize:12,marginTop:5,color:"#333"}}>💊 {h.treatment}</div>}
-        <div style={{fontSize:10,color:"#4A7C3F",marginTop:4,fontWeight:600}}>👆 Detay / Düzenle / Sonlandır</div>
-      </div>)}
-    </div>}
-    {detailTab==="vaccines"&&<div>
-      {vaccines.filter(v=>v.goatId===goat.id).length===0&&<Empty text="Aşı kaydı yok"/>}
-      {vaccines.filter(v=>v.goatId===goat.id).sort((a,c)=>new Date(c.date)-new Date(a.date)).map(v=>{const vd=VACCINE_DEFS.find(x=>x.id===v.vaccineType);const nd=new Date(v.date);nd.setDate(nd.getDate()+(vd?.intervalDays||180));const nextStr=nd.toISOString().split("T")[0];const d=daysUntil(nextStr);return <div key={v.id} style={{...S.card,padding:12,marginBottom:5}}><div style={{fontWeight:700,fontSize:14,color:vd?.color||"#333"}}>💉 {vd?.name}</div><div style={{fontSize:11,color:"#8c8c7e",marginTop:2}}>📅 {fmt(v.date)}{v.batchNo?` · Parti: ${v.batchNo}`:""}</div><div style={{fontSize:11,marginTop:3,color:d<=15?"#BE3B31":d<=30?"#D4850A":"#4A7C3F",fontWeight:600}}>⏭ Sonraki: {fmt(nextStr)}{d<=30&&d>=0?` (${d} gün!)`:""}</div></div>;})}
-    </div>}
-  </div>;
+        <div style={{fontSize:40,margin:"4px 0"}}>{goat.category==="anac"?"🐐":"🍼"}</div>
+        <h2 style={{margin:"2px 0",fontSize:22,fontWeight:900,color:"#1e1e1e"}}>{goat.name}</h2>
+        <div style={{fontSize:12,color:"#8c8c7e"}}>🏷 {goat.earTag} · {goat.gender==="dişi"?"♀ Dişi":"♂ Erkek"} · {getAge(goat.birthDate)}</div>
+      </div>
+      <div style={{display:"flex",background:"#fff",borderRadius:10,marginBottom:8,border:"1px solid #E8E5DC",overflow:"hidden"}}>
+        {[["info","Bilgiler"],["health","Sağlık"],["vaccines","Aşılar"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setDetailTab(k)} style={{...S.tabBtn,background:detailTab===k?"#4A7C3F":"transparent",color:detailTab===k?"#fff":"#8c8c7e",fontSize:12}}>{l}</button>
+        ))}
+      </div>
+      {detailTab==="info" && (
+        <div style={S.card}>
+          {[["Irk",b?.name],["Kategori",goat.category==="anac"?"Anaç":"Oğlak"],["Doğum",fmt(goat.birthDate)],["Yaş",getAge(goat.birthDate)],["Ağırlık",goat.weight?`${goat.weight} kg`:"—"],["Renk",goat.color||"—"],["Üreme",goat.reproductionStatus||"—"],["Oğlak Sayısı",goat.kidCount||"—"]].map(([l,v],i,arr)=>(
+            <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:i<arr.length-1?"1px solid #F2F0EA":"none"}}>
+              <span style={{fontSize:13,color:"#8c8c7e",fontWeight:500}}>{l}</span>
+              <span style={{fontSize:13,color:"#1e1e1e",textAlign:"right",maxWidth:"55%"}}>{v||"—"}</span>
+            </div>
+          ))}
+          {goat.archived && <div style={{marginTop:8,padding:"8px 10px",background:"#FFF0EE",borderRadius:8,fontSize:12,color:"#BE3B31"}}><b>Arşiv Nedeni:</b> {goat.archiveReason}</div>}
+          {goat.notes && <div style={{marginTop:4,padding:"8px 10px",background:"#F5F3ED",borderRadius:8,fontSize:12,color:"#555"}}><b>Not:</b> {goat.notes}</div>}
+        </div>
+      )}
+      {detailTab==="health" && (
+        <div>
+          {!goat.archived && <button onClick={onAddHealth} style={{...S.btnPrimary,width:"100%",marginBottom:8,fontSize:13}}>+ Sağlık Kaydı Ekle</button>}
+          {activeRecs.length===0 && <Empty text="Aktif sağlık kaydı yok"/>}
+          {activeRecs.sort((a,c)=>new Date(c.date)-new Date(a.date)).map(h=>(
+            <div key={h.id} onClick={()=>setSelRecord(h.id)} style={{...S.card,padding:12,marginBottom:5,cursor:"pointer",border:"1.5px solid #E8E5DC"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                <div>
+                  <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{h.condition}</div>
+                  <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(h.date)} · {h.createdByName}</div>
+                </div>
+                <StatusBadge status={h.status}/>
+              </div>
+              {h.treatment&&<div style={{fontSize:12,marginTop:5,color:"#333"}}>💊 {h.treatment}</div>}
+              <div style={{fontSize:10,color:"#4A7C3F",marginTop:4,fontWeight:600}}>👆 Detay / Düzenle / Sonlandır / Geçmiş</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {detailTab==="vaccines" && (
+        <div>
+          {vaccines.filter(v=>v.goatId===goat.id).length===0 && <Empty text="Aşı kaydı yok"/>}
+          {vaccines.filter(v=>v.goatId===goat.id).sort((a,c)=>new Date(c.date)-new Date(a.date)).map(v=>{
+            const vd=VACCINE_DEFS.find(x=>x.id===v.vaccineType);
+            const nd=new Date(v.date);nd.setDate(nd.getDate()+(vd?.intervalDays||180));
+            const nextStr=nd.toISOString().split("T")[0];const d=daysUntil(nextStr);
+            return (
+              <div key={v.id} style={{...S.card,padding:12,marginBottom:5}}>
+                <div style={{fontWeight:700,fontSize:14,color:vd?.color||"#333"}}>💉 {vd?.name}</div>
+                <div style={{fontSize:11,color:"#8c8c7e",marginTop:2}}>📅 {fmt(v.date)}{v.batchNo?` · Parti: ${v.batchNo}`:""}</div>
+                <div style={{fontSize:11,marginTop:3,color:d<=15?"#BE3B31":d<=30?"#D4850A":"#4A7C3F",fontWeight:600}}>⏭ Sonraki: {fmt(nextStr)}{d<=30&&d>=0?` (${d} gün!)`:""}</div>
+                <div style={{fontSize:10,color:"#8c8c7e",marginTop:2}}>Ekleyen: {v.createdByName}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ════════════ MAIN APP ════════════
@@ -615,6 +768,7 @@ function App(){
   const [healthRecs,setHealthRecs]=useState([]);
   const [vaccines,setVaccines]=useState([]);
   const [reports,setReports]=useState([]);
+  const [logs,setLogs]=useState([]);
 
   const [hModal,setHModal]=useState(null);
   const [vModal,setVModal]=useState(null);
@@ -624,23 +778,42 @@ function App(){
     if(showLogin) return;
     const load=async()=>{
       setLoading(true);
-      const [g,h,v,r]=await Promise.all([
+      const [g,h,v,r,l]=await Promise.all([
         sb.from("goats").select("*"),
         sb.from("health_records").select("*").eq("closed",false),
         sb.from("vaccines").select("*"),
         sb.from("reports").select("*"),
+        sb.from("health_logs").select("*"),
       ]);
       setGoats((g.data||[]).map(toGoat));
       setHealthRecs((h.data||[]).map(toHealth));
       setVaccines((v.data||[]).map(toVaccine));
       setReports((r.data||[]).map(toReport));
+      setLogs((l.data||[]).map(toLog));
       setLoading(false);
     };
     load();
   },[showLogin]);
 
-  const upcomingAll=useMemo(()=>{const list=[];goats.forEach(g=>{VACCINE_DEFS.forEach(vd=>{const next=nextVaccineDate(g.id,vd.id,vaccines);if(next){const d=daysUntil(next);if(d<=30&&d>=0)list.push({goat:g,vd,days:d,next});}});});return list.sort((a,b)=>a.days-b.days);},[goats,vaccines]);
-  const breedStats=useMemo(()=>{const r={};BREEDS.forEach(b=>{const all=goats.filter(g=>g.breed===b.id);r[b.id]={total:all.length,anac:all.filter(g=>g.category==="anac").length,oglak:all.filter(g=>g.category==="oglak").length,sick:healthRecs.filter(h=>h.breed===b.id&&h.status==="tedavi_altında").length};});return r;},[goats,healthRecs]);
+  const upcomingAll=useMemo(()=>{
+    const list=[];
+    goats.filter(g=>!g.archived).forEach(g=>{
+      VACCINE_DEFS.forEach(vd=>{
+        const next=nextVaccineDate(g.id,vd.id,vaccines);
+        if(next){const d=daysUntil(next);if(d<=30&&d>=0)list.push({goat:g,vd,days:d,next});}
+      });
+    });
+    return list.sort((a,b)=>a.days-b.days);
+  },[goats,vaccines]);
+
+  const breedStats=useMemo(()=>{
+    const r={};
+    BREEDS.forEach(b=>{
+      const all=goats.filter(g=>g.breed===b.id&&!g.archived);
+      r[b.id]={total:all.length,anac:all.filter(g=>g.category==="anac").length,oglak:all.filter(g=>g.category==="oglak").length,sick:healthRecs.filter(h=>h.breed===b.id&&h.status==="tedavi_altında").length};
+    });
+    return r;
+  },[goats,healthRecs]);
 
   const navigate=p=>{setPage(p);setSelBreed(null);setSelGoat(null);setBreedTab("surü");setCatTab("anac");setDetailTab("info");};
   const goBack=()=>{if(selGoat){setSelGoat(null);setDetailTab("info");}else if(selBreed){setSelBreed(null);}else navigate("home");};
@@ -648,181 +821,343 @@ function App(){
   const saveVaccines=recs=>{setVaccines(p=>[...recs,...p]);setVModal(null);};
   const saveGoat=g=>{setGoats(p=>[...p,g]);setAddGoatModal(null);};
   const updateHealth=updated=>{setHealthRecs(p=>p.map(h=>h.id===updated.id?updated:h));};
-  const finalizeHealth=(id,report)=>{setHealthRecs(p=>p.filter(h=>h.id!==id));setReports(p=>[report,...p]);};
+  const addLogToState=newLog=>{setLogs(p=>[newLog,...p]);};
+
+  const finalizeHealth=async(id,report)=>{
+    setHealthRecs(p=>p.filter(h=>h.id!==id));
+    setReports(p=>[report,...p]);
+    // Hayvanı arşivle eğer "Hayvan Öldü" ise
+    if(report.closeReason==="Hayvan Öldü"){
+      await sb.from("goats").update({archived:true,archive_reason:"Hayvan öldü — "+report.dateClosed}).eq("id",report.goatId);
+      setGoats(p=>p.map(g=>g.id===report.goatId?{...g,archived:true,archiveReason:"Hayvan öldü — "+report.dateClosed}:g));
+    }
+  };
+
+  const deleteReport=id=>{setReports(p=>p.filter(r=>r.id!==id));};
 
   const breed=selBreed?BREEDS.find(b=>b.id===selBreed):null;
   const goat=selGoat?goats.find(g=>g.id===selGoat):null;
   const showBack=(page==="goats"&&(selBreed||selGoat))||page==="profile";
 
-  if(showLogin) return <div style={S.loginWrap}><style>{css}</style>
-    <div style={{animation:"fadeUp .6s ease",width:"100%",maxWidth:360,padding:"0 20px"}}>
-      <div style={{textAlign:"center",marginBottom:28}}>
-        <div style={{fontSize:56,animation:"pulse 2s infinite"}}>🐐</div>
-        <h1 style={{color:"#fff",fontSize:24,fontWeight:800,margin:"8px 0 4px"}}>Sürü Takip Sistemi</h1>
-        <p style={{color:"rgba(255,255,255,.6)",fontSize:13,margin:0}}>☁️ Bulut Tabanlı · 3 Irk · Çok Kullanıcılı</p>
-      </div>
-      <div style={{background:"rgba(255,255,255,.95)",borderRadius:18,padding:24,boxShadow:"0 20px 60px rgba(0,0,0,.25)"}}>
-        <h2 style={{margin:"0 0 14px",fontSize:17,fontWeight:700,color:"#1e1e1e"}}>Giriş Yapın</h2>
-        {DEMO_USERS.map(u=><button key={u.id} onClick={()=>{setCurrentUser(u.name);setShowLogin(false);}} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:u.id==="u1"?"2px solid #4A7C3F":"1px solid #E0DDD4",background:u.id==="u1"?"#F3F8F0":"#fff",cursor:"pointer",width:"100%",marginBottom:6}}>
-          <span style={{fontSize:18}}>{u.emoji}</span>
-          <div style={{textAlign:"left"}}><div style={{fontWeight:600,fontSize:14,color:"#1e1e1e"}}>{u.name}</div><div style={{fontSize:11,color:"#8c8c7e"}}>{u.role==="veteriner"?"Veteriner Hekim":u.role==="sef"?"Şef":"Vardiya Çalışanı"}</div></div>
-        </button>)}
+  const activeGoats=goats.filter(g=>!g.archived);
+
+  if(showLogin) return (
+    <div style={S.loginWrap}><style>{css}</style>
+      <div style={{animation:"fadeUp .6s ease",width:"100%",maxWidth:380,padding:"0 20px"}}>
+        <div style={{textAlign:"center",marginBottom:28}}>
+          <div style={{fontSize:56,animation:"pulse 2s infinite"}}>🐐</div>
+          <h1 style={{color:"#fff",fontSize:24,fontWeight:800,margin:"8px 0 4px"}}>Sürü Takip Sistemi</h1>
+          <p style={{color:"rgba(255,255,255,.6)",fontSize:13,margin:0}}>☁️ Bulut Tabanlı · 3 Irk · Çok Kullanıcılı</p>
+        </div>
+        <div style={{background:"rgba(255,255,255,.95)",borderRadius:18,padding:24,boxShadow:"0 20px 60px rgba(0,0,0,.25)"}}>
+          <h2 style={{margin:"0 0 14px",fontSize:17,fontWeight:700,color:"#1e1e1e"}}>Giriş Yapın</h2>
+          {DEMO_USERS.map(u=>(
+            <button key={u.id} onClick={()=>{setCurrentUser(u.name);setShowLogin(false);}}
+              style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:u.id==="u1"?"2px solid #4A7C3F":"1px solid #E0DDD4",background:u.id==="u1"?"#F3F8F0":"#fff",cursor:"pointer",width:"100%",marginBottom:6}}>
+              <span style={{fontSize:18}}>{u.emoji}</span>
+              <div style={{textAlign:"left",flex:1}}>
+                <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{u.name}</div>
+                {u.members && <div style={{fontSize:10,color:"#8c8c7e"}}>{u.members}</div>}
+                {!u.members && <div style={{fontSize:10,color:"#8c8c7e"}}>{u.role==="veteriner"?"Veteriner Hekim":"Şef"}</div>}
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
-  </div>;
+  );
 
   if(loading) return <Loading/>;
 
-  return <div style={S.app}><style>{css}</style>
-    {hModal&&<HealthModal goats={goats} breedFilter={hModal.breedId||null} preGoatId={hModal.goatId||""} onSave={saveHealth} onClose={()=>setHModal(null)} currentUser={currentUser}/>}
-    {vModal&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
-    {addGoatModal&&<AddGoatModal breed={BREEDS.find(b=>b.id===addGoatModal)} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser}/>}
+  return (
+    <div style={S.app}><style>{css}</style>
+      {hModal&&<HealthModal goats={goats} breedFilter={hModal.breedId||null} preGoatId={hModal.goatId||""} onSave={saveHealth} onClose={()=>setHModal(null)} currentUser={currentUser}/>}
+      {vModal&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
+      {addGoatModal&&<AddGoatModal breed={BREEDS.find(b=>b.id===addGoatModal)} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser}/>}
 
-    <div style={S.header}>
-      {showBack?<button onClick={goBack} style={{...S.ghost,color:"#fff",fontSize:22,padding:"0 6px 0 0",lineHeight:1}}>‹</button>:<span style={{fontSize:20}}>🐐</span>}
-      <div style={{flex:1}}>
-        <div style={{color:"#fff",fontWeight:800,fontSize:15}}>{selGoat&&goat?goat.name:selBreed&&breed?breed.name:"Sürü Takip"}</div>
-        <div style={{color:"rgba(255,255,255,.5)",fontSize:10}}>☁️ {currentUser} · {goats.length} keçi</div>
+      <div style={S.header}>
+        {showBack?<button onClick={goBack} style={{...S.ghost,color:"#fff",fontSize:22,padding:"0 6px 0 0",lineHeight:1}}>‹</button>:<span style={{fontSize:20}}>🐐</span>}
+        <div style={{flex:1}}>
+          <div style={{color:"#fff",fontWeight:800,fontSize:15}}>{selGoat&&goat?goat.name:selBreed&&breed?breed.name:"Sürü Takip"}</div>
+          <div style={{color:"rgba(255,255,255,.5)",fontSize:10}}>☁️ {currentUser} · {activeGoats.length} keçi</div>
+        </div>
+        <button onClick={()=>{setPage("profile");setSelBreed(null);setSelGoat(null);}} style={{...S.ghost,padding:0}}>
+          <div style={{width:30,height:30,borderRadius:"50%",background:"rgba(255,255,255,.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>👤</div>
+        </button>
       </div>
-      <button onClick={()=>{setPage("profile");setSelBreed(null);setSelGoat(null);}} style={{...S.ghost,padding:0}}>
-        <div style={{width:30,height:30,borderRadius:"50%",background:"rgba(255,255,255,.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>👤</div>
-      </button>
+
+      <div style={{padding:"10px 14px 84px"}}>
+
+        {/* HOME */}
+        {page==="home" && (
+          <div className="anim-fade">
+            <div style={{marginBottom:12}}>
+              <h2 style={S.title}>Merhaba, {currentUser} 👋</h2>
+              <p style={{margin:0,fontSize:12,color:"#8c8c7e"}}>Sürü Yönetim Sistemi</p>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:12}}>
+              <Stat v={activeGoats.length} l="Toplam" bg="#E8E5DC" c="#444"/>
+              <Stat v={activeGoats.filter(g=>g.category==="anac").length} l="Anaç" bg="#E3F0DC" c="#3D5A25"/>
+              <Stat v={activeGoats.filter(g=>g.category==="oglak").length} l="Oğlak" bg="#FFF4E6" c="#8B5A1B"/>
+              <Stat v={healthRecs.filter(h=>h.status==="tedavi_altında").length} l="Tedavide" bg="#FFF0EE" c="#8B2920"/>
+            </div>
+            {BREEDS.map((b,i)=>{
+              const bs=breedStats[b.id];
+              return (
+                <div key={b.id} onClick={()=>{setPage("goats");setSelBreed(b.id);setBreedTab("surü");}} className="anim-fade"
+                  style={{...S.card,padding:0,marginBottom:8,cursor:"pointer",overflow:"hidden",border:`1.5px solid ${b.color}22`,animationDelay:`${i*.07}s`}}>
+                  <div style={{display:"flex",alignItems:"center"}}>
+                    <div style={{width:64,background:b.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,alignSelf:"stretch"}}>{b.emoji}</div>
+                    <div style={{flex:1,padding:"12px 14px"}}>
+                      <div style={{fontWeight:800,fontSize:16,color:b.color}}>{b.name}</div>
+                      <div style={{fontSize:11,color:"#8c8c7e",marginTop:1}}>{b.desc}</div>
+                      <div style={{display:"flex",gap:10,marginTop:6,flexWrap:"wrap"}}>
+                        <MiniPill label="Toplam" val={bs.total} color={b.color}/>
+                        <MiniPill label="Anaç" val={bs.anac} color="#4A7C3F"/>
+                        <MiniPill label="Oğlak" val={bs.oglak} color="#C17B2E"/>
+                        {bs.sick>0&&<MiniPill label="Tedavide" val={bs.sick} color="#BE3B31"/>}
+                      </div>
+                    </div>
+                    <div style={{padding:"0 14px",color:"#ccc",fontSize:20}}>›</div>
+                  </div>
+                </div>
+              );
+            })}
+            {upcomingAll.length>0 && (
+              <div style={{...S.card,background:"#FFF8EC",border:"1px solid #F0D49A",marginBottom:8}}>
+                <div style={{fontWeight:700,fontSize:13,color:"#B8750A",marginBottom:6}}>⚠️ Yaklaşan Aşılar ({upcomingAll.length})</div>
+                {upcomingAll.slice(0,3).map((x,i)=>{
+                  const b=BREEDS.find(br=>br.id===x.goat.breed);
+                  return <div key={i} style={{fontSize:12,padding:"3px 0",display:"flex",justifyContent:"space-between"}}>
+                    <span>{b?.emoji} <b>{x.goat.name}</b> — {x.vd.name}</span>
+                    <span style={{color:x.days<=7?"#BE3B31":"#D4850A",fontWeight:700,fontSize:11}}>{x.days}g</span>
+                  </div>;
+                })}
+              </div>
+            )}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <button onClick={()=>navigate("health")} style={S.btnPrimary}>🩺 Sağlık</button>
+              <button onClick={()=>navigate("vaccines")} style={S.btnOutline}>💉 Aşı Takibi</button>
+            </div>
+          </div>
+        )}
+
+        {/* GOATS BREED SELECT */}
+        {page==="goats"&&!selBreed && (
+          <div className="anim-fade">
+            <h2 style={{...S.title,marginBottom:12}}>🐐 Irk Seçin</h2>
+            {BREEDS.map((b,i)=>{
+              const bs=breedStats[b.id];
+              return (
+                <div key={b.id} onClick={()=>{setSelBreed(b.id);setBreedTab("surü");}} className="anim-fade"
+                  style={{...S.card,marginBottom:8,cursor:"pointer",border:`1.5px solid ${b.color}30`,padding:0,overflow:"hidden",animationDelay:`${i*.06}s`}}>
+                  <div style={{display:"flex",alignItems:"stretch"}}>
+                    <div style={{width:72,background:b.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"14px 0"}}>
+                      <span style={{fontSize:32}}>{b.emoji}</span>
+                      <span style={{fontSize:22,fontWeight:900,color:b.color,marginTop:4}}>{bs.total}</span>
+                    </div>
+                    <div style={{flex:1,padding:"14px 16px"}}>
+                      <div style={{fontWeight:800,fontSize:18,color:b.color,marginBottom:2}}>{b.name}</div>
+                      <div style={{fontSize:12,color:"#8c8c7e",marginBottom:8}}>{b.desc}</div>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                        <PillTag bg="#E3F0DC" color="#3D5A25" text={`🐐 ${bs.anac} Anaç`}/>
+                        <PillTag bg="#FFF4E6" color="#8B5A1B" text={`🍼 ${bs.oglak} Oğlak`}/>
+                        {bs.sick>0&&<PillTag bg="#FFF0EE" color="#BE3B31" text={`🏥 ${bs.sick} Tedavide`}/>}
+                      </div>
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",padding:"0 14px",color:"#ccc",fontSize:22}}>›</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* GOATS BREED DETAIL */}
+        {page==="goats"&&selBreed&&!selGoat&&breed && (
+          <div className="anim-slide">
+            <div style={{...S.card,padding:14,marginBottom:10,background:breed.bgCard,border:`1.5px solid ${breed.color}25`}}>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                <span style={{fontSize:34}}>{breed.emoji}</span>
+                <div>
+                  <h2 style={{margin:0,fontSize:20,fontWeight:900,color:breed.color}}>{breed.name}</h2>
+                  <div style={{fontSize:12,color:"#8c8c7e"}}>{breed.desc}</div>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:6,marginTop:10}}>
+                <Stat v={breedStats[breed.id].total} l="Toplam" bg={breed.bg} c={breed.color}/>
+                <Stat v={breedStats[breed.id].anac} l="Anaç" bg="#E3F0DC" c="#3D5A25"/>
+                <Stat v={breedStats[breed.id].oglak} l="Oğlak" bg="#FFF4E6" c="#8B5A1B"/>
+                <Stat v={breedStats[breed.id].sick} l="Tedavide" bg="#FFF0EE" c="#BE3B31"/>
+              </div>
+            </div>
+            <div style={{display:"flex",background:"#fff",borderRadius:12,marginBottom:10,border:"1px solid #E8E5DC",overflow:"hidden"}}>
+              {[["surü","🐐 Sürü"],["saglik","🩺 Sağlık"],["asi","💉 Aşı"]].map(([k,l])=>(
+                <button key={k} onClick={()=>setBreedTab(k)} style={{...S.tabBtn,background:breedTab===k?breed.color:"transparent",color:breedTab===k?"#fff":"#8c8c7e",fontSize:12}}>{l}</button>
+              ))}
+            </div>
+
+            {breedTab==="surü" && (
+              <div>
+                <div style={{display:"flex",background:"#fff",borderRadius:10,marginBottom:8,border:"1px solid #E8E5DC",overflow:"hidden"}}>
+                  <button onClick={()=>setCatTab("anac")} style={{...S.tabBtn,background:catTab==="anac"?"#3D5A25":"transparent",color:catTab==="anac"?"#fff":"#8c8c7e",fontSize:12}}>
+                    🐐 Anaçlar ({goats.filter(g=>g.breed===breed.id&&g.category==="anac"&&!g.archived).length})
+                  </button>
+                  <button onClick={()=>setCatTab("oglak")} style={{...S.tabBtn,background:catTab==="oglak"?"#B8602A":"transparent",color:catTab==="oglak"?"#fff":"#8c8c7e",fontSize:12}}>
+                    🍼 Oğlaklar ({goats.filter(g=>g.breed===breed.id&&g.category==="oglak"&&!g.archived).length})
+                  </button>
+                </div>
+                <button onClick={()=>setAddGoatModal(breed.id)} style={{...S.btnPrimary,width:"100%",marginBottom:8,fontSize:13}}>+ {catTab==="anac"?"Anaç":"Oğlak"} Ekle</button>
+                {goats.filter(g=>g.breed===breed.id&&g.category===catTab&&!g.archived).map((g,i)=>(
+                  <div key={g.id} onClick={()=>{setSelGoat(g.id);setDetailTab("info");}} className="anim-fade"
+                    style={{...S.card,padding:"10px 12px",marginBottom:5,cursor:"pointer",display:"flex",alignItems:"center",gap:10,animationDelay:`${i*.04}s`}}>
+                    <div style={{width:40,height:40,borderRadius:"50%",background:breed.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>
+                      {catTab==="anac"?"🐐":"🍼"}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{g.name}</div>
+                      <div style={{fontSize:11,color:"#8c8c7e",display:"flex",gap:6,flexWrap:"wrap"}}>
+                        <span>🏷 {g.earTag}</span>
+                        <span>{g.gender==="dişi"?"♀":"♂"}</span>
+                        <span>{getAge(g.birthDate)}</span>
+                        {g.weight&&<span>{g.weight}kg</span>}
+                      </div>
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3}}>
+                      {g.reproductionStatus==="gebe"&&<Badge bg="#E3F0DC" color="#3D5A25" text="GEBE"/>}
+                      {g.reproductionStatus==="laktasyon"&&<Badge bg="#EEF6FC" color="#1A5A8A" text="LAKT."/>}
+                      {healthRecs.filter(h=>h.goatId===g.id&&!h.closed).length>0&&<Badge bg="#FFF8EC" color="#B8750A" text="TEDAVİDE"/>}
+                    </div>
+                    <span style={{color:"#ccc",fontSize:16}}>›</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {breedTab==="saglik" && (
+              <div>
+                <button onClick={()=>setHModal({breedId:breed.id})} style={{...S.btnPrimary,width:"100%",marginBottom:8,fontSize:13}}>+ Sağlık Kaydı Ekle</button>
+                {healthRecs.filter(h=>h.breed===breed.id&&!h.closed).length===0 && <Empty text="Aktif sağlık kaydı yok"/>}
+                {[...healthRecs].filter(h=>h.breed===breed.id&&!h.closed).sort((a,b)=>new Date(b.date)-new Date(a.date)).map(h=>{
+                  const g=goats.find(x=>x.id===h.goatId);
+                  return (
+                    <div key={h.id} style={{...S.card,padding:12,marginBottom:5,cursor:"pointer"}}
+                      onClick={()=>{setSelGoat(h.goatId);setDetailTab("health");}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                        <div>
+                          <div style={{fontSize:11,fontWeight:700,color:breed.color,marginBottom:2}}>{breed.emoji} {g?.name} <span style={{color:"#8c8c7e",fontWeight:400}}>({g?.earTag})</span></div>
+                          <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{h.condition}</div>
+                          <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(h.date)} · {h.createdByName}</div>
+                        </div>
+                        <StatusBadge status={h.status}/>
+                      </div>
+                      {h.treatment&&<div style={{fontSize:12,marginTop:5,color:"#333"}}>💊 {h.treatment}</div>}
+                      <div style={{fontSize:10,color:"#4A7C3F",marginTop:4,fontWeight:600}}>👆 Detay / Güncelle / Geçmiş</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {breedTab==="asi" && <BreedVaccineTab breed={breed} goats={goats} vaccines={vaccines} onAdd={()=>setVModal(breed.id)}/>}
+          </div>
+        )}
+
+        {/* GOAT DETAIL */}
+        {page==="goats"&&selGoat&&goat && (
+          <GoatDetail goat={goat} goats={goats} healthRecs={healthRecs} vaccines={vaccines} logs={logs}
+            onAddHealth={()=>setHModal({breedId:goat.breed,goatId:goat.id})}
+            onUpdateHealth={updateHealth} onFinalizeHealth={finalizeHealth}
+            onLogsUpdate={addLogToState}
+            detailTab={detailTab} setDetailTab={setDetailTab} currentUser={currentUser}/>
+        )}
+
+        {/* HEALTH PAGE */}
+        {page==="health" && (
+          <div className="anim-fade">
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+              <h2 style={S.title}>🩺 Sağlık Kayıtları</h2>
+              <button onClick={()=>setHModal({})} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13}}>+ Ekle</button>
+            </div>
+            {BREEDS.map(b=>{
+              const recs=healthRecs.filter(h=>h.breed===b.id&&!h.closed);
+              if(!recs.length) return null;
+              const tedavi=recs.filter(h=>h.status==="tedavi_altında");
+              return (
+                <div key={b.id} style={{marginBottom:10}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                    <div style={{fontWeight:800,fontSize:14,color:b.color}}>{b.emoji} {b.name}</div>
+                    <div style={{display:"flex",gap:6}}>
+                      {tedavi.length>0&&<PillTag bg="#FFF0EE" color="#BE3B31" text={`${tedavi.length} tedavide`}/>}
+                      <button onClick={()=>{setPage("goats");setSelBreed(b.id);setBreedTab("saglik");}} style={{...S.btnSm,background:b.bg,color:b.color,fontSize:10}}>Detay →</button>
+                    </div>
+                  </div>
+                  {recs.sort((a,c)=>new Date(c.date)-new Date(a.date)).slice(0,2).map(h=>{
+                    const g=goats.find(x=>x.id===h.goatId);
+                    return (
+                      <div key={h.id} style={{...S.card,padding:10,marginBottom:4,cursor:"pointer"}}
+                        onClick={()=>{setSelGoat(h.goatId);setDetailTab("health");setPage("goats");setSelBreed(b.id);}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                          <div>
+                            <div style={{fontSize:11,color:b.color,fontWeight:700,marginBottom:1}}>{g?.name} ({g?.earTag})</div>
+                            <div style={{fontWeight:700,fontSize:13,color:"#1e1e1e"}}>{h.condition}</div>
+                            <div style={{fontSize:11,color:"#8c8c7e"}}>{fmt(h.date)} · {h.createdByName}</div>
+                          </div>
+                          <StatusBadge status={h.status}/>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {recs.length>2&&<div style={{fontSize:11,color:"#8c8c7e",textAlign:"center",padding:"4px 0"}}>+{recs.length-2} kayıt daha</div>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {page==="vaccines" && <GlobalVaccinePage goats={goats} vaccines={vaccines} upcomingAll={upcomingAll} onAddVaccine={breedId=>setVModal(breedId)}/>}
+
+        {page==="reports" && <ReportsPage reports={reports} goats={goats} onDeleteReport={deleteReport}/>}
+
+        {/* PROFILE */}
+        {page==="profile" && (
+          <div className="anim-fade">
+            <div style={{...S.card,textAlign:"center",padding:22,marginBottom:10}}>
+              <div style={{fontSize:44}}>👤</div>
+              <h2 style={{margin:"4px 0 2px",fontSize:20,fontWeight:900,color:"#1e1e1e"}}>{currentUser}</h2>
+              <div style={{fontSize:12,color:"#8c8c7e",marginTop:4}}>
+                {DEMO_USERS.find(u=>u.name===currentUser)?.members || (DEMO_USERS.find(u=>u.name===currentUser)?.role==="veteriner"?"Veteriner Hekim":"Şef")}
+              </div>
+              <div style={{marginTop:12}}>
+                <button onClick={()=>setShowLogin(true)} style={{...S.btnOutline,color:"#BE3B31",borderColor:"#BE3B31",fontSize:13}}>🚪 Çıkış Yap</button>
+              </div>
+            </div>
+            <div style={S.card}>
+              <div style={{fontWeight:700,fontSize:13,color:"#4A7C3F",marginBottom:8}}>👥 Kullanıcılar & Vardiyalar</div>
+              {DEMO_USERS.map(u=>(
+                <div key={u.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid #F2F0EA"}}>
+                  <span style={{fontSize:18}}>{u.emoji}</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:13,color:"#1e1e1e"}}>{u.name}{u.name===currentUser?" (siz)":""}</div>
+                    {u.members && <div style={{fontSize:11,color:"#8c8c7e"}}>{u.members}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={S.nav}>
+        {[["home","🏠","Ana"],["goats","🐐","Sürü"],["health","🩺","Sağlık"],["vaccines","💉","Aşı"],["reports","📊","Rapor"]].map(([k,ic,l])=>(
+          <button key={k} onClick={()=>navigate(k)} style={{...S.ghost,display:"flex",flexDirection:"column",alignItems:"center",gap:1,padding:"4px 6px",color:page===k?"#4A7C3F":"#8c8c7e"}}>
+            <span style={{fontSize:17}}>{ic}</span>
+            <span style={{fontSize:9,fontWeight:page===k?700:500}}>{l}</span>
+          </button>
+        ))}
+      </div>
     </div>
-
-    <div style={{padding:"10px 14px 84px"}}>
-      {page==="home"&&<div className="anim-fade">
-        <div style={{marginBottom:12}}><h2 style={S.title}>Merhaba, {currentUser} 👋</h2><p style={{margin:0,fontSize:12,color:"#8c8c7e"}}>Sürü Yönetim Sistemi</p></div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:12}}>
-          <Stat v={goats.length} l="Toplam" bg="#E8E5DC" c="#444"/>
-          <Stat v={goats.filter(g=>g.category==="anac").length} l="Anaç" bg="#E3F0DC" c="#3D5A25"/>
-          <Stat v={goats.filter(g=>g.category==="oglak").length} l="Oğlak" bg="#FFF4E6" c="#8B5A1B"/>
-          <Stat v={healthRecs.filter(h=>h.status==="tedavi_altında").length} l="Tedavide" bg="#FFF0EE" c="#8B2920"/>
-        </div>
-        {BREEDS.map((b,i)=>{const bs=breedStats[b.id];return <div key={b.id} onClick={()=>{setPage("goats");setSelBreed(b.id);setBreedTab("surü");}} className="anim-fade" style={{...S.card,padding:0,marginBottom:8,cursor:"pointer",overflow:"hidden",border:`1.5px solid ${b.color}22`,animationDelay:`${i*.07}s`}}>
-          <div style={{display:"flex",alignItems:"center"}}>
-            <div style={{width:64,background:b.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,alignSelf:"stretch"}}>{b.emoji}</div>
-            <div style={{flex:1,padding:"12px 14px"}}>
-              <div style={{fontWeight:800,fontSize:16,color:b.color}}>{b.name}</div>
-              <div style={{fontSize:11,color:"#8c8c7e",marginTop:1}}>{b.desc}</div>
-              <div style={{display:"flex",gap:10,marginTop:6,flexWrap:"wrap"}}><MiniPill label="Toplam" val={bs.total} color={b.color}/><MiniPill label="Anaç" val={bs.anac} color="#4A7C3F"/><MiniPill label="Oğlak" val={bs.oglak} color="#C17B2E"/>{bs.sick>0&&<MiniPill label="Tedavide" val={bs.sick} color="#BE3B31"/>}</div>
-            </div>
-            <div style={{padding:"0 14px",color:"#ccc",fontSize:20}}>›</div>
-          </div>
-        </div>;})}
-        {upcomingAll.length>0&&<div style={{...S.card,background:"#FFF8EC",border:"1px solid #F0D49A",marginBottom:8}}><div style={{fontWeight:700,fontSize:13,color:"#B8750A",marginBottom:6}}>⚠️ Yaklaşan Aşılar ({upcomingAll.length})</div>{upcomingAll.slice(0,3).map((x,i)=>{const b=BREEDS.find(br=>br.id===x.goat.breed);return <div key={i} style={{fontSize:12,padding:"3px 0",display:"flex",justifyContent:"space-between"}}><span>{b?.emoji} <b>{x.goat.name}</b> — {x.vd.name}</span><span style={{color:x.days<=7?"#BE3B31":"#D4850A",fontWeight:700,fontSize:11}}>{x.days}g</span></div>;})}</div>}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-          <button onClick={()=>navigate("health")} style={S.btnPrimary}>🩺 Sağlık</button>
-          <button onClick={()=>navigate("vaccines")} style={S.btnOutline}>💉 Aşı Takibi</button>
-        </div>
-      </div>}
-
-      {page==="goats"&&!selBreed&&<div className="anim-fade">
-        <h2 style={{...S.title,marginBottom:12}}>🐐 Irk Seçin</h2>
-        {BREEDS.map((b,i)=>{const bs=breedStats[b.id];return <div key={b.id} onClick={()=>{setSelBreed(b.id);setBreedTab("surü");}} className="anim-fade" style={{...S.card,marginBottom:8,cursor:"pointer",border:`1.5px solid ${b.color}30`,padding:0,overflow:"hidden",animationDelay:`${i*.06}s`}}>
-          <div style={{display:"flex",alignItems:"stretch"}}>
-            <div style={{width:72,background:b.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"14px 0"}}><span style={{fontSize:32}}>{b.emoji}</span><span style={{fontSize:22,fontWeight:900,color:b.color,marginTop:4}}>{bs.total}</span></div>
-            <div style={{flex:1,padding:"14px 16px"}}><div style={{fontWeight:800,fontSize:18,color:b.color,marginBottom:2}}>{b.name}</div><div style={{fontSize:12,color:"#8c8c7e",marginBottom:8}}>{b.desc}</div><div style={{display:"flex",gap:8,flexWrap:"wrap"}}><PillTag bg="#E3F0DC" color="#3D5A25" text={`🐐 ${bs.anac} Anaç`}/><PillTag bg="#FFF4E6" color="#8B5A1B" text={`🍼 ${bs.oglak} Oğlak`}/>{bs.sick>0&&<PillTag bg="#FFF0EE" color="#BE3B31" text={`🏥 ${bs.sick} Tedavide`}/>}</div></div>
-            <div style={{display:"flex",alignItems:"center",padding:"0 14px",color:"#ccc",fontSize:22}}>›</div>
-          </div>
-        </div>;})}
-      </div>}
-
-      {page==="goats"&&selBreed&&!selGoat&&breed&&<div className="anim-slide">
-        <div style={{...S.card,padding:14,marginBottom:10,background:breed.bgCard,border:`1.5px solid ${breed.color}25`}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}><span style={{fontSize:34}}>{breed.emoji}</span><div><h2 style={{margin:0,fontSize:20,fontWeight:900,color:breed.color}}>{breed.name}</h2><div style={{fontSize:12,color:"#8c8c7e"}}>{breed.desc}</div></div></div>
-          <div style={{display:"flex",gap:6,marginTop:10}}>
-            <Stat v={breedStats[breed.id].total} l="Toplam" bg={breed.bg} c={breed.color}/>
-            <Stat v={breedStats[breed.id].anac} l="Anaç" bg="#E3F0DC" c="#3D5A25"/>
-            <Stat v={breedStats[breed.id].oglak} l="Oğlak" bg="#FFF4E6" c="#8B5A1B"/>
-            <Stat v={breedStats[breed.id].sick} l="Tedavide" bg="#FFF0EE" c="#BE3B31"/>
-          </div>
-        </div>
-        <div style={{display:"flex",background:"#fff",borderRadius:12,marginBottom:10,border:"1px solid #E8E5DC",overflow:"hidden"}}>
-          {[["surü","🐐 Sürü"],["saglik","🩺 Sağlık"],["asi","💉 Aşı"]].map(([k,l])=><button key={k} onClick={()=>setBreedTab(k)} style={{...S.tabBtn,background:breedTab===k?breed.color:"transparent",color:breedTab===k?"#fff":"#8c8c7e",fontSize:12}}>{l}</button>)}
-        </div>
-        {breedTab==="surü"&&<div>
-          <div style={{display:"flex",background:"#fff",borderRadius:10,marginBottom:8,border:"1px solid #E8E5DC",overflow:"hidden"}}>
-            <button onClick={()=>setCatTab("anac")} style={{...S.tabBtn,background:catTab==="anac"?"#3D5A25":"transparent",color:catTab==="anac"?"#fff":"#8c8c7e",fontSize:12}}>🐐 Anaçlar ({goats.filter(g=>g.breed===breed.id&&g.category==="anac").length})</button>
-            <button onClick={()=>setCatTab("oglak")} style={{...S.tabBtn,background:catTab==="oglak"?"#B8602A":"transparent",color:catTab==="oglak"?"#fff":"#8c8c7e",fontSize:12}}>🍼 Oğlaklar ({goats.filter(g=>g.breed===breed.id&&g.category==="oglak").length})</button>
-          </div>
-          <button onClick={()=>setAddGoatModal(breed.id)} style={{...S.btnPrimary,width:"100%",marginBottom:8,fontSize:13}}>+ {catTab==="anac"?"Anaç":"Oğlak"} Ekle</button>
-          {goats.filter(g=>g.breed===breed.id&&g.category===catTab).map((g,i)=><div key={g.id} onClick={()=>{setSelGoat(g.id);setDetailTab("info");}} className="anim-fade" style={{...S.card,padding:"10px 12px",marginBottom:5,cursor:"pointer",display:"flex",alignItems:"center",gap:10,animationDelay:`${i*.04}s`}}>
-            <div style={{width:40,height:40,borderRadius:"50%",background:breed.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{catTab==="anac"?"🐐":"🍼"}</div>
-            <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{g.name}</div><div style={{fontSize:11,color:"#8c8c7e",display:"flex",gap:6,flexWrap:"wrap"}}><span>🏷 {g.earTag}</span><span>{g.gender==="dişi"?"♀":"♂"}</span><span>{getAge(g.birthDate)}</span>{g.weight&&<span>{g.weight}kg</span>}</div></div>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3}}>
-              {g.reproductionStatus==="gebe"&&<Badge bg="#E3F0DC" color="#3D5A25" text="GEBE"/>}
-              {g.reproductionStatus==="laktasyon"&&<Badge bg="#EEF6FC" color="#1A5A8A" text="LAKT."/>}
-              {healthRecs.filter(h=>h.goatId===g.id&&!h.closed).length>0&&<Badge bg="#FFF8EC" color="#B8750A" text="TEDAVİDE"/>}
-            </div>
-            <span style={{color:"#ccc",fontSize:16}}>›</span>
-          </div>)}
-        </div>}
-        {breedTab==="saglik"&&<div>
-          <button onClick={()=>setHModal({breedId:breed.id})} style={{...S.btnPrimary,width:"100%",marginBottom:8,fontSize:13}}>+ Sağlık Kaydı Ekle</button>
-          {healthRecs.filter(h=>h.breed===breed.id&&!h.closed).length===0&&<Empty text="Aktif sağlık kaydı yok"/>}
-          {[...healthRecs].filter(h=>h.breed===breed.id&&!h.closed).sort((a,b)=>new Date(b.date)-new Date(a.date)).map(h=>{const g=goats.find(x=>x.id===h.goatId);return <div key={h.id} style={{...S.card,padding:12,marginBottom:5,cursor:"pointer"}} onClick={()=>{setSelGoat(h.goatId);setDetailTab("health");}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
-              <div><div style={{fontSize:11,fontWeight:700,color:breed.color,marginBottom:2}}>{breed.emoji} {g?.name} <span style={{color:"#8c8c7e",fontWeight:400}}>({g?.earTag})</span></div><div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{h.condition}</div><div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(h.date)}</div></div>
-              <StatusBadge status={h.status}/>
-            </div>
-            {h.treatment&&<div style={{fontSize:12,marginTop:5,color:"#333"}}>💊 {h.treatment}</div>}
-            <div style={{fontSize:10,color:"#4A7C3F",marginTop:4,fontWeight:600}}>👆 Detay için tıklayın</div>
-          </div>;})}
-        </div>}
-        {breedTab==="asi"&&<BreedVaccineTab breed={breed} goats={goats} vaccines={vaccines} onAdd={()=>setVModal(breed.id)}/>}
-      </div>}
-
-      {page==="goats"&&selGoat&&goat&&<GoatDetail goat={goat} goats={goats} healthRecs={healthRecs} vaccines={vaccines} onAddHealth={()=>setHModal({breedId:goat.breed,goatId:goat.id})} onUpdateHealth={updateHealth} onFinalizeHealth={finalizeHealth} detailTab={detailTab} setDetailTab={setDetailTab} currentUser={currentUser}/>}
-
-      {page==="health"&&<div className="anim-fade">
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-          <h2 style={S.title}>🩺 Sağlık Kayıtları</h2>
-          <button onClick={()=>setHModal({})} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13}}>+ Ekle</button>
-        </div>
-        {BREEDS.map(b=>{const recs=healthRecs.filter(h=>h.breed===b.id&&!h.closed);if(!recs.length)return null;const tedavi=recs.filter(h=>h.status==="tedavi_altında");return <div key={b.id} style={{marginBottom:10}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-            <div style={{fontWeight:800,fontSize:14,color:b.color}}>{b.emoji} {b.name}</div>
-            <div style={{display:"flex",gap:6}}>{tedavi.length>0&&<PillTag bg="#FFF0EE" color="#BE3B31" text={`${tedavi.length} tedavide`}/>}<button onClick={()=>{setPage("goats");setSelBreed(b.id);setBreedTab("saglik");}} style={{...S.btnSm,background:b.bg,color:b.color,fontSize:10}}>Detay →</button></div>
-          </div>
-          {recs.sort((a,c)=>new Date(c.date)-new Date(a.date)).slice(0,2).map(h=>{const g=goats.find(x=>x.id===h.goatId);return <div key={h.id} style={{...S.card,padding:10,marginBottom:4,cursor:"pointer"}} onClick={()=>{setSelGoat(h.goatId);setDetailTab("health");setPage("goats");setSelBreed(b.id);}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
-              <div><div style={{fontSize:11,color:b.color,fontWeight:700,marginBottom:1}}>{g?.name} ({g?.earTag})</div><div style={{fontWeight:700,fontSize:13,color:"#1e1e1e"}}>{h.condition}</div><div style={{fontSize:11,color:"#8c8c7e"}}>{fmt(h.date)}</div></div>
-              <StatusBadge status={h.status}/>
-            </div>
-          </div>;})}
-          {recs.length>2&&<div style={{fontSize:11,color:"#8c8c7e",textAlign:"center",padding:"4px 0"}}>+{recs.length-2} kayıt daha</div>}
-        </div>;})}
-      </div>}
-
-      {page==="vaccines"&&<GlobalVaccinePage goats={goats} vaccines={vaccines} upcomingAll={upcomingAll} onAddVaccine={breedId=>setVModal(breedId)}/>}
-
-      {page==="reports"&&<ReportsPage reports={reports} goats={goats} breeds={BREEDS}/>}
-
-      {page==="profile"&&<div className="anim-fade">
-        <div style={{...S.card,textAlign:"center",padding:22,marginBottom:10}}>
-          <div style={{fontSize:44}}>👤</div>
-          <h2 style={{margin:"4px 0 2px",fontSize:20,fontWeight:900,color:"#1e1e1e"}}>{currentUser}</h2>
-          <span style={{display:"inline-block",background:"#1B6B3A",color:"#fff",fontSize:11,fontWeight:700,padding:"3px 12px",borderRadius:14}}>
-            {DEMO_USERS.find(u=>u.name===currentUser)?.role==="veteriner"?"Veteriner Hekim":DEMO_USERS.find(u=>u.name===currentUser)?.role==="sef"?"Şef":"Vardiya Çalışanı"}
-          </span>
-          <div style={{marginTop:12}}><button onClick={()=>setShowLogin(true)} style={{...S.btnOutline,color:"#BE3B31",borderColor:"#BE3B31",fontSize:13}}>🚪 Çıkış Yap</button></div>
-        </div>
-        <div style={S.card}>
-          <div style={{fontWeight:700,fontSize:13,color:"#4A7C3F",marginBottom:8}}>👥 Kullanıcılar</div>
-          {DEMO_USERS.map(u=><div key={u.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:"1px solid #F2F0EA"}}>
-            <span style={{fontSize:18}}>{u.emoji}</span>
-            <div style={{flex:1}}><div style={{fontWeight:600,fontSize:13,color:"#1e1e1e"}}>{u.name}{u.name===currentUser?" (siz)":""}</div><div style={{fontSize:10,color:"#8c8c7e"}}>{u.role==="veteriner"?"Veteriner Hekim":u.role==="sef"?"Şef":"Vardiya Çalışanı"} · ✅ Aktif</div></div>
-          </div>)}
-        </div>
-      </div>}
-    </div>
-
-    <div style={S.nav}>
-      {[["home","🏠","Ana"],["goats","🐐","Sürü"],["health","🩺","Sağlık"],["vaccines","💉","Aşı"],["reports","📊","Rapor"]].map(([k,ic,l])=><button key={k} onClick={()=>navigate(k)} style={{...S.ghost,display:"flex",flexDirection:"column",alignItems:"center",gap:1,padding:"4px 6px",color:page===k?"#4A7C3F":"#8c8c7e"}}>
-        <span style={{fontSize:17}}>{ic}</span><span style={{fontSize:9,fontWeight:page===k?700:500}}>{l}</span>
-      </button>)}
-    </div>
-  </div>;
+  );
 }
 
 const css=`
@@ -834,6 +1169,7 @@ const css=`
   .anim-fade{animation:fadeUp .3s ease both}
   .anim-slide{animation:slideIn .3s ease both}
 `;
+
 const S={
   app:{fontFamily:"system-ui,-apple-system,sans-serif",background:"#FAFAF5",minHeight:"100vh",maxWidth:480,margin:"0 auto",position:"relative"},
   loginWrap:{fontFamily:"system-ui,-apple-system,sans-serif",minHeight:"100vh",background:"linear-gradient(155deg,#2D4A20 0%,#4A7C3F 40%,#6B9F5B 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:20},
