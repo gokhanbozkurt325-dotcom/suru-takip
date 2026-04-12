@@ -552,6 +552,7 @@ function ReportsPage({reports, goats, logs, vaccineReports, currentUser, onDelet
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [expandedReport, setExpandedReport] = useState(null);
   const [vaccineReportsLocal, setVaccineReportsLocal] = useState(vaccineReports);
+  useEffect(()=>{ setVaccineReportsLocal(vaccineReports); },[vaccineReports]);
   const isVet = currentUser==="Veteriner Hekim";
 
   const filtered = selBreed==="all" ? reports : reports.filter(r=>r.breed===selBreed);
@@ -683,8 +684,8 @@ function ReportsPage({reports, goats, logs, vaccineReports, currentUser, onDelet
                   {isVet && (
                     <button onClick={async()=>{
                       if(window.confirm("Bu aşı raporu silinecek. Emin misiniz?")){
-                        await sb.from("vaccine_reports").delete().eq("id",r.id);
-                        setVaccineReportsLocal(p=>p.filter(x=>x.id!==r.id));
+                        const {error} = await sb.from("vaccine_reports").delete().eq("id",r.id);
+                        if(!error) setVaccineReportsLocal(p=>p.filter(x=>x.id!==r.id));
                       }
                     }} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px",flexShrink:0,marginLeft:8}}>🗑 Sil</button>
                   )}
@@ -876,11 +877,13 @@ function CreateGroupModal({ breed, goats, onSave, onClose, currentUser }) {
 }
 
 // ── Irk Aşı Sekmesi (Grup Sistemi) ──
-function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCreated, onGroupUpdated, onVaccineApplied, currentUser}){
+function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCreated, onGroupUpdated, onGroupDeleted, onVaccineApplied, currentUser}){
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [activeGroupVaccine, setActiveGroupVaccine] = useState(null);
   const [editMembersGroup, setEditMembersGroup] = useState(null);
+  const [confirmDeleteGroup, setConfirmDeleteGroup] = useState(null);
   const [viewTab, setViewTab] = useState("gruplar");
+  const isVet = currentUser==="Veteriner Hekim";
 
   const breedGroups = vaccineGroups.filter(g=>g.breed===breed.id);
   const breedReports = [...vaccineReports].filter(r=>r.breed===breed.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
@@ -888,8 +891,29 @@ function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCr
   const activeGroup = activeGroupVaccine ? breedGroups.find(g=>g.id===activeGroupVaccine) : null;
   const editGroup = editMembersGroup ? breedGroups.find(g=>g.id===editMembersGroup) : null;
 
+  const deleteGroup = async (groupId) => {
+    await sb.from("vaccine_group_members").delete().eq("group_id", groupId);
+    await sb.from("vaccine_groups").delete().eq("id", groupId);
+    onGroupDeleted(groupId);
+    setConfirmDeleteGroup(null);
+  };
+
   return (
     <div>
+      {confirmDeleteGroup && (
+        <div onClick={()=>setConfirmDeleteGroup(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,padding:20,width:"100%",maxWidth:320}}>
+            <div style={{fontWeight:800,fontSize:16,color:"#1e1e1e",marginBottom:8}}>🗑 Grubu Sil</div>
+            <div style={{fontSize:13,color:"#555",marginBottom:16}}>
+              <b>{breedGroups.find(g=>g.id===confirmDeleteGroup)?.name}</b> grubu kalıcı silinecek. Emin misiniz?
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setConfirmDeleteGroup(null)} style={{...S.btnOutline,flex:1,padding:10}}>İptal</button>
+              <button onClick={()=>deleteGroup(confirmDeleteGroup)} style={{...S.btnPrimary,flex:1,padding:10,background:"#BE3B31",border:"none"}}>Evet, Sil</button>
+            </div>
+          </div>
+        </div>
+      )}
       {showCreateGroup && <CreateGroupModal breed={breed} goats={goats} currentUser={currentUser}
         onSave={g=>{onGroupCreated(g);setShowCreateGroup(false);}}
         onClose={()=>setShowCreateGroup(false)}/>}
@@ -916,11 +940,15 @@ function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCr
             return (
               <div key={group.id} style={{...S.card,padding:12,marginBottom:8,border:`1.5px solid ${breed.color}33`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:8}}>
-                  <div>
+                  <div style={{flex:1}}>
                     <div style={{fontWeight:800,fontSize:14,color:breed.color}}>{group.name}</div>
                     {group.description&&<div style={{fontSize:11,color:"#8c8c7e"}}>{group.description}</div>}
-                    <div style={{fontSize:11,color:"#555",marginTop:2}}>👥 {memberGoats.length} hayvan · {memberGoats.map(g=>g.name).join(", ")}</div>
+                    <div style={{fontSize:11,color:"#555",marginTop:2}}>👥 {memberGoats.length} hayvan {memberGoats.length>0?`· ${memberGoats.map(g=>g.name).join(", ")}`:""}  </div>
                   </div>
+                  {isVet && (
+                    <button onClick={()=>setConfirmDeleteGroup(group.id)}
+                      style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:11,padding:"4px 8px",flexShrink:0}}>🗑</button>
+                  )}
                 </div>
                 {lastVaccine && (
                   <div style={{fontSize:11,color:"#4A7C3F",background:"#F5FAF0",padding:"4px 8px",borderRadius:6,marginBottom:8}}>
@@ -1348,6 +1376,7 @@ function App(){
   const deleteReport=id=>{setReports(p=>p.filter(r=>r.id!==id));};
   const saveVaccineGroup=g=>{setVaccineGroups(p=>[...p,g]);};
   const updateVaccineGroup=g=>{setVaccineGroups(p=>p.map(x=>x.id===g.id?g:x));};
+  const deleteVaccineGroup=id=>{setVaccineGroups(p=>p.filter(x=>x.id!==id));};
   const saveVaccineReport=r=>{setVaccineReports(p=>[r,...p]);};
 
   const archiveGoat=async(goatId, reason)=>{
@@ -1701,7 +1730,7 @@ function App(){
               </div>
             )}
 
-            {breedTab==="asi" && <BreedVaccineTab breed={breed} goats={goats} vaccineGroups={vaccineGroups} vaccineReports={vaccineReports} onGroupCreated={saveVaccineGroup} onGroupUpdated={updateVaccineGroup} onVaccineApplied={saveVaccineReport} currentUser={currentUser}/>}
+            {breedTab==="asi" && <BreedVaccineTab breed={breed} goats={goats} vaccineGroups={vaccineGroups} vaccineReports={vaccineReports} onGroupCreated={saveVaccineGroup} onGroupUpdated={updateVaccineGroup} onGroupDeleted={deleteVaccineGroup} onVaccineApplied={saveVaccineReport} currentUser={currentUser}/>}
           </div>
         )}
 
