@@ -748,7 +748,45 @@ function GroupVaccineModal({ group, goats, onSave, onClose, currentUser }) {
   </ModalWrap>;
 }
 
-// ── Grup Oluştur Modal ──
+// ── Gruba Hayvan Ekle Modal ──
+function AddMembersModal({ group, breed, goats, onSave, onClose }) {
+  const breedGoats = goats.filter(g=>g.breed===breed.id&&!g.archived);
+  const [selected, setSelected] = useState(new Set(group.memberIds||[]));
+  const [saving, setSaving] = useState(false);
+
+  const toggle = id => setSelected(prev=>{const s=new Set(prev);s.has(id)?s.delete(id):s.add(id);return s;});
+
+  const save = async () => {
+    setSaving(true);
+    // Mevcut üyeleri sil, yeniden ekle
+    await sb.from("vaccine_group_members").delete().eq("group_id", group.id);
+    if(selected.size>0){
+      const members=[...selected].map(goatId=>({id:"gm"+Date.now()+Math.random().toString(36).slice(2),group_id:group.id,goat_id:goatId}));
+      await sb.from("vaccine_group_members").insert(members);
+    }
+    onSave({...group, memberIds:[...selected]});
+    setSaving(false);
+  };
+
+  return <ModalWrap title={`👥 ${group.name} — Hayvanlar`} onClose={onClose}>
+    <div style={{fontSize:12,color:"#8c8c7e",marginBottom:8}}>{selected.size} hayvan seçili</div>
+    {breedGoats.length===0 && <div style={{fontSize:12,color:"#aaa",textAlign:"center",padding:12}}>Bu ırkta henüz hayvan yok</div>}
+    {breedGoats.map(g=>{
+      const sel=selected.has(g.id);
+      return <div key={g.id} onClick={()=>toggle(g.id)} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,background:sel?breed.bg:"#F9F9F6",border:`1.5px solid ${sel?breed.color+"44":"#E8E5DC"}`,cursor:"pointer",marginBottom:4}}>
+        <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${sel?breed.color:"#ccc"}`,background:sel?breed.color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          {sel&&<span style={{color:"#fff",fontSize:11,fontWeight:900}}>✓</span>}
+        </div>
+        <span style={{fontSize:13,fontWeight:sel?700:400,color:sel?breed.color:"#444"}}>{g.name}</span>
+        <span style={{fontSize:10,color:"#8c8c7e",marginLeft:"auto"}}>{g.earTag} · {g.category==="anac"?"Anaç":"Oğlak"}</span>
+      </div>;
+    })}
+    <div style={{display:"flex",gap:8,marginTop:8}}>
+      <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
+      <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
+    </div>
+  </ModalWrap>;
+}
 function CreateGroupModal({ breed, goats, onSave, onClose, currentUser }) {
   const breedGoats = goats.filter(g=>g.breed===breed.id&&!g.archived);
   const [name, setName] = useState("");
@@ -761,14 +799,15 @@ function CreateGroupModal({ breed, goats, onSave, onClose, currentUser }) {
 
   const save = async () => {
     if(!name.trim()){setErr("Grup adı giriniz");return;}
-    if(selected.size===0){setErr("En az bir hayvan seçin");return;}
     setSaving(true);
     const groupId = "grp"+Date.now();
     const group = {id:groupId, breed:breed.id, name:name.trim(), description:desc||null, created_by:currentUser};
-    const members = [...selected].map(goatId=>({id:"gm"+Date.now()+goatId, group_id:groupId, goat_id:goatId}));
     const {error} = await sb.from("vaccine_groups").insert(group);
     if(error){setErr("Hata: "+error.message);setSaving(false);return;}
-    await sb.from("vaccine_group_members").insert(members);
+    if(selected.size>0){
+      const members = [...selected].map(goatId=>({id:"gm"+Date.now()+Math.random().toString(36).slice(2), group_id:groupId, goat_id:goatId}));
+      await sb.from("vaccine_group_members").insert(members);
+    }
     onSave({...group, memberIds:[...selected]});
     setSaving(false);
   };
@@ -793,7 +832,9 @@ function CreateGroupModal({ breed, goats, onSave, onClose, currentUser }) {
     <input value={name} onChange={e=>setName(e.target.value)} style={S.input} placeholder="örn. Saanen Oğlakları"/>
     <FL>Açıklama</FL>
     <input value={desc} onChange={e=>setDesc(e.target.value)} style={S.input} placeholder="İsteğe bağlı..."/>
-    <FL>Hayvanları Seç ({selected.size} seçili) *</FL>
+    <FL>Hayvan Seç (opsiyonel — sonradan da eklenebilir)</FL>
+    <div style={{fontSize:11,color:"#8c8c7e",marginBottom:8}}>{selected.size} hayvan seçildi</div>
+    {breedGoats.length===0 && <div style={{fontSize:12,color:"#aaa",textAlign:"center",padding:8,background:"#F9F9F6",borderRadius:8}}>Bu ırkta henüz hayvan yok</div>}
     {anacList.length>0&&<>
       <div style={{fontSize:11,fontWeight:700,color:"#3D5A25",marginBottom:4,marginTop:4}}>🐐 Anaçlar</div>
       {anacList.map(g=><GoatRow key={g.id} g={g}/>)}
@@ -802,7 +843,7 @@ function CreateGroupModal({ breed, goats, onSave, onClose, currentUser }) {
       <div style={{fontSize:11,fontWeight:700,color:"#8B5A1B",marginBottom:4,marginTop:8}}>🍼 Oğlaklar</div>
       {oglakList.map(g=><GoatRow key={g.id} g={g}/>)}
     </>}
-    <div style={{display:"flex",gap:8,marginTop:4}}>
+    <div style={{display:"flex",gap:8,marginTop:8}}>
       <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
       <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"✅ Grup Oluştur"}</button>
     </div>
@@ -810,15 +851,17 @@ function CreateGroupModal({ breed, goats, onSave, onClose, currentUser }) {
 }
 
 // ── Irk Aşı Sekmesi (Grup Sistemi) ──
-function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCreated, onVaccineApplied, currentUser}){
+function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCreated, onGroupUpdated, onVaccineApplied, currentUser}){
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [activeGroupVaccine, setActiveGroupVaccine] = useState(null);
+  const [editMembersGroup, setEditMembersGroup] = useState(null);
   const [viewTab, setViewTab] = useState("gruplar");
 
   const breedGroups = vaccineGroups.filter(g=>g.breed===breed.id);
   const breedReports = [...vaccineReports].filter(r=>r.breed===breed.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
 
   const activeGroup = activeGroupVaccine ? breedGroups.find(g=>g.id===activeGroupVaccine) : null;
+  const editGroup = editMembersGroup ? breedGroups.find(g=>g.id===editMembersGroup) : null;
 
   return (
     <div>
@@ -828,6 +871,9 @@ function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCr
       {activeGroup && <GroupVaccineModal group={activeGroup} goats={goats} currentUser={currentUser}
         onSave={r=>{onVaccineApplied(r);setActiveGroupVaccine(null);}}
         onClose={()=>setActiveGroupVaccine(null)}/>}
+      {editGroup && <AddMembersModal group={editGroup} breed={breed} goats={goats}
+        onSave={updatedGroup=>{onGroupUpdated(updatedGroup);setEditMembersGroup(null);}}
+        onClose={()=>setEditMembersGroup(null)}/>}
 
       <button onClick={()=>setShowCreateGroup(true)} style={{...S.btnOutline,width:"100%",marginBottom:10,fontSize:13}}>➕ Yeni Grup Oluştur</button>
 
@@ -856,9 +902,14 @@ function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCr
                     Son aşı: {VACCINE_TYPES_EXT.find(v=>v.id===lastVaccine.vaccineType)?.name} · {fmt(lastVaccine.date)}
                   </div>
                 )}
-                <button onClick={()=>setActiveGroupVaccine(group.id)} style={{...S.btnPrimary,width:"100%",fontSize:13,padding:"9px 0"}}>
-                  💉 Bu Gruba Aşı Uygula
-                </button>
+                <div style={{display:"flex",gap:6}}>
+                  <button onClick={()=>setEditMembersGroup(group.id)} style={{...S.btnOutline,flex:1,fontSize:12,padding:"8px 0"}}>
+                    👥 Hayvanlar ({memberGoats.length})
+                  </button>
+                  <button onClick={()=>setActiveGroupVaccine(group.id)} style={{...S.btnPrimary,flex:2,fontSize:12,padding:"8px 0"}}>
+                    💉 Aşı Uygula
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -1206,6 +1257,7 @@ function App(){
 
   const deleteReport=id=>{setReports(p=>p.filter(r=>r.id!==id));};
   const saveVaccineGroup=g=>{setVaccineGroups(p=>[...p,g]);};
+  const updateVaccineGroup=g=>{setVaccineGroups(p=>p.map(x=>x.id===g.id?g:x));};
   const saveVaccineReport=r=>{setVaccineReports(p=>[r,...p]);};
 
   const archiveGoat=async(goatId, reason)=>{
@@ -1558,7 +1610,7 @@ function App(){
               </div>
             )}
 
-            {breedTab==="asi" && <BreedVaccineTab breed={breed} goats={goats} vaccineGroups={vaccineGroups} vaccineReports={vaccineReports} onGroupCreated={saveVaccineGroup} onVaccineApplied={saveVaccineReport} currentUser={currentUser}/>}
+            {breedTab==="asi" && <BreedVaccineTab breed={breed} goats={goats} vaccineGroups={vaccineGroups} vaccineReports={vaccineReports} onGroupCreated={saveVaccineGroup} onGroupUpdated={updateVaccineGroup} onVaccineApplied={saveVaccineReport} currentUser={currentUser}/>}
           </div>
         )}
 
