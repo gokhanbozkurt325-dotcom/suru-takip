@@ -461,11 +461,17 @@ function StatusPicker({value,onChange}){return <div style={{display:"flex",gap:6
 function Stat({v,l,bg,c}){return <div style={{background:bg,borderRadius:10,padding:"10px 8px",textAlign:"center",flex:1}}><div style={{fontSize:20,fontWeight:900,color:c}}>{v}</div><div style={{fontSize:10,color:c,fontWeight:600,opacity:.75}}>{l}</div></div>;}
 function Badge({bg,color,text}){return <span style={{background:bg,color,fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:10,whiteSpace:"nowrap"}}>{text}</span>;}
 function StatusBadge({status}){const m={"tedavi_altında":["#FFF8EC","#B8750A","Tedavide"],"iyileşti":["#E3F0DC","#3D5A25","İyileşti"],"kronik":["#F0E6F6","#7B2D8E","Kronik"],"öldü":["#FFF0EE","#BE3B31","Öldü"]};const [bg,c,t]=m[status]||["#F2F0EA","#8c8c7e",status];return <span style={{background:bg,color:c,fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10}}>{t}</span>;}
-function AnnouncementBox({ announcements, setAnnouncements, currentUser }) {
+function AnnouncementBox({ announcements, setAnnouncements, currentUser, vaccineReports }) {
   const [newMsg, setNewMsg] = useState("");
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(true);
   const isVet = currentUser === "Veteriner Hekim";
+
+  const today = todayISO();
+  const urgentVaccines = (vaccineReports||[]).filter(r=>{
+    const d = daysUntil(r.date);
+    return d>=0 && d<=3 && r.date>=today;
+  });
 
   const save = async () => {
     if (!newMsg.trim()) return;
@@ -487,10 +493,30 @@ function AnnouncementBox({ announcements, setAnnouncements, currentUser }) {
   return (
     <div style={{...S.card,marginBottom:12,background:"#FFFDF5",border:"1.5px solid #F0D49A"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:expanded?10:0}}>
-        <div style={{fontWeight:800,fontSize:14,color:"#B8750A"}}>📢 Duyurular {announcements.length>0&&`(${announcements.length})`}</div>
+        <div style={{fontWeight:800,fontSize:14,color:"#B8750A"}}>
+          📢 Duyurular {(announcements.length+urgentVaccines.length)>0&&`(${announcements.length+urgentVaccines.length})`}
+        </div>
         <button onClick={()=>setExpanded(!expanded)} style={{...S.ghost,fontSize:12,color:"#8c8c7e"}}>{expanded?"▲ Gizle":"▼ Göster"}</button>
       </div>
       {expanded && <>
+        {/* Yaklaşan aşı uyarıları */}
+        {urgentVaccines.map(r=>{
+          const vt=VACCINE_TYPES_EXT.find(v=>v.id===r.vaccineType);
+          const b=BREEDS.find(x=>x.id===r.breed);
+          const d=daysUntil(r.date);
+          return (
+            <div key={r.id} style={{display:"flex",alignItems:"start",gap:8,padding:"8px 10px",background:"#FFF0EE",borderRadius:8,marginBottom:6,border:"1px solid #F5C0BA"}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,color:"#BE3B31",fontWeight:700,marginBottom:2}}>
+                  ⚠️ Aşı Yaklaşıyor: {vt?.name}
+                </div>
+                <div style={{fontSize:11,color:"#555"}}>{b?.emoji} {b?.name} · {r.groupName}</div>
+                <div style={{fontSize:10,color:"#BE3B31",fontWeight:600}}>📅 {fmt(r.date)} — {d===0?"Bugün!":d===1?"Yarın!":`${d} gün kaldı`}</div>
+              </div>
+            </div>
+          );
+        })}
+        {/* Yeni duyuru */}
         <div style={{display:"flex",gap:6,marginBottom:10}}>
           <input value={newMsg} onChange={e=>setNewMsg(e.target.value)} onKeyDown={e=>e.key==="Enter"&&save()}
             placeholder="Duyuru yaz..." style={{...S.input,flex:1,fontSize:13,padding:"8px 12px"}}/>
@@ -498,7 +524,7 @@ function AnnouncementBox({ announcements, setAnnouncements, currentUser }) {
             {saving?"...":"Gönder"}
           </button>
         </div>
-        {announcements.length===0 && <div style={{fontSize:12,color:"#aaa",textAlign:"center",padding:"8px 0"}}>Henüz duyuru yok</div>}
+        {announcements.length===0 && urgentVaccines.length===0 && <div style={{fontSize:12,color:"#aaa",textAlign:"center",padding:"8px 0"}}>Henüz duyuru yok</div>}
         {announcements.map(a=>(
           <div key={a.id} style={{display:"flex",alignItems:"start",gap:8,padding:"8px 10px",background:"#FFF8EC",borderRadius:8,marginBottom:6,border:"1px solid #F5E0A0"}}>
             <div style={{flex:1}}>
@@ -941,96 +967,164 @@ function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCr
   );
 }
 
+// ── Aşı Takvim Kaydı Ekle Modal ──
+function VaccineScheduleModal({ breed, vaccineGroups, onSave, onClose, currentUser }) {
+  const breedGroups = vaccineGroups.filter(g=>g.breed===breed.id);
+  const [groupId, setGroupId] = useState("");
+  const [vaccineType, setVaccineType] = useState("");
+  const [date, setDate] = useState("");
+  const [batchNo, setBatchNo] = useState("");
+  const [notes, setNotes] = useState("");
+  const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if(!groupId){setErr("Grup seçiniz");return;}
+    if(!vaccineType){setErr("Aşı türü seçiniz");return;}
+    if(!date){setErr("Tarih giriniz");return;}
+    setSaving(true);
+    const group = breedGroups.find(g=>g.id===groupId);
+    const report = {
+      id:"vr"+Date.now(),
+      group_id: groupId,
+      group_name: group?.name||"",
+      breed: breed.id,
+      vaccine_type: vaccineType,
+      date, batch_no: batchNo||null,
+      goat_ids: "", goat_names: "", goat_count: 0,
+      created_by: currentUser,
+      notes: notes||null,
+    };
+    const {error} = await sb.from("vaccine_reports").insert(report);
+    if(error){setErr("Hata: "+error.message);setSaving(false);return;}
+    onSave({...report, groupId:report.group_id, groupName:report.group_name, vaccineType:report.vaccine_type, batchNo:report.batch_no, goatCount:0, createdBy:report.created_by});
+  };
+
+  return <ModalWrap title={`📅 ${breed.emoji} ${breed.name} — Aşı Takvimi`} onClose={onClose}>
+    {err&&<ErrBox msg={err}/>}
+    <FL>Grup *</FL>
+    <select value={groupId} onChange={e=>setGroupId(e.target.value)} style={S.select}>
+      <option value="">— Grup seçin —</option>
+      {breedGroups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
+    </select>
+    {breedGroups.length===0&&<div style={{fontSize:11,color:"#BE3B31",marginTop:-6}}>⚠️ Önce ırk içinden grup oluşturun</div>}
+    <FL>Aşı Türü *</FL>
+    <select value={vaccineType} onChange={e=>setVaccineType(e.target.value)} style={S.select}>
+      <option value="">— Seçin —</option>
+      {VACCINE_TYPES_EXT.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}
+    </select>
+    <FL>Tarih * (ileri tarih girilebilir)</FL>
+    <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={S.input}/>
+    <FL>Parti / Seri No</FL>
+    <input value={batchNo} onChange={e=>setBatchNo(e.target.value)} style={S.input} placeholder="örn. VAK-2026-A1"/>
+    <FL>Notlar</FL>
+    <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
+    <div style={{display:"flex",gap:8,marginTop:4}}>
+      <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
+      <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Takvime Ekle"}</button>
+    </div>
+  </ModalWrap>;
+}
+
 // ── Global Aşı Sayfası ──
-function GlobalVaccinePage({goats,vaccines,upcomingAll,onAddVaccine}){
-  const [activeTab,setActiveTab]=useState("uyarilar");
-  const historyAll=[...vaccines].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  return (
-    <div className="anim-fade">
-      <h2 style={{...S.title,marginBottom:10}}>💉 Aşı Takibi</h2>
-      <div style={{display:"flex",gap:6,marginBottom:12}}>
-        {BREEDS.map(b=>(
-          <button key={b.id} onClick={()=>onAddVaccine(b.id)} style={{flex:1,background:b.bg,border:`1.5px solid ${b.color}44`,borderRadius:10,padding:"8px 4px",cursor:"pointer",textAlign:"center"}}>
-            <div style={{fontSize:18}}>{b.emoji}</div>
-            <div style={{fontSize:10,fontWeight:700,color:b.color,marginTop:2}}>{b.name}</div>
-            <div style={{fontSize:9,color:"#8c8c7e"}}>+ Aşı Ekle</div>
-          </button>
-        ))}
-      </div>
-      <div style={{display:"flex",background:"#fff",borderRadius:12,marginBottom:10,border:"1px solid #E8E5DC",overflow:"hidden"}}>
-        {[["uyarilar","⚠️ Uyarılar"],["takvim","📅 Takvim"],["gecmis","📋 Geçmiş"]].map(([k,l])=>(
-          <button key={k} onClick={()=>setActiveTab(k)} style={{...S.tabBtn,background:activeTab===k?"#4A7C3F":"transparent",color:activeTab===k?"#fff":"#8c8c7e",fontSize:11}}>{l}</button>
-        ))}
-      </div>
-      {activeTab==="uyarilar" && (
-        <div>
-          {upcomingAll.length===0 && <Empty text="Yaklaşan aşı yok 🎉"/>}
-          {upcomingAll.map((x,i)=>{
-            const b=BREEDS.find(br=>br.id===x.goat.breed);
-            const urgent=x.days<=7;
-            return (
-              <div key={i} style={{...S.card,padding:10,marginBottom:5,border:`1.5px solid ${urgent?"#F5C0BA":"#F0D49A"}`}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <div>
-                    <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · {x.goat.name}</div>
-                    <div style={{fontWeight:700,fontSize:13,color:"#1e1e1e"}}>💉 {x.vd.name}</div>
-                    <div style={{fontSize:11,color:"#8c8c7e"}}>Tarih: {fmt(x.next)}</div>
-                  </div>
-                  <div style={{textAlign:"right"}}>
-                    <div style={{fontSize:18,fontWeight:900,color:urgent?"#BE3B31":"#D4850A"}}>{x.days}</div>
-                    <div style={{fontSize:9,color:urgent?"#BE3B31":"#D4850A",fontWeight:700}}>gün kaldı</div>
-                  </div>
+function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, currentUser}){
+  const [selBreed, setSelBreed] = useState(null);
+  const [showSchedule, setShowSchedule] = useState(null);
+
+  const today = todayISO();
+
+  if(selBreed) {
+    const breed = BREEDS.find(b=>b.id===selBreed);
+    const breedReports = [...vaccineReports]
+      .filter(r=>r.breed===selBreed)
+      .sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const upcoming = breedReports.filter(r=>r.date>=today);
+    const past = breedReports.filter(r=>r.date<today);
+
+    return (
+      <div className="anim-slide">
+        {showSchedule && <VaccineScheduleModal breed={breed} vaccineGroups={vaccineGroups}
+          onSave={r=>{onScheduleAdded(r);setShowSchedule(false);}}
+          onClose={()=>setShowSchedule(false)} currentUser={currentUser}/>}
+
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+          <button onClick={()=>setSelBreed(null)} style={{...S.ghost,fontSize:22,color:"#555",padding:0}}>‹</button>
+          <div style={{fontSize:20}}>{breed.emoji}</div>
+          <h2 style={{...S.title,margin:0}}>{breed.name} — Aşı Takvimi</h2>
+        </div>
+
+        <button onClick={()=>setShowSchedule(true)} style={{...S.btnPrimary,width:"100%",marginBottom:12,fontSize:13}}>
+          + Takvime Aşı Ekle
+        </button>
+
+        {/* Yaklaşan aşılar */}
+        <div style={{fontWeight:700,fontSize:13,color:"#2873A8",marginBottom:8}}>📅 Yaklaşan / Planlanan</div>
+        {upcoming.length===0 && <div style={{...S.card,padding:10,marginBottom:8,textAlign:"center",color:"#aaa",fontSize:12}}>Planlanan aşı yok</div>}
+        {upcoming.map(r=>{
+          const vt=VACCINE_TYPES_EXT.find(v=>v.id===r.vaccineType);
+          const d=daysUntil(r.date);
+          const isUrgent=d<=3;
+          return (
+            <div key={r.id} style={{...S.card,padding:10,marginBottom:5,border:`1.5px solid ${isUrgent?"#F5C0BA":"#D4E8FF"}`}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <div style={{fontWeight:700,fontSize:13,color:vt?.color||"#333"}}>💉 {vt?.name}</div>
+                  <div style={{fontSize:11,color:"#555"}}>👥 {r.groupName}</div>
+                  <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.date)}{r.batchNo?` · Parti: ${r.batchNo}`:""}</div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontSize:20,fontWeight:900,color:isUrgent?"#BE3B31":"#2873A8"}}>{d}</div>
+                  <div style={{fontSize:9,color:isUrgent?"#BE3B31":"#2873A8",fontWeight:700}}>gün kaldı</div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
-      {activeTab==="takvim" && (
-        <div>
-          {BREEDS.map(b=>{
-            const bGoats=goats.filter(g=>g.breed===b.id&&!g.archived);
-            const upcoming=[];
-            bGoats.forEach(g=>{
-              VACCINE_DEFS.forEach(vd=>{
-                const last=vaccines.filter(v=>v.goatId===g.id&&v.vaccineType===vd.id).sort((a,c)=>new Date(c.date)-new Date(a.date))[0];
-                if(last){const nd=new Date(last.date);nd.setDate(nd.getDate()+vd.intervalDays);const nextStr=nd.toISOString().split("T")[0];upcoming.push({g,vd,nextStr,d:daysUntil(nextStr)});}
-              });
-            });
-            upcoming.sort((a,c)=>a.d-c.d);
+              {r.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:4}}>📝 {r.notes}</div>}
+            </div>
+          );
+        })}
+
+        {/* Geçmiş aşılar */}
+        {past.length>0&&<>
+          <div style={{fontWeight:700,fontSize:13,color:"#8c8c7e",marginBottom:8,marginTop:12}}>📋 Geçmiş Aşılar</div>
+          {past.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(r=>{
+            const vt=VACCINE_TYPES_EXT.find(v=>v.id===r.vaccineType);
             return (
-              <div key={b.id} style={{...S.card,padding:12,marginBottom:8,border:`1.5px solid ${b.color}22`}}>
-                <div style={{fontWeight:800,fontSize:14,color:b.color,marginBottom:8}}>{b.emoji} {b.name}</div>
-                {upcoming.length===0 && <div style={{fontSize:12,color:"#aaa"}}>Kayıt yok</div>}
-                {upcoming.slice(0,4).map((x,i)=>(
-                  <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:i<Math.min(upcoming.length,4)-1?"1px solid #F2F0EA":"none"}}>
-                    <span style={{fontSize:12}}><b>{x.g.name}</b> — {x.vd.name}</span>
-                    <span style={{fontSize:11,fontWeight:700,color:x.d<=7?"#BE3B31":x.d<=30?"#D4850A":"#4A7C3F"}}>{fmt(x.nextStr)}{x.d<=30&&x.d>=0?` (${x.d}g)`:""}</span>
-                  </div>
-                ))}
-                {upcoming.length>4&&<div style={{fontSize:11,color:"#aaa",marginTop:4}}>+{upcoming.length-4} daha</div>}
+              <div key={r.id} style={{...S.card,padding:10,marginBottom:5,opacity:.8}}>
+                <div style={{fontWeight:700,fontSize:13,color:vt?.color||"#333"}}>💉 {vt?.name}</div>
+                <div style={{fontSize:11,color:"#555"}}>👥 {r.groupName}</div>
+                <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.date)} · {r.createdBy}</div>
               </div>
             );
           })}
-        </div>
-      )}
-      {activeTab==="gecmis" && (
-        <div>
-          {historyAll.length===0 && <Empty text="Aşı kaydı yok"/>}
-          {historyAll.map(v=>{
-            const g=goats.find(x=>x.id===v.goatId);
-            const b=BREEDS.find(x=>x.id===v.breed||x.id===g?.breed);
-            const vd=VACCINE_DEFS.find(x=>x.id===v.vaccineType);
-            return (
-              <div key={v.id} style={{...S.card,padding:10,marginBottom:5}}>
-                <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · {g?.name}</div>
-                <div style={{fontWeight:700,fontSize:13,color:"#1e1e1e"}}>💉 {vd?.name}</div>
-                <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(v.date)}{v.batchNo?` · Parti: ${v.batchNo}`:""} · {v.createdByName}</div>
+        </>}
+      </div>
+    );
+  }
+
+  // Ana sayfa — 3 ırk kartı
+  return (
+    <div className="anim-fade">
+      <h2 style={{...S.title,marginBottom:12}}>💉 Aşı Takvimi</h2>
+      {BREEDS.map((b,i)=>{
+        const breedReports=vaccineReports.filter(r=>r.breed===b.id);
+        const upcoming=breedReports.filter(r=>r.date>=today);
+        const urgent=upcoming.filter(r=>daysUntil(r.date)<=3);
+        return (
+          <div key={b.id} onClick={()=>setSelBreed(b.id)} className="anim-fade"
+            style={{...S.card,padding:0,marginBottom:10,cursor:"pointer",overflow:"hidden",border:`1.5px solid ${b.color}22`,animationDelay:`${i*.07}s`}}>
+            <div style={{display:"flex",alignItems:"center"}}>
+              <div style={{width:64,background:b.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,alignSelf:"stretch"}}>{b.emoji}</div>
+              <div style={{flex:1,padding:"14px 16px"}}>
+                <div style={{fontWeight:800,fontSize:17,color:b.color,marginBottom:4}}>{b.name}</div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <PillTag bg="#EEF6FC" color="#2873A8" text={`📅 ${upcoming.length} planlı`}/>
+                  {urgent.length>0&&<PillTag bg="#FFF0EE" color="#BE3B31" text={`⚠️ ${urgent.length} acil`}/>}
+                </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+              <div style={{padding:"0 14px",color:"#ccc",fontSize:22}}>›</div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1439,6 +1533,7 @@ function App(){
               announcements={announcements}
               setAnnouncements={setAnnouncements}
               currentUser={currentUser}
+              vaccineReports={vaccineReports}
             />
 
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:12}}>
@@ -1662,7 +1757,7 @@ function App(){
           </div>
         )}
 
-        {page==="vaccines" && <GlobalVaccinePage goats={goats} vaccines={vaccines} upcomingAll={upcomingAll} onAddVaccine={breedId=>setVModal(breedId)}/>}
+        {page==="vaccines" && <GlobalVaccinePage vaccineGroups={vaccineGroups} vaccineReports={vaccineReports} onScheduleAdded={saveVaccineReport} currentUser={currentUser}/>}
 
         {page==="reports" && <ReportsPage reports={reports} goats={goats} logs={logs} vaccineReports={vaccineReports} currentUser={currentUser} onDeleteReport={deleteReport}/>}
 
