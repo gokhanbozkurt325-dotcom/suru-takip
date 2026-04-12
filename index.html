@@ -525,6 +525,7 @@ function ReportsPage({reports, goats, logs, vaccineReports, currentUser, onDelet
   const [selBreed, setSelBreed] = useState("all");
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [expandedReport, setExpandedReport] = useState(null);
+  const [vaccineReportsLocal, setVaccineReportsLocal] = useState(vaccineReports);
   const isVet = currentUser==="Veteriner Hekim";
 
   const filtered = selBreed==="all" ? reports : reports.filter(r=>r.breed===selBreed);
@@ -535,7 +536,7 @@ function ReportsPage({reports, goats, logs, vaccineReports, currentUser, onDelet
     oldu: reports.filter(r=>r.closeReason==="Hayvan Öldü").length,
   };
 
-  const filteredVR = selBreed==="all" ? vaccineReports : vaccineReports.filter(r=>r.breed===selBreed);
+  const filteredVR = selBreed==="all" ? vaccineReportsLocal : vaccineReportsLocal.filter(r=>r.breed===selBreed);
   const sortedVR = [...filteredVR].sort((a,b)=>new Date(b.date)-new Date(a.date));
 
   const handleDelete = async (id) => {
@@ -649,10 +650,18 @@ function ReportsPage({reports, goats, logs, vaccineReports, currentUser, onDelet
                   <div style={{flex:1}}>
                     <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · {r.groupName}</div>
                     <div style={{fontWeight:800,fontSize:14,color:vt?.color||"#333"}}>💉 {vt?.name}</div>
-                    <div style={{fontSize:11,color:"#555",marginTop:1}}>👥 {r.goatCount} hayvan: {r.goatNames}</div>
+                    {r.goatCount>0&&<div style={{fontSize:11,color:"#555",marginTop:1}}>👥 {r.goatCount} hayvan: {r.goatNames}</div>}
                     <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.date)}{r.batchNo?` · Parti: ${r.batchNo}`:""}</div>
+                    <div style={{fontSize:10,color:"#aaa",marginTop:1}}>Uygulayan: {r.createdBy}</div>
                   </div>
-                  <div style={{fontSize:10,color:"#aaa",textAlign:"right",marginLeft:8}}>{r.createdBy}</div>
+                  {isVet && (
+                    <button onClick={async()=>{
+                      if(window.confirm("Bu aşı raporu silinecek. Emin misiniz?")){
+                        await sb.from("vaccine_reports").delete().eq("id",r.id);
+                        setVaccineReportsLocal(p=>p.filter(x=>x.id!==r.id));
+                      }
+                    }} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px",flexShrink:0,marginLeft:8}}>🗑 Sil</button>
+                  )}
                 </div>
                 {r.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:4}}>📝 {r.notes}</div>}
               </div>
@@ -1171,7 +1180,7 @@ function App(){
     if(showLogin) return;
     const load=async()=>{
       setLoading(true);
-      const [g,h,v,r,l,vg,vr]=await Promise.all([
+      const [gRes,hRes,vRes,rRes,lRes,vgRes,vgmRes,vrRes]=await Promise.all([
         sb.from("goats").select("*"),
         sb.from("health_records").select("*").eq("closed",false),
         sb.from("vaccines").select("*"),
@@ -1181,25 +1190,22 @@ function App(){
         sb.from("vaccine_group_members").select("*"),
         sb.from("vaccine_reports").select("*"),
       ]);
-      // Grup üyelerini gruplara ekle
-      const groupMembers = (vr?.data||[]);
-      const groups = (vg.data||[]).map(gr=>({
+      const groupMembers = (vgmRes.data||[]);
+      const groups = (vgRes.data||[]).map(gr=>({
         ...gr,
         memberIds: groupMembers.filter(m=>m.group_id===gr.id).map(m=>m.goat_id)
       }));
-      // vaccine_reports ayrıca yükle
-      const {data:vrData} = await sb.from("vaccine_reports").select("*");
-      const vReports = (vrData||[]).map(r=>({
+      const vReports = (vrRes.data||[]).map(r=>({
         id:r.id, groupId:r.group_id, groupName:r.group_name, breed:r.breed,
         vaccineType:r.vaccine_type, date:r.date, batchNo:r.batch_no||"",
         goatIds:r.goat_ids||"", goatNames:r.goat_names||"", goatCount:r.goat_count||0,
         createdBy:r.created_by||"", notes:r.notes||""
       }));
-      setGoats((g.data||[]).map(toGoat));
-      setHealthRecs((h.data||[]).map(toHealth));
-      setVaccines((v.data||[]).map(toVaccine));
-      setReports((r.data||[]).map(toReport));
-      setLogs((l.data||[]).map(toLog));
+      setGoats((gRes.data||[]).map(toGoat));
+      setHealthRecs((hRes.data||[]).map(toHealth));
+      setVaccines((vRes.data||[]).map(toVaccine));
+      setReports((rRes.data||[]).map(toReport));
+      setLogs((lRes.data||[]).map(toLog));
       setVaccineGroups(groups);
       setVaccineReports(vReports);
       setLoading(false);
