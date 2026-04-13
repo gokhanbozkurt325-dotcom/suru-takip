@@ -62,7 +62,7 @@ const DEMO_USERS = [
 // Supabase dönüşümleri
 const toGoat    = r => ({ id:r.id, name:r.name, earTag:r.ear_tag, gender:r.gender, breed:r.breed, category:r.category, birthDate:r.birth_date||"", weight:r.weight||"", color:r.color||"", motherTag:r.mother_tag||"", fatherTag:r.father_tag||"", abortHistory:r.abort_history||"hayır", reproductionStatus:r.reproduction_status||"", lastBirthDate:r.last_birth_date||"", kidCount:r.kid_count||"0", notes:r.notes||"", abortDetails:r.abort_details||"", archived:r.archived||false, archiveReason:r.archive_reason||"" });
 const fromGoat  = g => ({ id:g.id, name:g.name, ear_tag:g.earTag, gender:g.gender, breed:g.breed, category:g.category, birth_date:g.birthDate||null, weight:g.weight||null, color:g.color||null, mother_tag:g.motherTag||null, father_tag:g.fatherTag||null, abort_history:g.abortHistory||"hayır", reproduction_status:g.reproductionStatus||null, last_birth_date:g.lastBirthDate||null, kid_count:g.kidCount||"0", notes:g.notes||null, abort_details:g.abortDetails||null, archived:false });
-const toHealth  = r => ({ id:r.id, goatId:r.goat_id, goatEarTag:r.goat_ear_tag||"", breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false });
+const toHealth  = r => ({ id:r.id, goatId:r.goat_id, goatEarTag:r.goat_ear_tag||"", breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false, category:r.category||"anac" });
 const fromHealth= h => ({ id:h.id, goat_id:h.goatId, goat_ear_tag:h.goatEarTag||null, breed:h.breed, date:h.date, condition:h.condition, treatment:h.treatment||null, status:h.status, veterinarian:h.veterinarian||null, cost:h.cost||null, created_by_name:h.createdByName||null, notes:h.notes||null, closed:false });
 const toVaccine = r => ({ id:r.id, goatId:r.goat_id, breed:r.breed, date:r.date, vaccineType:r.vaccine_type, batchNo:r.batch_no||"", createdByName:r.created_by_name||"" });
 const fromVaccine=v => ({ id:v.id, goat_id:v.goatId, breed:v.breed, date:v.date, vaccine_type:v.vaccineType, batch_no:v.batchNo||null, created_by_name:v.createdByName||null });
@@ -390,8 +390,8 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     // Sürüde bu küpe no'lu hayvan var mı kontrol et
     const existingGoat = goats.find(g=>g.earTag===earTag.trim()&&!g.archived);
     const goatId = existingGoat ? existingGoat.id : "ext_"+earTag.trim().replace(/\s/g,"_");
-    const rec = { id:"h"+Date.now(), goatId, goatEarTag:earTag.trim(), breed, date, condition:cond, treatment, status, veterinarian:currentUser, cost:"", createdByName:currentUser, notes };
-    const { error } = await sb.from("health_records").insert({...fromHealth(rec), goat_ear_tag:earTag.trim()});
+    const rec = { id:"h"+Date.now(), goatId, goatEarTag:earTag.trim(), breed, date, condition:cond, treatment, status, veterinarian:currentUser, cost:"", createdByName:currentUser, notes, category };
+    const { error } = await sb.from("health_records").insert({...fromHealth(rec), goat_ear_tag:earTag.trim(), category});
     if(error){setErr("Kayıt hatası: "+error.message);setSaving(false);return;}
     await addLog(rec.id, goatId, breed, "açılış", `${cond} — ${currentUser} tarafından açıldı`, currentUser);
     if(treatmentDays>0){
@@ -2632,7 +2632,12 @@ function App(){
                 {healthRecs.filter(h=>h.breed===breed.id&&!h.closed).length===0 && <Empty text="Aktif sağlık kaydı yok"/>}
                 {/* Kategori bazlı gruplama */}
                 {[["anac","🐐 Anaç"],["oglak","🍼 Oğlak"]].map(([cat, catLabel])=>{
-                  const catRecs = [...healthRecs].filter(h=>h.breed===breed.id&&!h.closed&&(()=>{const g=goats.find(x=>x.id===h.goatId);return g?.category===cat;})()).sort((a,b)=>new Date(b.date)-new Date(a.date));
+                  const catRecs = [...healthRecs].filter(h=>{
+                    if(h.breed!==breed.id||h.closed) return false;
+                    const g=goats.find(x=>x.id===h.goatId);
+                    const hCat = h.category || g?.category || "anac";
+                    return hCat===cat;
+                  }).sort((a,b)=>new Date(b.date)-new Date(a.date));
                   if(catRecs.length===0) return null;
                   return (
                     <div key={cat} style={{marginBottom:12}}>
@@ -2713,7 +2718,8 @@ function App(){
                   {[["anac","🐐 Anaç"],["oglak","🍼 Oğlak"]].map(([cat,catLabel])=>{
                     const catRecs = breedRecs.filter(h=>{
                       const g=goats.find(x=>x.id===h.goatId);
-                      return g?.category===cat;
+                      const hCat = h.category || g?.category || "anac";
+                      return hCat===cat;
                     }).sort((a,c)=>new Date(c.date)-new Date(a.date));
                     if(!catRecs.length) return null;
                     return (
