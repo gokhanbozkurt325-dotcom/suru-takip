@@ -692,7 +692,8 @@ function ReportsPage({reports, goats, logs, vaccineReports, currentUser, onDelet
                     <div style={{fontWeight:800,fontSize:14,color:vt?.color||"#333"}}>💉 {vt?.name}</div>
                     {r.goatCount>0&&<div style={{fontSize:11,color:"#555",marginTop:1}}>👥 {r.goatCount} hayvan: {r.goatNames}</div>}
                     <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.date)}{r.batchNo?` · Parti: ${r.batchNo}`:""}</div>
-                    <div style={{fontSize:10,color:"#aaa",marginTop:1}}>Uygulayan: {r.createdBy}</div>
+                    <div style={{fontSize:11,color:"#3D5A25",fontWeight:600,marginTop:2}}>✅ Uygulayan: {r.appliedBy||r.createdBy}</div>
+                    <div style={{fontSize:10,color:"#aaa",marginTop:1}}>Ekleyen: {r.createdBy}{r.appliedAt?` · ${fmtDT(r.appliedAt)}`:""}</div>
                   </div>
                   {isVet && (
                     <button onClick={async()=>{
@@ -1103,14 +1104,51 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
   const markApplied = async (r) => {
     setApplyingId(r.id);
     const now = new Date().toISOString();
-    const {error} = await sb.from("vaccine_reports").update({
-      status:"uygulandı", applied_by:currentUser, applied_at:now, record_type:"uygulama"
-    }).eq("id",r.id);
-    if(!error){
-      const updated = {...r, status:"uygulandı", appliedBy:currentUser, appliedAt:now, recordType:"uygulama"};
-      setLocalReports(p=>p.map(x=>x.id===r.id?updated:x));
-      if(onVaccineApplied) onVaccineApplied(updated);
-    }
+    const appliedDate = now.split("T")[0];
+
+    // Yeni uygulama kaydı oluştur (rapor için)
+    const newReport = {
+      id: "vr"+Date.now(),
+      group_id: r.groupId,
+      group_name: r.groupName,
+      breed: r.breed,
+      vaccine_type: r.vaccineType,
+      date: appliedDate,
+      batch_no: r.batchNo||null,
+      goat_ids: r.goatIds||"",
+      goat_names: r.goatNames||"",
+      goat_count: r.goatCount||0,
+      created_by: r.createdBy,
+      notes: r.notes||null,
+      record_type: "uygulama",
+      status: "uygulandı",
+      applied_by: currentUser,
+      applied_at: now,
+    };
+
+    // 1. Yeni uygulama kaydını Supabase'e ekle
+    await sb.from("vaccine_reports").insert(newReport);
+
+    // 2. Eski takvim kaydını Supabase'den sil
+    await sb.from("vaccine_reports").delete().eq("id", r.id);
+
+    // 3. State güncelle — takvim kaydını kaldır, yeni raporu ekle
+    const newReportObj = {
+      ...newReport,
+      groupId: newReport.group_id,
+      groupName: newReport.group_name,
+      vaccineType: newReport.vaccine_type,
+      batchNo: newReport.batch_no||"",
+      goatCount: newReport.goat_count,
+      createdBy: newReport.created_by,
+      recordType: "uygulama",
+      appliedBy: currentUser,
+      appliedAt: now,
+    };
+
+    setLocalReports(p=>[newReportObj, ...p.filter(x=>x.id!==r.id)]);
+    if(onScheduleDeleted) onScheduleDeleted(r.id);
+    if(onVaccineApplied) onVaccineApplied(newReportObj);
     setApplyingId(null);
   };
 
@@ -1863,7 +1901,15 @@ function App(){
           </div>
         )}
 
-        {page==="vaccines" && <GlobalVaccinePage vaccineGroups={vaccineGroups} vaccineReports={vaccineReports} onScheduleAdded={saveVaccineReport} onScheduleDeleted={id=>setVaccineReports(p=>p.filter(x=>x.id!==id))} onVaccineApplied={r=>setVaccineReports(p=>p.map(x=>x.id===r.id?r:x))} currentUser={currentUser}/>}
+        {page==="vaccines" && <GlobalVaccinePage
+          vaccineGroups={vaccineGroups}
+          vaccineReports={vaccineReports}
+          onScheduleAdded={saveVaccineReport}
+          onScheduleDeleted={id=>setVaccineReports(p=>p.filter(x=>x.id!==id))}
+          onVaccineApplied={r=>{
+            setVaccineReports(p=>[r,...p.filter(x=>x.id!==r.id)]);
+          }}
+          currentUser={currentUser}/>}
 
         {page==="reports" && <ReportsPage reports={reports} goats={goats} logs={logs} vaccineReports={vaccineReports} currentUser={currentUser} onDeleteReport={deleteReport}/>}
 
