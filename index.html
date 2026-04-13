@@ -169,7 +169,7 @@ function EarTagScanner({ onResult, onClose }) {
 }
 
 // ── Sağlık Kaydı Detay & Log ──
-function HealthDetailModal({ record, goat, logs, onUpdate, onClose, onFinalize, currentUser, onLogsUpdate }) {
+function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClose, onFinalize, currentUser, onLogsUpdate, onTreatmentDayUpdate }) {
   const [status,    setStatus]    = useState(record.status);
   const [treatment, setTreatment] = useState(record.treatment||"");
   const [notes,     setNotes]     = useState(record.notes||"");
@@ -180,8 +180,20 @@ function HealthDetailModal({ record, goat, logs, onUpdate, onClose, onFinalize, 
   const [closeNote,   setCloseNote]   = useState("");
   const [tab, setTab] = useState("detay");
   const [treatmentChanged, setTreatmentChanged] = useState(false);
+  const [markingDay, setMarkingDay] = useState(null);
 
   const recLogs = logs.filter(l=>l.healthRecordId===record.id).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  const recDays = treatmentDays.filter(d=>d.healthRecordId===record.id).sort((a,b)=>a.dayNumber-b.dayNumber);
+  const today = todayISO();
+
+  const markDay = async (day) => {
+    if(day.done) return;
+    setMarkingDay(day.id);
+    const now = new Date().toISOString();
+    await sb.from("treatment_days").update({done:true, done_by:currentUser, done_at:now}).eq("id",day.id);
+    onTreatmentDayUpdate({...day, done:true, doneBy:currentUser, doneAt:now});
+    setMarkingDay(null);
+  };
 
   const save = async () => {
     setSaving(true);
@@ -238,7 +250,7 @@ function HealthDetailModal({ record, goat, logs, onUpdate, onClose, onFinalize, 
       <b>{goat.name}</b> · 🏷 {goat.earTag} · Başlangıç: {fmt(record.date)}
     </div>
     <div style={{display:"flex",background:"#F2F0EA",borderRadius:8,overflow:"hidden",marginTop:4}}>
-      {[["detay","✏️ Güncelle"],["gecmis","📋 Geçmiş"]].map(([k,l])=>(
+      {[["detay","✏️ Güncelle"],["takvim","📅 Takvim"],["gecmis","📋 Geçmiş"]].map(([k,l])=>(
         <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"8px 0",border:"none",fontWeight:700,fontSize:12,cursor:"pointer",background:tab===k?"#4A7C3F":"transparent",color:tab===k?"#fff":"#8c8c7e"}}>{l}</button>
       ))}
     </div>
@@ -269,7 +281,52 @@ function HealthDetailModal({ record, goat, logs, onUpdate, onClose, onFinalize, 
       </div>
     </>}
 
-    {tab==="gecmis" && <div>
+    {tab==="takvim" && (
+      <div>
+        {recDays.length===0 && (
+          <div style={{textAlign:"center",padding:20,color:"#8c8c7e",fontSize:13}}>
+            <div style={{fontSize:32,marginBottom:8}}>📅</div>
+            Bu kayıt için tedavi takvimi oluşturulmamış.
+          </div>
+        )}
+        {recDays.map(day=>{
+          const isPast = day.plannedDate < today;
+          const isToday = day.plannedDate === today;
+          const isFuture = day.plannedDate > today;
+          return (
+            <div key={day.id} style={{...S.card,padding:12,marginBottom:6,
+              border:`2px solid ${day.done?"#4A7C3F":isToday?"#2873A8":isPast?"#F5C0BA":"#E8E5DC"}`,
+              background:day.done?"#F5FAF0":isToday?"#EEF6FC":"#fff"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <div style={{fontWeight:800,fontSize:14,color:day.done?"#3D5A25":isToday?"#2873A8":isPast?"#BE3B31":"#555"}}>
+                    {day.done?"✅":isToday?"🔵":isPast?"⚠️":"⏳"} Gün {day.dayNumber}
+                  </div>
+                  <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(day.plannedDate)}
+                    {isToday&&<span style={{color:"#2873A8",fontWeight:700}}> — Bugün</span>}
+                  </div>
+                  {day.done && <div style={{fontSize:11,color:"#3D5A25",fontWeight:600,marginTop:2}}>
+                    👤 {day.doneBy} · {fmtDT(day.doneAt)}
+                  </div>}
+                  {isPast && !day.done && <div style={{fontSize:11,color:"#BE3B31",fontWeight:600}}>❌ Yapılmadı</div>}
+                </div>
+                {!day.done && !isFuture && (
+                  <button onClick={()=>markDay(day)} disabled={markingDay===day.id}
+                    style={{...S.btnPrimary,fontSize:12,padding:"8px 14px",opacity:markingDay===day.id?.6:1}}>
+                    {markingDay===day.id?"...":"✅ Yapıldı"}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {recDays.length>0 && (
+          <div style={{background:"#F5F3ED",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#555",marginTop:4}}>
+            {recDays.filter(d=>d.done).length}/{recDays.length} gün tamamlandı
+          </div>
+        )}
+      </div>
+    )}
       {recLogs.length===0 && <Empty text="Henüz işlem geçmişi yok"/>}
       {recLogs.map((l,i)=>(
         <div key={l.id} style={{display:"flex",gap:8,padding:"10px 0",borderBottom:i<recLogs.length-1?"1px solid #F2F0EA":"none"}}>
@@ -300,6 +357,7 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
   const [status,setStatus]=useState("tedavi_altında");
   const [cost,setCost]=useState("");
   const [notes,setNotes]=useState("");
+  const [treatmentDays,setTreatmentDays]=useState(0);
   const [err,setErr]=useState("");
   const [saving,setSaving]=useState(false);
 
@@ -313,6 +371,24 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     const { error } = await sb.from("health_records").insert(fromHealth(rec));
     if (error){setErr("Kayıt hatası: "+error.message);setSaving(false);return;}
     await addLog(rec.id, goatId, g.breed, "açılış", `${cond} — ${currentUser} tarafından açıldı`, currentUser);
+    // Tedavi günlerini oluştur
+    if(treatmentDays>0){
+      const days=[];
+      for(let i=0;i<treatmentDays;i++){
+        const d=new Date(date);
+        d.setDate(d.getDate()+i);
+        days.push({
+          id:"td"+Date.now()+i,
+          health_record_id:rec.id,
+          goat_id:goatId,
+          day_number:i+1,
+          planned_date:d.toISOString().split("T")[0],
+          done:false, done_by:null, done_at:null
+        });
+      }
+      await sb.from("treatment_days").insert(days);
+      rec.treatmentDays = days.map(d=>({...d,healthRecordId:d.health_record_id,goatId:d.goat_id,dayNumber:d.day_number,plannedDate:d.planned_date,doneBy:d.done_by,doneAt:d.done_at}));
+    }
     onSave(rec);
   };
 
@@ -333,6 +409,18 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     {condition==="Diğer"&&<input style={{...S.input,marginTop:6}} placeholder="Açıklayın..." value={condCustom} onChange={e=>setCondCustom(e.target.value)}/>}
     <FL>Tedavi</FL>
     <textarea value={treatment} onChange={e=>setTreatment(e.target.value)} rows={3} placeholder="İlaç, doz, işlem..." style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
+    <FL>Tedavi Süresi (gün)</FL>
+    <div style={{display:"flex",gap:6"}}>
+      {[0,1,2,3,4,5].map(d=>(
+        <button key={d} onClick={()=>setTreatmentDays(d)}
+          style={{flex:1,padding:"8px 0",borderRadius:8,border:`2px solid ${treatmentDays===d?"#4A7C3F":"#E8E5DC"}`,background:treatmentDays===d?"#E3F0DC":"#fff",color:treatmentDays===d?"#3D5A25":"#555",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+          {d===0?"—":d}
+        </button>
+      ))}
+    </div>
+    {treatmentDays>0&&<div style={{fontSize:11,color:"#4A7C3F",background:"#F5FAF0",padding:"6px 10px",borderRadius:8}}>
+      📅 {treatmentDays} günlük tedavi takvimi oluşturulacak ({date} tarihinden itibaren)
+    </div>}
     <FL>Durum *</FL>
     <StatusPicker value={status} onChange={setStatus}/>
     <FL>Maliyet (₺)</FL>
@@ -1273,7 +1361,7 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
 }
 
 // ── Keçi Detay ──
-function GoatDetail({goat,goats,healthRecs,vaccines,logs,onAddHealth,onUpdateHealth,onFinalizeHealth,onLogsUpdate,detailTab,setDetailTab,currentUser}){
+function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHealth,onUpdateHealth,onFinalizeHealth,onLogsUpdate,onTreatmentDayUpdate,detailTab,setDetailTab,currentUser}){
   const b=BREEDS.find(x=>x.id===goat.breed);
   const [selRecord,setSelRecord]=useState(null);
   const activeRecs=healthRecs.filter(h=>h.goatId===goat.id&&!h.closed);
@@ -1283,10 +1371,11 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,onAddHealth,onUpdateHea
     <div className="anim-slide">
       {selRecordObj && (
         <HealthDetailModal
-          record={selRecordObj} goat={goat} logs={logs} currentUser={currentUser}
+          record={selRecordObj} goat={goat} logs={logs} treatmentDays={treatmentDays} currentUser={currentUser}
           onUpdate={updated=>{onUpdateHealth(updated);setSelRecord(null);}}
           onFinalize={(id,report)=>{onFinalizeHealth(id,report);setSelRecord(null);}}
           onLogsUpdate={onLogsUpdate}
+          onTreatmentDayUpdate={onTreatmentDayUpdate}
           onClose={()=>setSelRecord(null)}
         />
       )}
@@ -1408,6 +1497,7 @@ function App(){
   const [logs,setLogs]=useState([]);
   const [vaccineGroups,setVaccineGroups]=useState([]);
   const [vaccineReports,setVaccineReports]=useState([]);
+  const [treatmentDaysData,setTreatmentDaysData]=useState([]);
 
   const [hModal,setHModal]=useState(null);
   const [vModal,setVModal]=useState(null);
@@ -1418,7 +1508,7 @@ function App(){
     if(showLogin) return;
     const load=async()=>{
       setLoading(true);
-      const [gRes,hRes,vRes,rRes,lRes,vgRes,vgmRes,vrRes]=await Promise.all([
+      const [gRes,hRes,vRes,rRes,lRes,vgRes,vgmRes,vrRes,tdRes]=await Promise.all([
         sb.from("goats").select("*"),
         sb.from("health_records").select("*").eq("closed",false),
         sb.from("vaccines").select("*"),
@@ -1427,6 +1517,7 @@ function App(){
         sb.from("vaccine_groups").select("*"),
         sb.from("vaccine_group_members").select("*"),
         sb.from("vaccine_reports").select("*"),
+        sb.from("treatment_days").select("*"),
       ]);
       const groupMembers = (vgmRes.data||[]);
       const groups = (vgRes.data||[]).map(gr=>({
@@ -1447,6 +1538,11 @@ function App(){
       setLogs((lRes.data||[]).map(toLog));
       setVaccineGroups(groups);
       setVaccineReports(vReports);
+      setTreatmentDaysData((tdRes.data||[]).map(r=>({
+        id:r.id, healthRecordId:r.health_record_id, goatId:r.goat_id,
+        dayNumber:r.day_number, plannedDate:r.planned_date,
+        done:r.done||false, doneBy:r.done_by||"", doneAt:r.done_at||""
+      })));
       setLoading(false);
     };
     load();
@@ -1665,8 +1761,8 @@ function App(){
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:14,color:guestAccess.isOpen?"#3D5A25":"#8c8c7e"}}>Misafir</div>
                   <div style={{fontSize:10,color:guestAccess.isOpen?"#4A7C3F":"#aaa"}}>
-                    {guestAccess.isOpen
-                      ? `✅ Açık · ${Math.max(0,Math.ceil((new Date(guestAccess.expiresAt)-new Date())/60000))} dk kaldı`
+                    {guestAccess.isOpen && guestAccess.expiresAt
+                      ? `✅ Açık · ${Math.max(0,Math.ceil((new Date(guestAccess.expiresAt)-Date.now())/60000))} dk kaldı`
                       : "🔒 Kapalı — Veteriner Hekim açabilir"}
                   </div>
                 </div>
@@ -1952,9 +2048,11 @@ function App(){
         {/* GOAT DETAIL */}
         {page==="goats"&&selGoat&&goat && (
           <GoatDetail goat={goat} goats={goats} healthRecs={healthRecs} vaccines={vaccines} logs={logs}
+            treatmentDays={treatmentDaysData}
             onAddHealth={()=>setHModal({breedId:goat.breed,goatId:goat.id})}
             onUpdateHealth={updateHealth} onFinalizeHealth={finalizeHealth}
             onLogsUpdate={addLogToState}
+            onTreatmentDayUpdate={day=>setTreatmentDaysData(p=>p.map(d=>d.id===day.id?day:d))}
             detailTab={detailTab} setDetailTab={setDetailTab} currentUser={currentUser}/>
         )}
 
