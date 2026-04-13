@@ -1662,22 +1662,32 @@ function App(){
     let breedText = "";
     Object.keys(breedGroups).forEach(b=>{
       const g=breedGroups[b];
-      breedText += `${breedNames[b]||b} ırkımızda ${g.count} canımız ${g.conditions.join(", ")} nedeniyle takibimizde. `;
+      breedText += `${breedNames[b]||b} ırkında ${g.count} hasta keçimiz var. ${g.conditions.join(", ")} nedeniyle tedavi görüyorlar. `;
     });
     const metin = tedaviSayisi>0
-      ? `Merhaba ${userName}, hoş geldiniz canım! Burdur Açık Ceza Evi İşyurtları Hayvancılık Birimi olarak size hayırlı günler diliyoruz. Yeryüzündekilere merhamet edin ki gökyüzündeki size merhamet etsin. Şu an sürümüzde ${tedaviSayisi} canımız tedavi altında. ${breedText}Geçmiş olsun, iyi günler!`
-      : `Merhaba ${userName}, hoş geldiniz canım! Burdur Açık Ceza Evi İşyurtları Hayvancılık Birimi olarak size hayırlı günler diliyoruz. Yeryüzündekilere merhamet edin ki gökyüzündeki size merhamet etsin. Sürümüz şu an sağlıklı, geçmiş olsun, iyi günler!`;
-    const u = new SpeechSynthesisUtterance(metin);
-    u.lang = "tr-TR";
-    u.rate = 0.88;
-    u.pitch = 1.4;
-    u.volume = 1;
+      ? `Merhaba ${userName}, hoş geldiniz! Burdur Açık Ceza Evi İşyurtları Hayvancılık Birimi olarak size hayırlı günler diliyoruz. Şu an sürümüzde ${tedaviSayisi} hasta keçimiz bulunmaktadır. ${breedText}Geçmiş olsun, iyi günler!`
+      : `Merhaba ${userName}, hoş geldiniz! Burdur Açık Ceza Evi İşyurtları Hayvancılık Birimi olarak size hayırlı günler diliyoruz. Sürümüzdeki tüm keçilerimiz sağlıklı. İyi günler!`;
+
+    const doSpeak = () => {
+      const u = new SpeechSynthesisUtterance(metin);
+      u.lang = "tr-TR";
+      u.rate = 0.88;
+      u.pitch = 1.4;
+      u.volume = 1;
+      const sesler = window.speechSynthesis.getVoices();
+      const bayanSes = sesler.find(s=>(s.lang==="tr-TR"||s.lang==="tr")&&(s.name.toLowerCase().includes("female")||s.name.toLowerCase().includes("kadın")))
+        || sesler.find(s=>s.lang==="tr-TR"||s.lang==="tr")
+        || sesler.find(s=>s.name.toLowerCase().includes("female")||s.name.toLowerCase().includes("samantha")||s.name.toLowerCase().includes("karen")||s.name.toLowerCase().includes("victoria"));
+      if(bayanSes) u.voice = bayanSes;
+      window.speechSynthesis.speak(u);
+    };
+
     const sesler = window.speechSynthesis.getVoices();
-    const bayanSes = sesler.find(s=>(s.lang==="tr-TR"||s.lang==="tr")&&(s.name.toLowerCase().includes("female")||s.name.toLowerCase().includes("kadın")))
-      || sesler.find(s=>s.lang==="tr-TR"||s.lang==="tr")
-      || sesler.find(s=>s.name.toLowerCase().includes("female")||s.name.toLowerCase().includes("samantha")||s.name.toLowerCase().includes("karen"));
-    if(bayanSes) u.voice = bayanSes;
-    window.speechSynthesis.speak(u);
+    if(sesler.length > 0) {
+      doSpeak();
+    } else {
+      window.speechSynthesis.onvoiceschanged = () => { doSpeak(); };
+    }
   };
 
   // Giriş sonrası ses tercihi kontrol
