@@ -455,13 +455,13 @@ function AddGoatModal({ breed, onSave, onClose, currentUser }) {
 }
 
 function ModalWrap({title,onClose,children}){
-  return <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:999,overflowY:"auto"}}>
-    <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,width:"calc(100% - 24px)",maxWidth:456,margin:"60px auto 40px",paddingBottom:24}}>
+  return <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:999,overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
+    <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,width:"calc(100% - 24px)",maxWidth:456,margin:"50px auto 60px"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 18px 12px",borderBottom:"1px solid #F2F0EA"}}>
         <div style={{fontWeight:800,fontSize:16,color:"#1e1e1e"}}>{title}</div>
         <button onClick={onClose} style={{background:"#F2F0EA",border:"none",borderRadius:"50%",width:30,height:30,fontSize:16,cursor:"pointer",color:"#555"}}>✕</button>
       </div>
-      <div style={{padding:"12px 18px",display:"flex",flexDirection:"column",gap:10}}>{children}</div>
+      <div style={{padding:"12px 18px 24px",display:"flex",flexDirection:"column",gap:10}}>{children}</div>
     </div>
   </div>;
 }
