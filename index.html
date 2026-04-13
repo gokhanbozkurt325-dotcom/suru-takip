@@ -2107,43 +2107,63 @@ function App(){
         {/* HEALTH PAGE */}
         {page==="health" && (
           <div className="anim-fade">
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
               <h2 style={S.title}>🩺 Sağlık Kayıtları</h2>
               {!isGuest && <button onClick={()=>setHModal({})} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13}}>+ Ekle</button>}
             </div>
             {BREEDS.map(b=>{
-              const recs=healthRecs.filter(h=>h.breed===b.id&&!h.closed);
-              if(!recs.length) return null;
-              const tedavi=recs.filter(h=>h.status==="tedavi_altında");
+              const breedRecs = healthRecs.filter(h=>h.breed===b.id&&!h.closed);
+              if(!breedRecs.length) return null;
               return (
-                <div key={b.id} style={{marginBottom:10}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-                    <div style={{fontWeight:800,fontSize:14,color:b.color}}>{b.emoji} {b.name}</div>
-                    <div style={{display:"flex",gap:6}}>
-                      {tedavi.length>0&&<PillTag bg="#FFF0EE" color="#BE3B31" text={`${tedavi.length} tedavide`}/>}
-                      <button onClick={()=>{setPage("goats");setSelBreed(b.id);setBreedTab("saglik");}} style={{...S.btnSm,background:b.bg,color:b.color,fontSize:10}}>Detay →</button>
-                    </div>
+                <div key={b.id} style={{marginBottom:16}}>
+                  {/* Irk başlığı */}
+                  <div style={{fontWeight:700,fontSize:13,color:b.color,background:b.bg,padding:"6px 10px",borderRadius:8,marginBottom:6,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <span>{b.emoji} {b.name}</span>
+                    <button onClick={()=>{setPage("goats");setSelBreed(b.id);setBreedTab("saglik");}} style={{...S.btnSm,background:"rgba(255,255,255,.5)",color:b.color,fontSize:10}}>Detay →</button>
                   </div>
-                  {recs.sort((a,c)=>new Date(c.date)-new Date(a.date)).slice(0,2).map(h=>{
-                    const g=goats.find(x=>x.id===h.goatId);
+                  {/* Anaç ve Oğlak kategorileri */}
+                  {[["anac","🐐 Anaç"],["oglak","🍼 Oğlak"]].map(([cat,catLabel])=>{
+                    const catRecs = breedRecs.filter(h=>{
+                      const g=goats.find(x=>x.id===h.goatId);
+                      return g?.category===cat;
+                    }).sort((a,c)=>new Date(c.date)-new Date(a.date));
+                    if(!catRecs.length) return null;
                     return (
-                      <div key={h.id} style={{...S.card,padding:10,marginBottom:4,cursor:"pointer"}}
-                        onClick={()=>{setSelGoat(h.goatId);setDetailTab("health");setPage("goats");setSelBreed(b.id);}}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
-                          <div>
-                            <div style={{fontSize:11,color:b.color,fontWeight:700,marginBottom:1}}>{g?.name} ({g?.earTag})</div>
-                            <div style={{fontWeight:700,fontSize:13,color:"#1e1e1e"}}>{h.condition}</div>
-                            <div style={{fontSize:11,color:"#8c8c7e"}}>{fmt(h.date)} · {h.createdByName}</div>
-                          </div>
-                          <StatusBadge status={h.status}/>
-                        </div>
+                      <div key={cat} style={{marginBottom:8}}>
+                        <div style={{fontSize:12,fontWeight:500,color:"var(--color-text-secondary)",margin:"4px 0 4px 4px"}}>{catLabel}</div>
+                        {catRecs.map(h=>{
+                          const g=goats.find(x=>x.id===h.goatId);
+                          const hDays=treatmentDaysData.filter(d=>d.healthRecordId===h.id);
+                          const doneDays=hDays.filter(d=>d.done).length;
+                          return (
+                            <div key={h.id} style={{...S.card,padding:"10px 12px",marginBottom:5,cursor:"pointer"}}
+                              onClick={()=>{setSelGoat(h.goatId);setDetailTab("health");setPage("goats");setSelBreed(b.id);}}>
+                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                                <div style={{flex:1}}>
+                                  <div style={{fontSize:12,fontWeight:700,color:b.color,marginBottom:2}}>
+                                    {g?.name} <span style={{fontWeight:400,color:"#8c8c7e"}}>({g?.earTag})</span>
+                                  </div>
+                                  <div style={{fontWeight:700,fontSize:13,color:"#1e1e1e"}}>{h.condition}</div>
+                                  {h.treatment&&<div style={{fontSize:11,color:"#333",marginTop:3}}>💊 {h.treatment}</div>}
+                                  {h.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
+                                  {hDays.length>0&&(
+                                    <div style={{fontSize:10,background:"#E3F0DC",color:"#3D5A25",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
+                                      📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
+                                    </div>
+                                  )}
+                                </div>
+                                <StatusBadge status={h.status}/>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     );
                   })}
-                  {recs.length>2&&<div style={{fontSize:11,color:"#8c8c7e",textAlign:"center",padding:"4px 0"}}>+{recs.length-2} kayıt daha</div>}
                 </div>
               );
             })}
+            {healthRecs.filter(h=>!h.closed).length===0 && <Empty text="Aktif sağlık kaydı yok"/>}
           </div>
         )}
 
