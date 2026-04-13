@@ -259,7 +259,6 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
       <FL>Durum</FL>
       <StatusPicker value={status} onChange={setStatus}/>
       <FL>Tedavi / Yapılan İşlem</FL>
-      {/* Aynı tedavi devam ediyorsa checkbox */}
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,padding:"6px 10px",background:"#F5FAF0",borderRadius:8,border:"1px solid #D4E8C2"}}>
         <input type="checkbox" id="sameTreatment" checked={!treatmentChanged}
           onChange={e=>setTreatmentChanged(!e.target.checked)}
@@ -271,8 +270,6 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
       <textarea value={treatment} onChange={e=>{setTreatment(e.target.value);setTreatmentChanged(true);}} rows={3}
         style={{...S.input,resize:"vertical",lineHeight:1.5,opacity:treatmentChanged?1:.7}}
         placeholder="İlaç, doz, işlem..."/>
-      <FL>Maliyet (₺)</FL>
-      <input type="number" value={cost} onChange={e=>setCost(e.target.value)} style={S.input} placeholder="0"/>
       <FL>Notlar</FL>
       <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
       <div style={{display:"flex",gap:8,marginTop:4}}>
@@ -283,6 +280,19 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
 
     {tab==="takvim" && (
       <div>
+        {/* Tedavi notu özeti */}
+        {record.treatment && (
+          <div style={{background:"#F5FAF0",border:"1px solid #D4E8C2",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#3D5A25",marginBottom:2}}>💊 Tedavi</div>
+            <div style={{fontSize:12,color:"#333"}}>{record.treatment}</div>
+          </div>
+        )}
+        {record.notes && (
+          <div style={{background:"#F5F3ED",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#555",marginBottom:2}}>📝 Not</div>
+            <div style={{fontSize:12,color:"#555"}}>{record.notes}</div>
+          </div>
+        )}
         {recDays.length===0 && (
           <div style={{textAlign:"center",padding:20,color:"#8c8c7e",fontSize:13}}>
             <div style={{fontSize:32,marginBottom:8}}>📅</div>
@@ -294,27 +304,39 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
           const isToday = day.plannedDate === today;
           const isFuture = day.plannedDate > today;
           return (
-            <div key={day.id} style={{...S.card,padding:12,marginBottom:6,
-              border:`2px solid ${day.done?"#4A7C3F":isToday?"#2873A8":isPast?"#F5C0BA":"#E8E5DC"}`,
-              background:day.done?"#F5FAF0":isToday?"#EEF6FC":"#fff"}}>
+            <div key={day.id} style={{
+              borderRadius:12, padding:12, marginBottom:8,
+              background: day.done ? "#E3F0DC" : isToday ? "#EEF6FC" : isFuture ? "#F9F9F6" : "#FFF0EE",
+              border: `2px solid ${day.done?"#4A7C3F":isToday?"#2873A8":isPast?"#F5C0BA":"#E8E5DC"}`
+            }}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div>
-                  <div style={{fontWeight:800,fontSize:14,color:day.done?"#3D5A25":isToday?"#2873A8":isPast?"#BE3B31":"#555"}}>
-                    {day.done?"✅":isToday?"🔵":isPast?"⚠️":"⏳"} Gün {day.dayNumber}
+                  <div style={{fontWeight:800,fontSize:15,color:day.done?"#3D5A25":isToday?"#2873A8":isPast?"#BE3B31":"#8c8c7e"}}>
+                    {day.done?"✅":isToday?"🔵":isPast?"⚠️":"⏳"} {day.dayNumber}. Gün
                   </div>
-                  <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(day.plannedDate)}
-                    {isToday&&<span style={{color:"#2873A8",fontWeight:700}}> — Bugün</span>}
+                  <div style={{fontSize:11,color:"#8c8c7e",marginTop:2}}>📅 {fmt(day.plannedDate)}
+                    {isToday && <span style={{color:"#2873A8",fontWeight:700}}> — Bugün</span>}
                   </div>
-                  {day.done && <div style={{fontSize:11,color:"#3D5A25",fontWeight:600,marginTop:2}}>
-                    👤 {day.doneBy} · {fmtDT(day.doneAt)}
-                  </div>}
-                  {isPast && !day.done && <div style={{fontSize:11,color:"#BE3B31",fontWeight:600}}>❌ Yapılmadı</div>}
+                  {day.done && (
+                    <div style={{fontSize:11,color:"#3D5A25",fontWeight:700,marginTop:4,background:"rgba(255,255,255,.6)",padding:"4px 8px",borderRadius:6}}>
+                      👤 {day.doneBy} · {fmtDT(day.doneAt)}
+                    </div>
+                  )}
+                  {isPast && !day.done && (
+                    <div style={{fontSize:11,color:"#BE3B31",fontWeight:600,marginTop:2}}>❌ Yapılmadı</div>
+                  )}
                 </div>
                 {!day.done && !isFuture && (
                   <button onClick={()=>markDay(day)} disabled={markingDay===day.id}
-                    style={{...S.btnPrimary,fontSize:12,padding:"8px 14px",opacity:markingDay===day.id?.6:1}}>
-                    {markingDay===day.id?"...":"✅ Yapıldı"}
+                    style={{...S.btnPrimary,fontSize:12,padding:"10px 16px",opacity:markingDay===day.id?.6:1,borderRadius:10}}>
+                    {markingDay===day.id?"⏳":"✅ Yapıldı"}
                   </button>
+                )}
+                {isFuture && (
+                  <div style={{fontSize:11,color:"#aaa",textAlign:"right"}}>
+                    <div style={{fontSize:16}}>⏳</div>
+                    <div>{daysUntil(day.plannedDate)} gün</div>
+                  </div>
                 )}
               </div>
             </div>
@@ -424,8 +446,6 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     </div>}
     <FL>Durum *</FL>
     <StatusPicker value={status} onChange={setStatus}/>
-    <FL>Maliyet (₺)</FL>
-    <input type="number" value={cost} onChange={e=>setCost(e.target.value)} style={S.input} placeholder="0"/>
     <FL>Notlar</FL>
     <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
     <div style={{display:"flex",gap:8,marginTop:4}}>
@@ -1606,15 +1626,16 @@ function App(){
   const showBack=(page==="goats"&&(selBreed||selGoat))||page==="profile";
   // Misafir girişi açma - UTC zaman kullan
   const openGuestAccess = async () => {
+    // UTC+3 için: local now + 10dk = server time + 10dk
     const now = new Date();
     const exp = new Date(now.getTime() + 10*60*1000);
-    await sb.from("guest_access").update({
+    const {error} = await sb.from("guest_access").update({
       is_open: true,
       opened_by: "Veteriner Hekim",
       opened_at: now.toISOString(),
       expires_at: exp.toISOString()
     }).eq("id","singleton");
-    setGuestAccess({isOpen:true, expiresAt:exp.toISOString()});
+    if(!error) setGuestAccess({isOpen:true, expiresAt:exp.toISOString()});
   };
 
   const closeGuestAccess = async () => {
@@ -1736,15 +1757,13 @@ function App(){
               <button
                 onClick={async()=>{
                   if(!guestAccess.isOpen) return;
-                  // Supabase'den güncel bilgiyi çek
                   const {data} = await sb.from("guest_access").select("*").eq("id","singleton").single();
                   if(!data || !data.is_open){
                     setPinError("Misafir girişi kapalı.");
                     return;
                   }
-                  const now = new Date();
-                  const exp = new Date(data.expires_at);
-                  if(now > exp){
+                  // Her iki zaman da ISO string, JS Date() otomatik UTC parse eder
+                  if(new Date() > new Date(data.expires_at)){
                     setPinError("Misafir girişi süresi dolmuş.");
                     await sb.from("guest_access").update({is_open:false}).eq("id","singleton");
                     setGuestAccess({isOpen:false,expiresAt:null});
