@@ -327,6 +327,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
         )}
       </div>
     )}
+    {tab==="gecmis" && <div>
       {recLogs.length===0 && <Empty text="Henüz işlem geçmişi yok"/>}
       {recLogs.map((l,i)=>(
         <div key={l.id} style={{display:"flex",gap:8,padding:"10px 0",borderBottom:i<recLogs.length-1?"1px solid #F2F0EA":"none"}}>
