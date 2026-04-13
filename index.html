@@ -2140,7 +2140,6 @@ function App(){
   const showBack = showBackBtn;
   const breed=selBreed?BREEDS.find(b=>b.id===selBreed):null;
   const goat=selGoat?goats.find(g=>g.id===selGoat):null;
-  const showBack = page!=="home" || selBreed || selGoat;
   // Misafir girişi açma - UTC zaman kullan
   const openGuestAccess = async () => {
     const {error} = await sb.from("guest_access").update({
