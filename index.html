@@ -56,6 +56,7 @@ const DEMO_USERS = [
   { id:"u4", name:"Vardiya 2",       role:"vardiya",   emoji:"👷",    members:"Mehmet · Zafer · Turan", pin:"2222" },
   { id:"u5", name:"Vardiya 3",       role:"vardiya",   emoji:"👷",    members:"İsmail · Süleyman · Ramazan", pin:"3333" },
   { id:"u6", name:"Vardiya 4",       role:"vardiya",   emoji:"👷",    members:"M. Ali · Mustafa · Hüseyin", pin:"4444" },
+  { id:"u7", name:"Misafir",         role:"misafir",   emoji:"👁",    members:"Sadece görüntüleme", pin:"" },
 ];
 
 // Supabase dönüşümleri
@@ -1398,6 +1399,7 @@ function App(){
   const [showLogin,setShowLogin]=useState(true);
   const [currentUser,setCurrentUser]=useState("");
   const [loading,setLoading]=useState(true);
+  const [guestAccess,setGuestAccess]=useState({isOpen:false,expiresAt:null});
 
   const [goats,setGoats]=useState([]);
   const [healthRecs,setHealthRecs]=useState([]);
@@ -1505,6 +1507,22 @@ function App(){
   const breed=selBreed?BREEDS.find(b=>b.id===selBreed):null;
   const goat=selGoat?goats.find(g=>g.id===selGoat):null;
   const showBack=(page==="goats"&&(selBreed||selGoat))||page==="profile";
+  const isGuest = currentUser==="Misafir";
+
+  // Misafir için 10 dakika timer
+  useEffect(()=>{
+    if(!isGuest) return;
+    let timer;
+    const init = async()=>{
+      const {data} = await sb.from("guest_access").select("*").eq("id","singleton").single();
+      if(!data||!data.is_open){setShowLogin(true);setCurrentUser("");return;}
+      const ms = new Date(data.expires_at)-new Date();
+      if(ms<=0){setShowLogin(true);setCurrentUser("");return;}
+      timer = setTimeout(()=>{setShowLogin(true);setCurrentUser("");}, ms);
+    };
+    init();
+    return ()=>clearTimeout(timer);
+  },[isGuest]);
 
   const activeGoats=goats.filter(g=>!g.archived);
 
@@ -1512,13 +1530,19 @@ function App(){
   const [selUser, setSelUser] = useState(null);
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
+  const [guestAccess, setGuestAccess] = useState({isOpen:false, expiresAt:null});
 
   useEffect(()=>{
     const loadAnn = async()=>{
       const {data} = await sb.from("announcements").select("*").order("created_at",{ascending:false}).limit(20);
       setAnnouncements(data||[]);
     };
+    const loadGuest = async()=>{
+      const {data} = await sb.from("guest_access").select("*").eq("id","singleton").single();
+      if(data) setGuestAccess({isOpen:data.is_open, expiresAt:data.expires_at});
+    };
     loadAnn();
+    loadGuest();
   },[]);
 
   const handlePinSubmit = ()=>{
@@ -1567,7 +1591,7 @@ function App(){
           {!selUser ? (
             <>
               <h2 style={{margin:"0 0 12px",fontSize:16,fontWeight:800,color:"#1e1e1e"}}>Kimsiniz?</h2>
-              {DEMO_USERS.map(u=>(
+              {DEMO_USERS.filter(u=>u.id!=="u7").map(u=>(
                 <button key={u.id} onClick={()=>{setSelUser(u.id);setPinInput("");setPinError("");}}
                   style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:"1px solid #E0DDD4",background:"#fff",cursor:"pointer",width:"100%",marginBottom:6,textAlign:"left"}}>
                   <span style={{fontSize:18}}>{u.emoji}</span>
@@ -1578,6 +1602,36 @@ function App(){
                   <span style={{color:"#ccc",fontSize:16}}>›</span>
                 </button>
               ))}
+              {/* Misafir butonu */}
+              <button
+                onClick={()=>{
+                  if(!guestAccess.isOpen){return;}
+                  const now = new Date();
+                  const exp = guestAccess.expiresAt ? new Date(guestAccess.expiresAt) : null;
+                  if(exp && now > exp){
+                    setPinError("Misafir girişi süresi dolmuş.");
+                    return;
+                  }
+                  setCurrentUser("Misafir");
+                  setShowLogin(false);
+                }}
+                style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,
+                  border:`1px solid ${guestAccess.isOpen?"#4A7C3F":"#E0DDD4"}`,
+                  background:guestAccess.isOpen?"#F3F8F0":"#F9F9F6",
+                  cursor:guestAccess.isOpen?"pointer":"not-allowed",
+                  width:"100%",marginBottom:6,textAlign:"left",opacity:guestAccess.isOpen?1:.6}}>
+                <span style={{fontSize:18}}>👁</span>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700,fontSize:14,color:guestAccess.isOpen?"#3D5A25":"#8c8c7e"}}>Misafir</div>
+                  <div style={{fontSize:10,color:guestAccess.isOpen?"#4A7C3F":"#aaa"}}>
+                    {guestAccess.isOpen
+                      ? `✅ Açık · ${Math.max(0,Math.ceil((new Date(guestAccess.expiresAt)-new Date())/60000))} dk kaldı`
+                      : "🔒 Kapalı — Veteriner Hekim açabilir"}
+                  </div>
+                </div>
+                {guestAccess.isOpen && <span style={{color:"#4A7C3F",fontSize:16}}>›</span>}
+              </button>
+              {pinError&&<div style={{background:"#FFF0EE",border:"1px solid #F5C0BA",borderRadius:8,padding:"6px 10px",fontSize:12,color:"#BE3B31",fontWeight:600}}>{pinError}</div>}
             </>
           ) : (
             <>
@@ -1630,9 +1684,9 @@ function App(){
 
   return (
     <div style={S.app}><style>{css}</style>
-      {hModal&&<HealthModal goats={goats} breedFilter={hModal.breedId||null} preGoatId={hModal.goatId||""} onSave={saveHealth} onClose={()=>setHModal(null)} currentUser={currentUser}/>}
-      {vModal&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
-      {addGoatModal&&<AddGoatModal breed={BREEDS.find(b=>b.id===addGoatModal)} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser}/>}
+      {hModal&&!isGuest&&<HealthModal goats={goats} breedFilter={hModal.breedId||null} preGoatId={hModal.goatId||""} onSave={saveHealth} onClose={()=>setHModal(null)} currentUser={currentUser}/>}
+      {vModal&&!isGuest&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
+      {addGoatModal&&!isGuest&&<AddGoatModal breed={BREEDS.find(b=>b.id===addGoatModal)} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser}/>}
 
       {archiveConfirm && (
         <div onClick={()=>setArchiveConfirm(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
@@ -1655,11 +1709,16 @@ function App(){
         {showBack?<button onClick={goBack} style={{...S.ghost,color:"#fff",fontSize:22,padding:"0 6px 0 0",lineHeight:1}}>‹</button>:<span style={{fontSize:20}}>🐐</span>}
         <div style={{flex:1}}>
           <div style={{color:"#fff",fontWeight:800,fontSize:15}}>{selGoat&&goat?goat.name:selBreed&&breed?breed.name:"Sürü Takip"}</div>
-          <div style={{color:"rgba(255,255,255,.5)",fontSize:10}}>☁️ {currentUser} · {activeGoats.length} keçi</div>
+          <div style={{color:"rgba(255,255,255,.5)",fontSize:10}}>
+            {isGuest?"👁 Misafir · Sadece Görüntüleme":"☁️ "+currentUser+" · "+activeGoats.length+" keçi"}
+          </div>
         </div>
-        <button onClick={()=>{setPage("profile");setSelBreed(null);setSelGoat(null);}} style={{...S.ghost,padding:0}}>
-          <div style={{width:30,height:30,borderRadius:"50%",background:"rgba(255,255,255,.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>👤</div>
-        </button>
+        {isGuest
+          ? <div style={{background:"rgba(255,165,0,.25)",borderRadius:8,padding:"3px 8px",fontSize:10,color:"#FFD700",fontWeight:700}}>MISAFIR</div>
+          : <button onClick={()=>{setPage("profile");setSelBreed(null);setSelGoat(null);}} style={{...S.ghost,padding:0}}>
+              <div style={{width:30,height:30,borderRadius:"50%",background:"rgba(255,255,255,.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>👤</div>
+            </button>
+        }
       </div>
 
       <div style={{padding:"10px 14px 84px"}}>
@@ -1792,7 +1851,7 @@ function App(){
                     🍼 Oğlaklar ({goats.filter(g=>g.breed===breed.id&&g.category==="oglak"&&!g.archived).length})
                   </button>
                 </div>
-                <button onClick={()=>setAddGoatModal(breed.id)} style={{...S.btnPrimary,width:"100%",marginBottom:8,fontSize:13}}>+ {catTab==="anac"?"Anaç":"Oğlak"} Ekle</button>
+                {!isGuest && <button onClick={()=>setAddGoatModal(breed.id)} style={{...S.btnPrimary,width:"100%",marginBottom:8,fontSize:13}}>+ {catTab==="anac"?"Anaç":"Oğlak"} Ekle</button>}
                 {goats.filter(g=>g.breed===breed.id&&g.category===catTab&&!g.archived).map((g,i)=>(
                   <div key={g.id} className="anim-fade"
                     style={{...S.card,padding:"10px 12px",marginBottom:5,display:"flex",alignItems:"center",gap:10,animationDelay:`${i*.04}s`}}>
@@ -1822,7 +1881,7 @@ function App(){
 
             {breedTab==="saglik" && (
               <div>
-                <button onClick={()=>setHModal({breedId:breed.id})} style={{...S.btnPrimary,width:"100%",marginBottom:8,fontSize:13}}>+ Sağlık Kaydı Ekle</button>
+                {!isGuest && <button onClick={()=>setHModal({breedId:breed.id})} style={{...S.btnPrimary,width:"100%",marginBottom:8,fontSize:13}}>+ Sağlık Kaydı Ekle</button>}
                 {healthRecs.filter(h=>h.breed===breed.id&&!h.closed).length===0 && <Empty text="Aktif sağlık kaydı yok"/>}
                 {[...healthRecs].filter(h=>h.breed===breed.id&&!h.closed).sort((a,b)=>new Date(b.date)-new Date(a.date)).map(h=>{
                   const g=goats.find(x=>x.id===h.goatId);
@@ -1863,7 +1922,7 @@ function App(){
           <div className="anim-fade">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
               <h2 style={S.title}>🩺 Sağlık Kayıtları</h2>
-              <button onClick={()=>setHModal({})} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13}}>+ Ekle</button>
+              {!isGuest && <button onClick={()=>setHModal({})} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13}}>+ Ekle</button>}
             </div>
             {BREEDS.map(b=>{
               const recs=healthRecs.filter(h=>h.breed===b.id&&!h.closed);
@@ -1917,18 +1976,63 @@ function App(){
         {page==="profile" && (
           <div className="anim-fade">
             <div style={{...S.card,textAlign:"center",padding:22,marginBottom:10}}>
-              <div style={{fontSize:44}}>👤</div>
+              <div style={{fontSize:44}}>{currentUser==="Misafir"?"👁":"👤"}</div>
               <h2 style={{margin:"4px 0 2px",fontSize:20,fontWeight:900,color:"#1e1e1e"}}>{currentUser}</h2>
               <div style={{fontSize:12,color:"#8c8c7e",marginTop:4}}>
-                {DEMO_USERS.find(u=>u.name===currentUser)?.members || (DEMO_USERS.find(u=>u.name===currentUser)?.role==="veteriner"?"Veteriner Hekim":"Şef")}
+                {currentUser==="Misafir"?"Sadece Görüntüleme":DEMO_USERS.find(u=>u.name===currentUser)?.members || (DEMO_USERS.find(u=>u.name===currentUser)?.role==="veteriner"?"Veteriner Hekim":"Şef")}
               </div>
               <div style={{marginTop:12}}>
-                <button onClick={()=>setShowLogin(true)} style={{...S.btnOutline,color:"#BE3B31",borderColor:"#BE3B31",fontSize:13}}>🚪 Çıkış Yap</button>
+                <button onClick={()=>{setShowLogin(true);}} style={{...S.btnOutline,color:"#BE3B31",borderColor:"#BE3B31",fontSize:13}}>🚪 Çıkış Yap</button>
               </div>
             </div>
+
+            {/* Veteriner Hekim - Misafir Yönetimi */}
+            {currentUser==="Veteriner Hekim" && (
+              <div style={{...S.card,marginBottom:10,border:`1.5px solid ${guestAccess.isOpen?"#4A7C3F":"#E8E5DC"}`}}>
+                <div style={{fontWeight:800,fontSize:14,color:"#1e1e1e",marginBottom:8}}>👁 Misafir Erişimi</div>
+                {guestAccess.isOpen ? (
+                  <div>
+                    <div style={{background:"#E3F0DC",borderRadius:8,padding:"8px 10px",marginBottom:10}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"#3D5A25"}}>✅ Misafir girişi açık</div>
+                      <div style={{fontSize:11,color:"#555",marginTop:2}}>
+                        Bitiş: {guestAccess.expiresAt ? new Date(guestAccess.expiresAt).toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"}) : "—"}
+                        {" · "}
+                        {Math.max(0,Math.ceil((new Date(guestAccess.expiresAt)-new Date())/60000))} dakika kaldı
+                      </div>
+                    </div>
+                    <button onClick={async()=>{
+                      await sb.from("guest_access").update({is_open:false,expires_at:null}).eq("id","singleton");
+                      setGuestAccess({isOpen:false,expiresAt:null});
+                    }} style={{...S.btnOutline,width:"100%",color:"#BE3B31",borderColor:"#BE3B31",fontSize:13}}>
+                      🔒 Misafir Girişini Kapat
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{fontSize:12,color:"#8c8c7e",marginBottom:10}}>
+                      Misafir girişi şu an kapalı. Açarsanız 10 dakika boyunca geçerli olur.
+                    </div>
+                    <button onClick={async()=>{
+                      const now = new Date();
+                      const exp = new Date(now.getTime()+10*60*1000);
+                      await sb.from("guest_access").update({
+                        is_open:true,
+                        opened_by:"Veteriner Hekim",
+                        opened_at:now.toISOString(),
+                        expires_at:exp.toISOString()
+                      }).eq("id","singleton");
+                      setGuestAccess({isOpen:true,expiresAt:exp.toISOString()});
+                    }} style={{...S.btnPrimary,width:"100%",fontSize:13}}>
+                      🔓 Misafir Girişini Aç (10 dk)
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div style={S.card}>
               <div style={{fontWeight:700,fontSize:13,color:"#4A7C3F",marginBottom:8}}>👥 Kullanıcılar & Vardiyalar</div>
-              {DEMO_USERS.map(u=>(
+              {DEMO_USERS.filter(u=>u.id!=="u7").map(u=>(
                 <div key={u.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid #F2F0EA"}}>
                   <span style={{fontSize:18}}>{u.emoji}</span>
                   <div style={{flex:1}}>
