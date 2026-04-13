@@ -1628,16 +1628,13 @@ function App(){
   const showBack=(page==="goats"&&(selBreed||selGoat))||page==="profile";
   // Misafir girişi açma - UTC zaman kullan
   const openGuestAccess = async () => {
-    // UTC+3 için: local now + 10dk = server time + 10dk
-    const now = new Date();
-    const exp = new Date(now.getTime() + 10*60*1000);
     const {error} = await sb.from("guest_access").update({
       is_open: true,
       opened_by: "Veteriner Hekim",
-      opened_at: now.toISOString(),
-      expires_at: exp.toISOString()
+      opened_at: new Date().toISOString(),
+      expires_at: null
     }).eq("id","singleton");
-    if(!error) setGuestAccess({isOpen:true, expiresAt:exp.toISOString()});
+    if(!error) setGuestAccess({isOpen:true, expiresAt:null});
   };
 
   const closeGuestAccess = async () => {
@@ -1647,35 +1644,17 @@ function App(){
 
   const isGuest = currentUser==="Misafir";
 
-  // Misafir için 10 dakika timer
+  // Misafir giriş kontrolü - sadece açık/kapalı
   useEffect(()=>{
     if(!isGuest) return;
-    let timer;
-    const init = async()=>{
+    const check = async()=>{
       const {data} = await sb.from("guest_access").select("*").eq("id","singleton").single();
       if(!data || !data.is_open){
         setShowLogin(true);
         setCurrentUser("");
-        return;
       }
-      const expiresAt = new Date(data.expires_at);
-      const now = new Date();
-      const ms = expiresAt - now;
-      if(ms <= 0){
-        setShowLogin(true);
-        setCurrentUser("");
-        await sb.from("guest_access").update({is_open:false}).eq("id","singleton");
-        return;
-      }
-      timer = setTimeout(async()=>{
-        await sb.from("guest_access").update({is_open:false}).eq("id","singleton");
-        setGuestAccess({isOpen:false,expiresAt:null});
-        setShowLogin(true);
-        setCurrentUser("");
-      }, ms);
     };
-    init();
-    return ()=>clearTimeout(timer);
+    check();
   },[isGuest]);
 
   const activeGoats=goats.filter(g=>!g.archived);
@@ -1764,13 +1743,6 @@ function App(){
                     setPinError("Misafir girişi kapalı.");
                     return;
                   }
-                  // Her iki zaman da ISO string, JS Date() otomatik UTC parse eder
-                  if(new Date() > new Date(data.expires_at)){
-                    setPinError("Misafir girişi süresi dolmuş.");
-                    await sb.from("guest_access").update({is_open:false}).eq("id","singleton");
-                    setGuestAccess({isOpen:false,expiresAt:null});
-                    return;
-                  }
                   setCurrentUser("Misafir");
                   setShowLogin(false);
                 }}
@@ -1783,9 +1755,7 @@ function App(){
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:14,color:guestAccess.isOpen?"#3D5A25":"#8c8c7e"}}>Misafir</div>
                   <div style={{fontSize:10,color:guestAccess.isOpen?"#4A7C3F":"#aaa"}}>
-                    {guestAccess.isOpen && guestAccess.expiresAt
-                      ? `✅ Açık · ${Math.max(0,Math.ceil((new Date(guestAccess.expiresAt)-Date.now())/60000))} dk kaldı`
-                      : "🔒 Kapalı — Veteriner Hekim açabilir"}
+                    {guestAccess.isOpen ? "✅ Açık — Giriş yapabilirsiniz" : "🔒 Kapalı — Veteriner Hekim açabilir"}
                   </div>
                 </div>
                 {guestAccess.isOpen && <span style={{color:"#4A7C3F",fontSize:16}}>›</span>}
@@ -2201,11 +2171,7 @@ function App(){
                   <div>
                     <div style={{background:"#E3F0DC",borderRadius:8,padding:"8px 10px",marginBottom:10}}>
                       <div style={{fontSize:13,fontWeight:700,color:"#3D5A25"}}>✅ Misafir girişi açık</div>
-                      <div style={{fontSize:11,color:"#555",marginTop:2}}>
-                        Bitiş: {guestAccess.expiresAt ? new Date(guestAccess.expiresAt).toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"}) : "—"}
-                        {" · "}
-                        {Math.max(0,Math.ceil((new Date(guestAccess.expiresAt)-new Date())/60000))} dakika kaldı
-                      </div>
+                      <div style={{fontSize:11,color:"#555",marginTop:2}}>Siz kapatana kadar geçerli</div>
                     </div>
                     <button onClick={closeGuestAccess} style={{...S.btnOutline,width:"100%",color:"#BE3B31",borderColor:"#BE3B31",fontSize:13}}>
                       🔒 Misafir Girişini Kapat
@@ -2214,10 +2180,10 @@ function App(){
                 ) : (
                   <div>
                     <div style={{fontSize:12,color:"#8c8c7e",marginBottom:10}}>
-                      Misafir girişi şu an kapalı. Açarsanız 10 dakika boyunca geçerli olur.
+                      Misafir girişi şu an kapalı. Açarsanız siz kapatana kadar geçerli olur.
                     </div>
                     <button onClick={openGuestAccess} style={{...S.btnPrimary,width:"100%",fontSize:13}}>
-                      🔓 Misafir Girişini Aç (10 dk)
+                      🔓 Misafir Girişini Aç
                     </button>
                   </div>
                 )}
