@@ -1031,61 +1031,89 @@ function VaccineScheduleModal({ breed, vaccineGroups, onSave, onClose, currentUs
       breed: breed.id,
       vaccine_type: vaccineType,
       date, batch_no: batchNo||null,
-      goat_ids: "", goat_names: "", goat_count: 0,
+      goat_ids:"", goat_names:"", goat_count:0,
       created_by: currentUser,
       notes: notes||null,
     };
     const {error} = await sb.from("vaccine_reports").insert(report);
     if(error){setErr("Hata: "+error.message);setSaving(false);return;}
-    onSave({...report, groupId:report.group_id, groupName:report.group_name, vaccineType:report.vaccine_type, batchNo:report.batch_no, goatCount:0, createdBy:report.created_by});
+    onSave({...report, groupId:report.group_id, groupName:report.group_name, vaccineType:report.vaccine_type, batchNo:report.batch_no||"", goatCount:0, createdBy:report.created_by, notes:report.notes||""});
   };
 
-  return <ModalWrap title={`📅 ${breed.emoji} ${breed.name} — Aşı Takvimi`} onClose={onClose}>
-    {err&&<ErrBox msg={err}/>}
-    <FL>Grup *</FL>
-    <select value={groupId} onChange={e=>setGroupId(e.target.value)} style={S.select}>
-      <option value="">— Grup seçin —</option>
-      {breedGroups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
-    </select>
-    {breedGroups.length===0&&<div style={{fontSize:11,color:"#BE3B31",marginTop:-6}}>⚠️ Önce ırk içinden grup oluşturun</div>}
-    <FL>Aşı Türü *</FL>
-    <select value={vaccineType} onChange={e=>setVaccineType(e.target.value)} style={S.select}>
-      <option value="">— Seçin —</option>
-      {VACCINE_TYPES_EXT.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}
-    </select>
-    <FL>Tarih * (ileri tarih girilebilir)</FL>
-    <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={S.input}/>
-    <FL>Parti / Seri No</FL>
-    <input value={batchNo} onChange={e=>setBatchNo(e.target.value)} style={S.input} placeholder="örn. VAK-2026-A1"/>
-    <FL>Notlar</FL>
-    <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
-    <div style={{display:"flex",gap:8,marginTop:4}}>
-      <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
-      <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Takvime Ekle"}</button>
+  return (
+    <div className="anim-fade" style={{background:"#FAFAF5",minHeight:"100vh",padding:"0 0 80px"}}>
+      <div style={{background:"#4A7C3F",padding:"12px 14px 10px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,zIndex:200}}>
+        <button onClick={onClose} style={{...S.ghost,color:"#fff",fontSize:22,padding:"0 6px 0 0"}}>‹</button>
+        <div style={{color:"#fff",fontWeight:800,fontSize:15}}>{breed.emoji} {breed.name} — Takvime Ekle</div>
+      </div>
+      <div style={{padding:"16px 14px",display:"flex",flexDirection:"column",gap:10}}>
+        {err&&<ErrBox msg={err}/>}
+        {breedGroups.length===0 && (
+          <div style={{background:"#FFF8EC",border:"1px solid #F0D49A",borderRadius:10,padding:12,fontSize:13,color:"#8B5A1B"}}>
+            ⚠️ Bu ırk için henüz grup yok. Önce Sürü → {breed.name} → 💉 Aşı sekmesinden grup oluşturun.
+          </div>
+        )}
+        <FL>Grup *</FL>
+        <select value={groupId} onChange={e=>setGroupId(e.target.value)} style={S.select}>
+          <option value="">— Grup seçin —</option>
+          {breedGroups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
+        </select>
+        <FL>Aşı Türü *</FL>
+        <select value={vaccineType} onChange={e=>setVaccineType(e.target.value)} style={S.select}>
+          <option value="">— Seçin —</option>
+          {VACCINE_TYPES_EXT.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}
+        </select>
+        <FL>Tarih * (ileri tarih girilebilir)</FL>
+        <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={S.input}/>
+        <FL>Parti / Seri No</FL>
+        <input value={batchNo} onChange={e=>setBatchNo(e.target.value)} style={S.input} placeholder="örn. VAK-2026-A1"/>
+        <FL>Notlar</FL>
+        <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
+        <div style={{display:"flex",gap:8,marginTop:8}}>
+          <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:13}}>İptal</button>
+          <button onClick={save} disabled={saving||breedGroups.length===0} style={{...S.btnPrimary,flex:2,padding:13,opacity:(saving||breedGroups.length===0)?.5:1}}>
+            {saving?"Kaydediliyor...":"💾 Takvime Ekle"}
+          </button>
+        </div>
+      </div>
     </div>
-  </ModalWrap>;
+  );
 }
 
 // ── Global Aşı Sayfası ──
-function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, currentUser}){
+function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onScheduleDeleted, currentUser}){
   const [selBreed, setSelBreed] = useState(null);
   const [showSchedule, setShowSchedule] = useState(null);
+  const [localReports, setLocalReports] = useState(vaccineReports);
+  const isVet = currentUser==="Veteriner Hekim";
+
+  useEffect(()=>setLocalReports(vaccineReports),[vaccineReports]);
 
   const today = todayISO();
 
+  const deleteReport = async (id) => {
+    const {error} = await sb.from("vaccine_reports").delete().eq("id",id);
+    if(!error){
+      setLocalReports(p=>p.filter(x=>x.id!==id));
+      if(onScheduleDeleted) onScheduleDeleted(id);
+    }
+  };
+
   if(selBreed) {
     const breed = BREEDS.find(b=>b.id===selBreed);
-    const breedReports = [...vaccineReports]
+    const breedReports = [...localReports]
       .filter(r=>r.breed===selBreed)
       .sort((a,b)=>new Date(a.date)-new Date(b.date));
     const upcoming = breedReports.filter(r=>r.date>=today);
-    const past = breedReports.filter(r=>r.date<today);
+    const past = breedReports.filter(r=>r.date<today).sort((a,b)=>new Date(b.date)-new Date(a.date));
 
     return (
       <div className="anim-slide">
-        {showSchedule && <VaccineScheduleModal breed={breed} vaccineGroups={vaccineGroups}
-          onSave={r=>{onScheduleAdded(r);setShowSchedule(false);}}
-          onClose={()=>setShowSchedule(false)} currentUser={currentUser}/>}
+        {showSchedule && <div style={{position:"fixed",inset:0,zIndex:500,background:"#FAFAF5"}}>
+          <VaccineScheduleModal breed={breed} vaccineGroups={vaccineGroups}
+            onSave={r=>{onScheduleAdded(r);setLocalReports(p=>[r,...p]);setShowSchedule(false);}}
+            onClose={()=>setShowSchedule(false)} currentUser={currentUser}/>
+        </div>}
 
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
           <button onClick={()=>setSelBreed(null)} style={{...S.ghost,fontSize:22,color:"#555",padding:0}}>‹</button>
@@ -1097,7 +1125,6 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, curr
           + Takvime Aşı Ekle
         </button>
 
-        {/* Yaklaşan aşılar */}
         <div style={{fontWeight:700,fontSize:13,color:"#2873A8",marginBottom:8}}>📅 Yaklaşan / Planlanan</div>
         {upcoming.length===0 && <div style={{...S.card,padding:10,marginBottom:8,textAlign:"center",color:"#aaa",fontSize:12}}>Planlanan aşı yok</div>}
         {upcoming.map(r=>{
@@ -1106,15 +1133,19 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, curr
           const isUrgent=d<=3;
           return (
             <div key={r.id} style={{...S.card,padding:10,marginBottom:5,border:`1.5px solid ${isUrgent?"#F5C0BA":"#D4E8FF"}`}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:13,color:vt?.color||"#333"}}>💉 {vt?.name}</div>
                   <div style={{fontSize:11,color:"#555"}}>👥 {r.groupName}</div>
                   <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.date)}{r.batchNo?` · Parti: ${r.batchNo}`:""}</div>
+                  <div style={{fontSize:10,color:"#aaa"}}>Ekleyen: {r.createdBy}</div>
                 </div>
-                <div style={{textAlign:"right"}}>
-                  <div style={{fontSize:20,fontWeight:900,color:isUrgent?"#BE3B31":"#2873A8"}}>{d}</div>
-                  <div style={{fontSize:9,color:isUrgent?"#BE3B31":"#2873A8",fontWeight:700}}>gün kaldı</div>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontSize:20,fontWeight:900,color:isUrgent?"#BE3B31":"#2873A8"}}>{d}</div>
+                    <div style={{fontSize:9,color:isUrgent?"#BE3B31":"#2873A8",fontWeight:700}}>gün kaldı</div>
+                  </div>
+                  {isVet && <button onClick={()=>deleteReport(r.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
                 </div>
               </div>
               {r.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:4}}>📝 {r.notes}</div>}
@@ -1122,16 +1153,20 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, curr
           );
         })}
 
-        {/* Geçmiş aşılar */}
         {past.length>0&&<>
           <div style={{fontWeight:700,fontSize:13,color:"#8c8c7e",marginBottom:8,marginTop:12}}>📋 Geçmiş Aşılar</div>
-          {past.sort((a,b)=>new Date(b.date)-new Date(a.date)).map(r=>{
+          {past.map(r=>{
             const vt=VACCINE_TYPES_EXT.find(v=>v.id===r.vaccineType);
             return (
-              <div key={r.id} style={{...S.card,padding:10,marginBottom:5,opacity:.8}}>
-                <div style={{fontWeight:700,fontSize:13,color:vt?.color||"#333"}}>💉 {vt?.name}</div>
-                <div style={{fontSize:11,color:"#555"}}>👥 {r.groupName}</div>
-                <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.date)} · {r.createdBy}</div>
+              <div key={r.id} style={{...S.card,padding:10,marginBottom:5,border:"1px solid #F2F0EA"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:13,color:vt?.color||"#333"}}>💉 {vt?.name}</div>
+                    <div style={{fontSize:11,color:"#555"}}>👥 {r.groupName}</div>
+                    <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.date)} · {r.createdBy}</div>
+                  </div>
+                  {isVet && <button onClick={()=>deleteReport(r.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
+                </div>
               </div>
             );
           })}
@@ -1145,7 +1180,7 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, curr
     <div className="anim-fade">
       <h2 style={{...S.title,marginBottom:12}}>💉 Aşı Takvimi</h2>
       {BREEDS.map((b,i)=>{
-        const breedReports=vaccineReports.filter(r=>r.breed===b.id);
+        const breedReports=localReports.filter(r=>r.breed===b.id);
         const upcoming=breedReports.filter(r=>r.date>=today);
         const urgent=upcoming.filter(r=>daysUntil(r.date)<=3);
         return (
@@ -1798,7 +1833,7 @@ function App(){
           </div>
         )}
 
-        {page==="vaccines" && <GlobalVaccinePage vaccineGroups={vaccineGroups} vaccineReports={vaccineReports} onScheduleAdded={saveVaccineReport} currentUser={currentUser}/>}
+        {page==="vaccines" && <GlobalVaccinePage vaccineGroups={vaccineGroups} vaccineReports={vaccineReports} onScheduleAdded={saveVaccineReport} onScheduleDeleted={id=>setVaccineReports(p=>p.filter(x=>x.id!==id))} currentUser={currentUser}/>}
 
         {page==="reports" && <ReportsPage reports={reports} goats={goats} logs={logs} vaccineReports={vaccineReports} currentUser={currentUser} onDeleteReport={deleteReport}/>}
 
