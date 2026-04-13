@@ -369,6 +369,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
 // ── Sağlık Kaydı Ekle ──
 function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUser }) {
   const [breed, setBreed] = useState(breedFilter||"");
+  const [category, setCategory] = useState("anac");
   const [earTag, setEarTag] = useState("");
   const [date,setDate]=useState(todayISO());
   const [condition,setCondition]=useState("");
@@ -423,6 +424,11 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
           {b.emoji} {b.name}
         </button>
       ))}
+    </div>
+    <FL>Kategori *</FL>
+    <div style={{display:"flex",gap:6}}>
+      <button onClick={()=>setCategory("anac")} style={{flex:1,padding:"9px 0",borderRadius:8,border:`1.5px solid ${category==="anac"?"#4A7C3F":"#E8E5DC"}`,background:category==="anac"?"#E3F0DC":"#fff",color:category==="anac"?"#3D5A25":"#8c8c7e",fontWeight:category==="anac"?700:400,fontSize:13,cursor:"pointer"}}>🐐 Anaç</button>
+      <button onClick={()=>setCategory("oglak")} style={{flex:1,padding:"9px 0",borderRadius:8,border:`1.5px solid ${category==="oglak"?"#B8602A":"#E8E5DC"}`,background:category==="oglak"?"#FFF4E6":"#fff",color:category==="oglak"?"#8B5A1B":"#8c8c7e",fontWeight:category==="oglak"?700:400,fontSize:13,cursor:"pointer"}}>🍼 Oğlak</button>
     </div>
     <FL>Küpe No *</FL>
     <input value={earTag} onChange={e=>setEarTag(e.target.value)} style={S.input} placeholder="TR-15-0042"/>
@@ -2089,7 +2095,12 @@ function App(){
   },[goats,healthRecs]);
 
   const navigate=p=>{setPage(p);setSelBreed(null);setSelGoat(null);setBreedTab("surü");setCatTab("anac");setDetailTab("info");};
-  const goBack=()=>{if(selGoat){setSelGoat(null);setDetailTab("info");}else if(selBreed){setSelBreed(null);}else navigate("home");};
+  const goBack=()=>{
+    if(selGoat){setSelGoat(null);setDetailTab("info");}
+    else if(selBreed){setSelBreed(null);}
+    else if(page!=="home"){navigate("home");}
+  };
+  const showBackBtn = page!=="home" || selBreed || selGoat;
   const saveHealth=rec=>{
     setHealthRecs(p=>[rec,...p]);
     if(rec.treatmentDays && rec.treatmentDays.length>0){
@@ -2126,9 +2137,10 @@ function App(){
     setArchiveConfirm(null);
   };
 
+  const showBack = showBackBtn;
   const breed=selBreed?BREEDS.find(b=>b.id===selBreed):null;
   const goat=selGoat?goats.find(g=>g.id===selGoat):null;
-  const showBack=(page==="goats"&&(selBreed||selGoat))||page==="profile";
+  const showBack = page!=="home" || selBreed || selGoat;
   // Misafir girişi açma - UTC zaman kullan
   const openGuestAccess = async () => {
     const {error} = await sb.from("guest_access").update({
@@ -2453,9 +2465,12 @@ function App(){
       )}
 
       <div style={S.header}>
-        {showBack?<button onClick={goBack} style={{...S.ghost,color:"#fff",fontSize:22,padding:"0 6px 0 0",lineHeight:1}}>‹</button>:<span onClick={()=>navigate("home")} style={{fontSize:20,cursor:"pointer"}}>🐐</span>}
+        {showBackBtn
+          ? <button onClick={goBack} style={{...S.ghost,color:"#fff",fontSize:22,padding:"0 6px 0 0",lineHeight:1}}>‹</button>
+          : <span onClick={()=>navigate("home")} style={{fontSize:20,cursor:"pointer"}}>🐐</span>
+        }
         <div style={{flex:1}}>
-          <div style={{color:"#fff",fontWeight:800,fontSize:15}}>{selGoat&&goat?goat.name:selBreed&&breed?breed.name:"Sürü Takip"}</div>
+          <div style={{color:"#fff",fontWeight:800,fontSize:15}}>{selGoat&&goat?goat.name:selBreed&&breed?breed.name:page==="home"?"Sürü Takip":page==="health"?"Sağlık Kayıtları":page==="vaccines"?"Aşı Takvimi":page==="births"?"Doğum Kayıtları":page==="deaths"?"Ölüm Kayıtları":page==="group_tx"?"Toplu Tedavi":page==="reports"?"Raporlar":page==="profile"?"Profil":"Sürü Takip"}</div>
           <div style={{color:"rgba(255,255,255,.5)",fontSize:10}}>
             {isGuest?"👁 Misafir · Sadece Görüntüleme":"☁️ "+currentUser+" · "+activeGoats.length+" keçi"}
           </div>
@@ -2468,7 +2483,14 @@ function App(){
         }
       </div>
 
-      <div style={{padding:"10px 14px 84px"}}>
+      <div
+        style={{padding:"10px 14px "+(page==="home"?"20px":"84px")}}
+        onTouchStart={e=>{window._swipeStartX=e.touches[0].clientX;}}
+        onTouchEnd={e=>{
+          const dx=e.changedTouches[0].clientX-window._swipeStartX;
+          if(dx>80) goBack();
+        }}
+      >
 
         {/* HOME */}
         {page==="home" && (
@@ -2837,6 +2859,18 @@ function App(){
           </div>
         )}
       </div>
+
+      {/* Alt Nav - ana sayfa hariç */}
+      {page!=="home" && (
+        <div style={S.nav}>
+          {[["home","🏠","Ana"],["health","🩺","Sağlık"],["vaccines","💉","Aşı"]].map(([k,ic,l])=>(
+            <button key={k} onClick={()=>navigate(k)} style={{...S.ghost,display:"flex",flexDirection:"column",alignItems:"center",gap:1,padding:"6px 20px",color:page===k?"#4A7C3F":"#8c8c7e"}}>
+              <span style={{fontSize:20}}>{ic}</span>
+              <span style={{fontSize:10,fontWeight:page===k?700:500}}>{l}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
     </div>
   );
