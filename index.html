@@ -575,7 +575,8 @@ function ReportsPage({reports, goats, logs, vaccineReports, currentUser, onDelet
     oldu: reports.filter(r=>r.closeReason==="Hayvan Öldü").length,
   };
 
-  const filteredVR = selBreed==="all" ? vaccineReportsLocal : vaccineReportsLocal.filter(r=>r.breed===selBreed);
+  const filteredVR = (selBreed==="all" ? vaccineReportsLocal : vaccineReportsLocal.filter(r=>r.breed===selBreed))
+    .filter(r=>r.recordType==="uygulama" || !r.recordType);
   const sortedVR = [...filteredVR].sort((a,b)=>new Date(b.date)-new Date(a.date));
 
   const handleDelete = async (id) => {
@@ -753,6 +754,7 @@ function GroupVaccineModal({ group, goats, onSave, onClose, currentUser }) {
       goat_count: groupGoats.length,
       created_by: currentUser,
       notes: notes||null,
+      record_type: "uygulama",
     };
     const {error} = await sb.from("vaccine_reports").insert(report);
     if(error){setErr("Hata: "+error.message);setSaving(false);return;}
@@ -1034,6 +1036,7 @@ function VaccineScheduleModal({ breed, vaccineGroups, onSave, onClose, currentUs
       goat_ids:"", goat_names:"", goat_count:0,
       created_by: currentUser,
       notes: notes||null,
+      record_type: "takvim",
     };
     const {error} = await sb.from("vaccine_reports").insert(report);
     if(error){setErr("Hata: "+error.message);setSaving(false);return;}
@@ -1102,7 +1105,7 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
   if(selBreed) {
     const breed = BREEDS.find(b=>b.id===selBreed);
     const breedReports = [...localReports]
-      .filter(r=>r.breed===selBreed)
+      .filter(r=>r.breed===selBreed && (r.recordType==="takvim" || r.recordType===undefined || r.recordType===""))
       .sort((a,b)=>new Date(a.date)-new Date(b.date));
     const upcoming = breedReports.filter(r=>r.date>=today);
     const past = breedReports.filter(r=>r.date<today).sort((a,b)=>new Date(b.date)-new Date(a.date));
@@ -1180,7 +1183,7 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
     <div className="anim-fade">
       <h2 style={{...S.title,marginBottom:12}}>💉 Aşı Takvimi</h2>
       {BREEDS.map((b,i)=>{
-        const breedReports=localReports.filter(r=>r.breed===b.id);
+        const breedReports=localReports.filter(r=>r.breed===b.id&&(r.recordType==="takvim"||!r.recordType));
         const upcoming=breedReports.filter(r=>r.date>=today);
         const urgent=upcoming.filter(r=>daysUntil(r.date)<=3);
         return (
@@ -1368,7 +1371,7 @@ function App(){
         id:r.id, groupId:r.group_id, groupName:r.group_name, breed:r.breed,
         vaccineType:r.vaccine_type, date:r.date, batchNo:r.batch_no||"",
         goatIds:r.goat_ids||"", goatNames:r.goat_names||"", goatCount:r.goat_count||0,
-        createdBy:r.created_by||"", notes:r.notes||""
+        createdBy:r.created_by||"", notes:r.notes||"", recordType:r.record_type||"uygulama"
       }));
       setGoats((gRes.data||[]).map(toGoat));
       setHealthRecs((hRes.data||[]).map(toHealth));
