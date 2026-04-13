@@ -660,6 +660,179 @@ function AnnouncementBox({ announcements, setAnnouncements, currentUser, vaccine
 }
 
 function Empty({text}){return <div style={{textAlign:"center",padding:30,color:"#8c8c7e",fontSize:13}}>{text}</div>;}
+function BirthModal({ onSave, onClose, currentUser }) {
+  const [breed, setBreed] = useState("");
+  const [motherEarTag, setMotherEarTag] = useState("");
+  const [birthType, setBirthType] = useState("");
+  const [birthDate, setBirthDate] = useState(todayISO());
+  const [kidCount, setKidCount] = useState(0);
+  const [kids, setKids] = useState([]);
+  const [notes, setNotes] = useState("");
+  const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const updateKidCount = (n) => {
+    setKidCount(n);
+    const newKids = Array.from({length:n}, (_,i) => kids[i] || {earTag:"", gender:"dişi"});
+    setKids(newKids);
+  };
+
+  const save = async () => {
+    if(!breed){setErr("Irk seçiniz");return;}
+    if(!motherEarTag.trim()){setErr("Ana hayvan küpe no giriniz");return;}
+    if(!birthType){setErr("Doğum türü seçiniz");return;}
+    if(!birthDate){setErr("Tarih giriniz");return;}
+    setSaving(true);
+    const record = {
+      id:"b"+Date.now(), breed, mother_ear_tag:motherEarTag.trim(),
+      birth_type:birthType, birth_date:birthDate,
+      kid_count:kidCount, kids:JSON.stringify(kids),
+      notes:notes||null, created_by:currentUser
+    };
+    const {error} = await sb.from("births").insert(record);
+    if(error){setErr("Hata: "+error.message);setSaving(false);return;}
+    onSave({id:record.id, breed, motherEarTag:motherEarTag.trim(), birthType, birthDate, kidCount, kids, notes, createdBy:currentUser, createdAt:new Date().toISOString()});
+  };
+
+  const BtnGroup = ({label, options, value, onChange, colorMap}) => (
+    <div>
+      <FL>{label}</FL>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        {options.map(([v,l])=>{
+          const sel=value===v;
+          const c=colorMap?.[v]||{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"};
+          return <button key={v} onClick={()=>onChange(v)} style={{flex:1,padding:"8px 0",borderRadius:8,border:`1.5px solid ${sel?c.border:"#E8E5DC"}`,background:sel?c.bg:"#fff",color:sel?c.color:"#8c8c7e",fontWeight:sel?700:400,fontSize:12,cursor:"pointer",minWidth:60}}>{l}</button>;
+        })}
+      </div>
+    </div>
+  );
+
+  return <ModalWrap title="🐣 Yeni Doğum Kaydı" onClose={onClose}>
+    {err&&<ErrBox msg={err}/>}
+    <BtnGroup label="Irk *" options={BREEDS.map(b=>[b.id,b.emoji+" "+b.name])} value={breed} onChange={setBreed}
+      colorMap={{saanen:{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"},honamli:{bg:"#F0E6F6",color:"#5B2D8E",border:"#7B4B94"},halep:{bg:"#FFF0E6",color:"#7A3B1E",border:"#B8602A"}}}/>
+    <FL>Ana Hayvan Küpe No *</FL>
+    <input value={motherEarTag} onChange={e=>setMotherEarTag(e.target.value)} style={S.input} placeholder="TR-15-0042"/>
+    <BtnGroup label="Doğum Türü *" options={[["normal","✅ Normal"],["gunsuz","⚠️ Günsüz"],["atik","❌ Atık"]]} value={birthType} onChange={v=>{setBirthType(v);if(v==="atik"){setKidCount(0);setKids([]);}}}
+      colorMap={{normal:{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"},gunsuz:{bg:"#FFF8EC",color:"#B8750A",border:"#D4850A"},atik:{bg:"#FFF0EE",color:"#BE3B31",border:"#BE3B31"}}}/>
+    {birthType!=="atik" && <>
+      <BtnGroup label="Yavru Sayısı" options={[[1,"1"],[2,"2"],[3,"3"],[4,"4"]]} value={kidCount} onChange={updateKidCount}
+        colorMap={{1:{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"},2:{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"},3:{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"},4:{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"}}}/>
+      {kids.map((kid,i)=>(
+        <div key={i} style={{background:"#F5FAF0",borderRadius:10,padding:10}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#3D5A25",marginBottom:6}}>🍼 {i+1}. Yavru</div>
+          <FL>Küpe No</FL>
+          <input value={kid.earTag} onChange={e=>{const k=[...kids];k[i]={...k[i],earTag:e.target.value};setKids(k);}} style={S.input} placeholder="TR-15-0101"/>
+          <FL>Cinsiyet</FL>
+          <div style={{display:"flex",gap:6,marginTop:4}}>
+            {[["dişi","♀ Dişi"],["erkek","♂ Erkek"]].map(([v,l])=>(
+              <button key={v} onClick={()=>{const k=[...kids];k[i]={...k[i],gender:v};setKids(k);}}
+                style={{flex:1,padding:"7px 0",borderRadius:8,border:`1.5px solid ${kid.gender===v?"#4A7C3F":"#E8E5DC"}`,background:kid.gender===v?"#E3F0DC":"#fff",color:kid.gender===v?"#3D5A25":"#8c8c7e",fontWeight:kid.gender===v?700:400,fontSize:12,cursor:"pointer"}}>{l}</button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </>}
+    <FL>Tarih *</FL>
+    <input type="date" value={birthDate} onChange={e=>setBirthDate(e.target.value)} style={S.input}/>
+    <FL>Notlar</FL>
+    <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
+    <div style={{display:"flex",gap:8,marginTop:4}}>
+      <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
+      <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
+    </div>
+  </ModalWrap>;
+}
+
+// ── Doğum Kayıtları Sayfası ──
+function BirthsPage({ births, currentUser, onDelete }) {
+  const [selBreed, setSelBreed] = useState("all");
+  const [showModal, setShowModal] = useState(false);
+  const [localBirths, setLocalBirths] = useState(births);
+  const isVet = currentUser==="Veteriner Hekim";
+
+  useEffect(()=>setLocalBirths(births),[births]);
+
+  const filtered = selBreed==="all" ? localBirths : localBirths.filter(b=>b.breed===selBreed);
+  const sorted = [...filtered].sort((a,b)=>new Date(b.birthDate)-new Date(a.birthDate));
+
+  const stats = {
+    total: localBirths.length,
+    normal: localBirths.filter(b=>b.birthType==="normal").length,
+    atik: localBirths.filter(b=>b.birthType==="atik").length,
+    kids: localBirths.reduce((s,b)=>s+(b.kidCount||0),0),
+  };
+
+  const deleteBirth = async (id) => {
+    await sb.from("births").delete().eq("id",id);
+    setLocalBirths(p=>p.filter(b=>b.id!==id));
+    onDelete(id);
+  };
+
+  const typeLabel = {normal:"Normal",gunsuz:"Günsüz",atik:"Atık"};
+  const typeBg = {normal:{bg:"#E3F0DC",color:"#3D5A25"},gunsuz:{bg:"#FFF8EC",color:"#B8750A"},atik:{bg:"#FFF0EE",color:"#BE3B31"}};
+
+  return (
+    <div className="anim-fade">
+      {showModal && <BirthModal currentUser={currentUser}
+        onSave={b=>{setLocalBirths(p=>[b,...p]);setShowModal(false);}}
+        onClose={()=>setShowModal(false)}/>}
+
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <h2 style={S.title}>🐣 Doğum Kayıtları</h2>
+        <button onClick={()=>setShowModal(true)} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13}}>+ Ekle</button>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:12}}>
+        <Stat v={stats.total} l="Toplam" bg="#E8E5DC" c="#444"/>
+        <Stat v={stats.normal} l="Normal" bg="#E3F0DC" c="#3D5A25"/>
+        <Stat v={stats.atik} l="Atık" bg="#FFF0EE" c="#BE3B31"/>
+        <Stat v={stats.kids} l="Yavru" bg="#EEF6FC" c="#2873A8"/>
+      </div>
+
+      <div style={{display:"flex",gap:6,marginBottom:10,overflowX:"auto",paddingBottom:4}}>
+        <button onClick={()=>setSelBreed("all")} style={{...S.btnSm,background:selBreed==="all"?"#4A7C3F":"#F2F0EA",color:selBreed==="all"?"#fff":"#555",whiteSpace:"nowrap",padding:"6px 14px"}}>Tümü ({localBirths.length})</button>
+        {BREEDS.map(b=><button key={b.id} onClick={()=>setSelBreed(b.id)} style={{...S.btnSm,background:selBreed===b.id?b.color:b.bg,color:selBreed===b.id?"#fff":b.color,whiteSpace:"nowrap",padding:"6px 14px"}}>{b.emoji} {b.name}</button>)}
+      </div>
+
+      {sorted.length===0 && <Empty text="Henüz doğum kaydı yok"/>}
+      {sorted.map(birth=>{
+        const b=BREEDS.find(x=>x.id===birth.breed);
+        const tc=typeBg[birth.birthType]||{bg:"#F2F0EA",color:"#555"};
+        const kids = typeof birth.kids==="string" ? JSON.parse(birth.kids||"[]") : (birth.kids||[]);
+        return (
+          <div key={birth.id} style={{...S.card,padding:12,marginBottom:8,border:`1.5px solid ${b?.color}22`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:8}}>
+              <div>
+                <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · 📅 {fmt(birth.birthDate)}</div>
+                <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>Ana: {birth.motherEarTag}</div>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+                <span style={{background:tc.bg,color:tc.color,fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8}}>{typeLabel[birth.birthType]}</span>
+                {isVet && <button onClick={()=>deleteBirth(birth.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
+              </div>
+            </div>
+            {kids.length>0 && (
+              <div style={{borderTop:"1px solid #F2F0EA",paddingTop:8}}>
+                <div style={{fontSize:11,color:"#8c8c7e",marginBottom:6,fontWeight:600}}>{kids.length} Yavru:</div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {kids.map((kid,i)=>(
+                    <div key={i} style={{background:"#F5FAF0",borderRadius:8,padding:"5px 10px",minWidth:90}}>
+                      <div style={{fontSize:11,fontWeight:700,color:"#3D5A25"}}>🍼 {kid.earTag||"—"}</div>
+                      <div style={{fontSize:10,color:"#8c8c7e"}}>{kid.gender==="dişi"?"♀ Dişi":"♂ Erkek"}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {birth.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:6}}>📝 {birth.notes}</div>}
+            <div style={{fontSize:10,color:"#aaa",marginTop:4}}>Ekleyen: {birth.createdBy}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 function MiniPill({label,val,color}){return <div style={{display:"flex",alignItems:"center",gap:4}}><span style={{fontSize:13,fontWeight:900,color}}>{val}</span><span style={{fontSize:10,color:"#8c8c7e"}}>{label}</span></div>;}
 function PillTag({bg,color,text}){return <span style={{background:bg,color,fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:8,whiteSpace:"nowrap"}}>{text}</span>;}
 
@@ -1515,6 +1688,7 @@ function App(){
   const [vaccineGroups,setVaccineGroups]=useState([]);
   const [vaccineReports,setVaccineReports]=useState([]);
   const [treatmentDaysData,setTreatmentDaysData]=useState([]);
+  const [births,setBirths]=useState([]);
 
   const [hModal,setHModal]=useState(null);
   const [vModal,setVModal]=useState(null);
@@ -1525,7 +1699,7 @@ function App(){
     if(showLogin) return;
     const load=async()=>{
       setLoading(true);
-      const [gRes,hRes,vRes,rRes,lRes,vgRes,vgmRes,vrRes,tdRes]=await Promise.all([
+      const [gRes,hRes,vRes,rRes,lRes,vgRes,vgmRes,vrRes,tdRes,bRes]=await Promise.all([
         sb.from("goats").select("*"),
         sb.from("health_records").select("*").eq("closed",false),
         sb.from("vaccines").select("*"),
@@ -1535,6 +1709,7 @@ function App(){
         sb.from("vaccine_group_members").select("*"),
         sb.from("vaccine_reports").select("*"),
         sb.from("treatment_days").select("*"),
+        sb.from("births").select("*"),
       ]);
       const groupMembers = (vgmRes.data||[]);
       const groups = (vgRes.data||[]).map(gr=>({
@@ -1559,6 +1734,13 @@ function App(){
         id:r.id, healthRecordId:r.health_record_id, goatId:r.goat_id,
         dayNumber:r.day_number, plannedDate:r.planned_date,
         done: r.done === true, doneBy:r.done_by||"", doneAt:r.done_at||""
+      })));
+      setBirths((bRes.data||[]).map(r=>({
+        id:r.id, breed:r.breed, motherEarTag:r.mother_ear_tag,
+        birthType:r.birth_type, birthDate:r.birth_date,
+        kidCount:r.kid_count||0, kids:r.kids||[],
+        notes:r.notes||"", createdBy:r.created_by||"",
+        createdAt:r.created_at
       })));
       setLoading(false);
     };
@@ -2252,6 +2434,8 @@ function App(){
           </div>
         )}
 
+        {page==="births" && <BirthsPage births={births} currentUser={currentUser} onDelete={id=>setBirths(p=>p.filter(b=>b.id!==id))}/>}
+
         {page==="vaccines" && <GlobalVaccinePage
           vaccineGroups={vaccineGroups}
           vaccineReports={vaccineReports}
@@ -2346,7 +2530,7 @@ function App(){
       </div>
 
       <div style={S.nav}>
-        {[["home","🏠","Ana"],["goats","🐐","Sürü"],["health","🩺","Sağlık"],["vaccines","💉","Aşı"],["reports","📊","Rapor"]].map(([k,ic,l])=>(
+        {[["home","🏠","Ana"],["goats","🐐","Sürü"],["health","🩺","Sağlık"],["births","🐣","Doğum"],["vaccines","💉","Aşı"],["reports","📊","Rapor"]].map(([k,ic,l])=>(
           <button key={k} onClick={()=>navigate(k)} style={{...S.ghost,display:"flex",flexDirection:"column",alignItems:"center",gap:1,padding:"4px 6px",color:page===k?"#4A7C3F":"#8c8c7e"}}>
             <span style={{fontSize:17}}>{ic}</span>
             <span style={{fontSize:9,fontWeight:page===k?700:500}}>{l}</span>
