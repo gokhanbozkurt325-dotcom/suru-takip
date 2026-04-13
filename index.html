@@ -482,7 +482,7 @@ function AnnouncementBox({ announcements, setAnnouncements, currentUser, vaccine
   const today = todayISO();
   const urgentVaccines = (vaccineReports||[]).filter(r=>{
     const d = daysUntil(r.date);
-    return d>=0 && d<=3 && r.date>=today;
+    return d>=0 && d<=3 && r.date>=today && (r.recordType==="takvim"||!r.recordType) && r.status!=="uygulandı";
   });
 
   const save = async () => {
@@ -576,7 +576,7 @@ function ReportsPage({reports, goats, logs, vaccineReports, currentUser, onDelet
   };
 
   const filteredVR = (selBreed==="all" ? vaccineReportsLocal : vaccineReportsLocal.filter(r=>r.breed===selBreed))
-    .filter(r=>r.recordType==="uygulama" || !r.recordType);
+    .filter(r=>r.recordType==="uygulama" || r.status==="uygulandı");
   const sortedVR = [...filteredVR].sort((a,b)=>new Date(b.date)-new Date(a.date));
 
   const handleDelete = async (id) => {
@@ -970,11 +970,8 @@ function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCr
                   </div>
                 )}
                 <div style={{display:"flex",gap:6}}>
-                  <button onClick={()=>setEditMembersGroup(group.id)} style={{...S.btnOutline,flex:1,fontSize:12,padding:"8px 0"}}>
+                  <button onClick={()=>setEditMembersGroup(group.id)} style={{...S.btnOutline,width:"100%",fontSize:12,padding:"8px 0"}}>
                     👥 Hayvanlar ({memberGoats.length})
-                  </button>
-                  <button onClick={()=>setActiveGroupVaccine(group.id)} style={{...S.btnPrimary,flex:2,fontSize:12,padding:"8px 0"}}>
-                    💉 Aşı Uygula
                   </button>
                 </div>
               </div>
@@ -1084,10 +1081,11 @@ function VaccineScheduleModal({ breed, vaccineGroups, onSave, onClose, currentUs
 }
 
 // ── Global Aşı Sayfası ──
-function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onScheduleDeleted, currentUser}){
+function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onScheduleDeleted, onVaccineApplied, currentUser}){
   const [selBreed, setSelBreed] = useState(null);
   const [showSchedule, setShowSchedule] = useState(null);
   const [localReports, setLocalReports] = useState(vaccineReports);
+  const [applyingId, setApplyingId] = useState(null);
   const isVet = currentUser==="Veteriner Hekim";
 
   useEffect(()=>setLocalReports(vaccineReports),[vaccineReports]);
@@ -1100,6 +1098,20 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
       setLocalReports(p=>p.filter(x=>x.id!==id));
       if(onScheduleDeleted) onScheduleDeleted(id);
     }
+  };
+
+  const markApplied = async (r) => {
+    setApplyingId(r.id);
+    const now = new Date().toISOString();
+    const {error} = await sb.from("vaccine_reports").update({
+      status:"uygulandı", applied_by:currentUser, applied_at:now, record_type:"uygulama"
+    }).eq("id",r.id);
+    if(!error){
+      const updated = {...r, status:"uygulandı", appliedBy:currentUser, appliedAt:now, recordType:"uygulama"};
+      setLocalReports(p=>p.map(x=>x.id===r.id?updated:x));
+      if(onVaccineApplied) onVaccineApplied(updated);
+    }
+    setApplyingId(null);
   };
 
   if(selBreed) {
@@ -1134,20 +1146,26 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
           const vt=VACCINE_TYPES_EXT.find(v=>v.id===r.vaccineType);
           const d=daysUntil(r.date);
           const isUrgent=d<=3;
+          const isApplied=r.status==="uygulandı";
           return (
-            <div key={r.id} style={{...S.card,padding:10,marginBottom:5,border:`1.5px solid ${isUrgent?"#F5C0BA":"#D4E8FF"}`}}>
+            <div key={r.id} style={{...S.card,padding:10,marginBottom:5,border:`1.5px solid ${isApplied?"#A8D5A2":isUrgent?"#F5C0BA":"#D4E8FF"}`}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:13,color:vt?.color||"#333"}}>💉 {vt?.name}</div>
                   <div style={{fontSize:11,color:"#555"}}>👥 {r.groupName}</div>
                   <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.date)}{r.batchNo?` · Parti: ${r.batchNo}`:""}</div>
-                  <div style={{fontSize:10,color:"#aaa"}}>Ekleyen: {r.createdBy}</div>
+                  {isApplied && <div style={{fontSize:10,color:"#3D5A25",fontWeight:700,marginTop:2}}>✅ Uygulandı · {r.appliedBy} · {fmtDT(r.appliedAt)}</div>}
                 </div>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
-                  <div style={{textAlign:"right"}}>
-                    <div style={{fontSize:20,fontWeight:900,color:isUrgent?"#BE3B31":"#2873A8"}}>{d}</div>
+                  {!isApplied && <div style={{textAlign:"right"}}>
+                    <div style={{fontSize:18,fontWeight:900,color:isUrgent?"#BE3B31":"#2873A8"}}>{d}</div>
                     <div style={{fontSize:9,color:isUrgent?"#BE3B31":"#2873A8",fontWeight:700}}>gün kaldı</div>
-                  </div>
+                  </div>}
+                  {isApplied && <PillTag bg="#E3F0DC" color="#3D5A25" text="✅ Uygulandı"/>}
+                  {!isApplied && <button onClick={()=>markApplied(r)} disabled={applyingId===r.id}
+                    style={{...S.btnPrimary,fontSize:11,padding:"5px 10px",opacity:applyingId===r.id?.6:1}}>
+                    {applyingId===r.id?"...":"✅ Uygulandı"}
+                  </button>}
                   {isVet && <button onClick={()=>deleteReport(r.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
                 </div>
               </div>
@@ -1157,18 +1175,26 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
         })}
 
         {past.length>0&&<>
-          <div style={{fontWeight:700,fontSize:13,color:"#8c8c7e",marginBottom:8,marginTop:12}}>📋 Geçmiş Aşılar</div>
+          <div style={{fontWeight:700,fontSize:13,color:"#8c8c7e",marginBottom:8,marginTop:12}}>📋 Geçmiş</div>
           {past.map(r=>{
             const vt=VACCINE_TYPES_EXT.find(v=>v.id===r.vaccineType);
+            const isApplied=r.status==="uygulandı";
             return (
-              <div key={r.id} style={{...S.card,padding:10,marginBottom:5,border:"1px solid #F2F0EA"}}>
+              <div key={r.id} style={{...S.card,padding:10,marginBottom:5,opacity:.85}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:700,fontSize:13,color:vt?.color||"#333"}}>💉 {vt?.name}</div>
                     <div style={{fontSize:11,color:"#555"}}>👥 {r.groupName}</div>
                     <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.date)} · {r.createdBy}</div>
+                    {isApplied && <div style={{fontSize:10,color:"#3D5A25",fontWeight:700}}>✅ Uygulandı · {r.appliedBy}</div>}
                   </div>
-                  {isVet && <button onClick={()=>deleteReport(r.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+                    {!isApplied && <button onClick={()=>markApplied(r)} disabled={applyingId===r.id}
+                      style={{...S.btnOutline,fontSize:11,padding:"5px 10px",opacity:applyingId===r.id?.6:1}}>
+                      {applyingId===r.id?"...":"✅ Uygulandı"}
+                    </button>}
+                    {isVet && <button onClick={()=>deleteReport(r.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
+                  </div>
                 </div>
               </div>
             );
@@ -1184,7 +1210,7 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
       <h2 style={{...S.title,marginBottom:12}}>💉 Aşı Takvimi</h2>
       {BREEDS.map((b,i)=>{
         const breedReports=localReports.filter(r=>r.breed===b.id&&(r.recordType==="takvim"||!r.recordType));
-        const upcoming=breedReports.filter(r=>r.date>=today);
+        const upcoming=breedReports.filter(r=>r.date>=today&&r.status!=="uygulandı");
         const urgent=upcoming.filter(r=>daysUntil(r.date)<=3);
         return (
           <div key={b.id} onClick={()=>setSelBreed(b.id)} className="anim-fade"
@@ -1371,7 +1397,8 @@ function App(){
         id:r.id, groupId:r.group_id, groupName:r.group_name, breed:r.breed,
         vaccineType:r.vaccine_type, date:r.date, batchNo:r.batch_no||"",
         goatIds:r.goat_ids||"", goatNames:r.goat_names||"", goatCount:r.goat_count||0,
-        createdBy:r.created_by||"", notes:r.notes||"", recordType:r.record_type||"uygulama"
+        createdBy:r.created_by||"", notes:r.notes||"", recordType:r.record_type||"uygulama",
+        status:r.status||"bekliyor", appliedBy:r.applied_by||"", appliedAt:r.applied_at||""
       }));
       setGoats((gRes.data||[]).map(toGoat));
       setHealthRecs((hRes.data||[]).map(toHealth));
@@ -1836,7 +1863,7 @@ function App(){
           </div>
         )}
 
-        {page==="vaccines" && <GlobalVaccinePage vaccineGroups={vaccineGroups} vaccineReports={vaccineReports} onScheduleAdded={saveVaccineReport} onScheduleDeleted={id=>setVaccineReports(p=>p.filter(x=>x.id!==id))} currentUser={currentUser}/>}
+        {page==="vaccines" && <GlobalVaccinePage vaccineGroups={vaccineGroups} vaccineReports={vaccineReports} onScheduleAdded={saveVaccineReport} onScheduleDeleted={id=>setVaccineReports(p=>p.filter(x=>x.id!==id))} onVaccineApplied={r=>setVaccineReports(p=>p.map(x=>x.id===r.id?r:x))} currentUser={currentUser}/>}
 
         {page==="reports" && <ReportsPage reports={reports} goats={goats} logs={logs} vaccineReports={vaccineReports} currentUser={currentUser} onDeleteReport={deleteReport}/>}
 
