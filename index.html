@@ -245,7 +245,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
 
   return <ModalWrap title={`🩺 ${record.condition}`} onClose={onClose}>
     <div style={{background:"#F5F3ED",borderRadius:10,padding:10,fontSize:12}}>
-      <b>{goat.name}</b> · 🏷 {goat.earTag} · Başlangıç: {fmt(record.date)}
+      {goat ? <><b>{goat.name}</b> · 🏷 {goat.earTag}</> : <><b>🏷 {record.goatEarTag||"—"}</b></>} · Başlangıç: {fmt(record.date)}
     </div>
     <div style={{display:"flex",background:"#F2F0EA",borderRadius:8,overflow:"hidden",marginTop:4}}>
       {[["detay","✏️ Güncelle"],["takvim","📅 Takvim"],["gecmis","📋 Geçmiş"]].map(([k,l])=>(
@@ -2007,6 +2007,7 @@ function App(){
   const [vModal,setVModal]=useState(null);
   const [addGoatModal,setAddGoatModal]=useState(null);
   const [archiveConfirm,setArchiveConfirm]=useState(null);
+  const [selHealthRec,setSelHealthRec]=useState(null);
 
   useEffect(()=>{
     if(showLogin) return;
@@ -2438,6 +2439,16 @@ function App(){
       {hModal&&!isGuest&&<HealthModal goats={goats} breedFilter={hModal.breedId||null} preGoatId={hModal.goatId||""} onSave={saveHealth} onClose={()=>setHModal(null)} currentUser={currentUser}/>}
       {vModal&&!isGuest&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
       {addGoatModal&&!isGuest&&<AddGoatModal breed={BREEDS.find(b=>b.id===(addGoatModal.breedId||addGoatModal))} defaultCategory={addGoatModal.defaultCategory||"anac"} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser}/>}
+      {selHealthRec&&<HealthDetailModal
+        record={selHealthRec}
+        goat={goats.find(g=>g.id===selHealthRec.goatId)||null}
+        logs={logs} treatmentDays={treatmentDaysData} currentUser={currentUser}
+        onUpdate={updated=>{updateHealth(updated);setSelHealthRec(null);}}
+        onFinalize={(id,report)=>{finalizeHealth(id,report);setSelHealthRec(null);}}
+        onLogsUpdate={addLogToState}
+        onTreatmentDayUpdate={day=>setTreatmentDaysData(p=>p.map(d=>d.id===day.id?day:d))}
+        onClose={()=>setSelHealthRec(null)}
+      />}
 
       {/* Ses tercihi sorusu */}
       {showSoundPrompt && (
@@ -2651,7 +2662,7 @@ function App(){
                         const doneDays=hDays.filter(d=>d.done).length;
                         return (
                           <div key={h.id} style={{...S.card,padding:12,marginBottom:5,cursor:"pointer",border:`1.5px solid ${breed.color}22`}}
-                            onClick={()=>{setSelGoat(h.goatId);setDetailTab("health");}}>
+                            onClick={()=>setSelHealthRec(h)}>
                             <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                               <div style={{flex:1}}>
                                 <div style={{fontSize:11,fontWeight:700,color:breed.color,marginBottom:2}}>
@@ -2731,7 +2742,7 @@ function App(){
                           const doneDays=hDays.filter(d=>d.done).length;
                           return (
                             <div key={h.id} style={{...S.card,padding:"10px 12px",marginBottom:5,cursor:"pointer"}}
-                              onClick={()=>{setSelGoat(h.goatId);setDetailTab("health");setPage("goats");setSelBreed(b.id);}}>
+                              onClick={()=>setSelHealthRec(h)}>
                               <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                                 <div style={{flex:1}}>
                                   <div style={{fontSize:12,fontWeight:700,color:b.color,marginBottom:2}}>
