@@ -1643,7 +1643,85 @@ function App(){
   };
 
   const isGuest = currentUser==="Misafir";
+  const [soundPref, setSoundPref] = useState(null); // null=sorulmadı, true=açık, false=kapalı
+  const [showSoundPrompt, setShowSoundPrompt] = useState(false);
 
+  // Ses çal
+  const playWelcome = (userName, recs) => {
+    if(!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const tedaviSayisi = recs.filter(h=>!h.closed).length;
+    const breedGroups = {};
+    recs.filter(h=>!h.closed).forEach(h=>{
+      if(!breedGroups[h.breed]) breedGroups[h.breed]={count:0,conditions:[]};
+      breedGroups[h.breed].count++;
+      if(h.condition && !breedGroups[h.breed].conditions.includes(h.condition))
+        breedGroups[h.breed].conditions.push(h.condition);
+    });
+    const breedNames = {saanen:"Saanen",honamli:"Honamlı",halep:"Halep"};
+    let breedText = "";
+    Object.keys(breedGroups).forEach(b=>{
+      const g=breedGroups[b];
+      breedText += `${breedNames[b]||b} ırkımızda ${g.count} canımız ${g.conditions.join(", ")} nedeniyle takibimizde. `;
+    });
+    const metin = tedaviSayisi>0
+      ? `Merhaba ${userName}, hoş geldiniz canım! Burdur Açık Ceza Evi İşyurtları Hayvancılık Birimi olarak size hayırlı günler diliyoruz. Yeryüzündekilere merhamet edin ki gökyüzündeki size merhamet etsin. Şu an sürümüzde ${tedaviSayisi} canımız tedavi altında. ${breedText}Geçmiş olsun, iyi günler!`
+      : `Merhaba ${userName}, hoş geldiniz canım! Burdur Açık Ceza Evi İşyurtları Hayvancılık Birimi olarak size hayırlı günler diliyoruz. Yeryüzündekilere merhamet edin ki gökyüzündeki size merhamet etsin. Sürümüz şu an sağlıklı, geçmiş olsun, iyi günler!`;
+    const u = new SpeechSynthesisUtterance(metin);
+    u.lang = "tr-TR";
+    u.rate = 0.88;
+    u.pitch = 1.4;
+    u.volume = 1;
+    const sesler = window.speechSynthesis.getVoices();
+    const bayanSes = sesler.find(s=>(s.lang==="tr-TR"||s.lang==="tr")&&(s.name.toLowerCase().includes("female")||s.name.toLowerCase().includes("kadın")))
+      || sesler.find(s=>s.lang==="tr-TR"||s.lang==="tr")
+      || sesler.find(s=>s.name.toLowerCase().includes("female")||s.name.toLowerCase().includes("samantha")||s.name.toLowerCase().includes("karen"));
+    if(bayanSes) u.voice = bayanSes;
+    window.speechSynthesis.speak(u);
+  };
+
+  // Giriş sonrası ses tercihi kontrol
+  const handleLoginSuccess = async (userName) => {
+    setCurrentUser(userName);
+    setShowLogin(false);
+    // Supabase'den tercih oku
+    try {
+      const {data} = await sb.from("user_preferences").select("*").eq("user_name", userName).single();
+      if(data && data.sound_enabled === true) {
+        // Ses açık, çal
+        setTimeout(()=>playWelcome(userName, healthRecs), 800);
+      } else if(data && data.sound_enabled === false) {
+        // Ses kapalı, çalma
+      } else {
+        // Hiç tercih yok, sor
+        setTimeout(()=>setShowSoundPrompt(true), 500);
+      }
+    } catch(e) {
+      // Kayıt yok, sor
+      setTimeout(()=>setShowSoundPrompt(true), 500);
+    }
+  };
+
+  const saveSoundPref = async (enabled) => {
+    const userName = currentUser;
+    setSoundPref(enabled);
+    setShowSoundPrompt(false);
+    try {
+      await sb.from("user_preferences").upsert({id:"sp_"+userName.replace(/\s/g,"_"), user_name:userName, sound_enabled:enabled});
+    } catch(e){}
+    if(enabled) setTimeout(()=>playWelcome(userName, healthRecs), 300);
+  };
+
+  useEffect(()=>{
+    if(showLogin||!currentUser) return;
+    const loadSoundPref = async()=>{
+      try {
+        const {data} = await sb.from("user_preferences").select("*").eq("user_name",currentUser).single();
+        if(data) setSoundPref(data.sound_enabled);
+      } catch(e){}
+    };
+    loadSoundPref();
+  },[currentUser,showLogin]);
   // Misafir giriş kontrolü - sadece açık/kapalı
   useEffect(()=>{
     if(!isGuest) return;
@@ -1792,7 +1870,7 @@ function App(){
                       setPinInput(next);
                       if(next.length===4){
                         const user=DEMO_USERS.find(u=>u.id===selUser);
-                        if(next===user.pin){setCurrentUser(user.name);setShowLogin(false);setPinError("");}
+                        if(next===user.pin){handleLoginSuccess(user.name);setPinError("");}
                         else{setPinError("Hatalı PIN! Tekrar deneyin.");setPinInput("");}
                       }
                     }
@@ -1816,6 +1894,27 @@ function App(){
       {hModal&&!isGuest&&<HealthModal goats={goats} breedFilter={hModal.breedId||null} preGoatId={hModal.goatId||""} onSave={saveHealth} onClose={()=>setHModal(null)} currentUser={currentUser}/>}
       {vModal&&!isGuest&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
       {addGoatModal&&!isGuest&&<AddGoatModal breed={BREEDS.find(b=>b.id===(addGoatModal.breedId||addGoatModal))} defaultCategory={addGoatModal.defaultCategory||"anac"} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser}/>}
+
+      {/* Ses tercihi sorusu */}
+      {showSoundPrompt && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"#fff",borderRadius:20,padding:28,width:"100%",maxWidth:320,textAlign:"center"}}>
+            <div style={{fontSize:40,marginBottom:12}}>🔊</div>
+            <div style={{fontWeight:800,fontSize:17,color:"#1e1e1e",marginBottom:8}}>Sesli Karşılama</div>
+            <div style={{fontSize:13,color:"#555",marginBottom:20,lineHeight:1.6}}>
+              Her girişinizde sizi sesli karşılayalım mı? Sürü durumunu ve tedavideki hayvanları sesli olarak bildiririz.
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>saveSoundPref(false)} style={{...S.btnOutline,flex:1,padding:12,fontSize:13}}>
+                Hayır, İstemiyorum
+              </button>
+              <button onClick={()=>saveSoundPref(true)} style={{...S.btnPrimary,flex:1,padding:12,fontSize:13}}>
+                Evet, Açın!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {archiveConfirm && (
         <div onClick={()=>setArchiveConfirm(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
@@ -2163,7 +2262,31 @@ function App(){
               </div>
             </div>
 
-            {/* Veteriner Hekim - Misafir Yönetimi */}
+            {/* Ses Ayarı */}
+            {!isGuest && (
+              <div style={{...S.card,marginBottom:10}}>
+                <div style={{fontWeight:700,fontSize:13,color:"#4A7C3F",marginBottom:8}}>🔊 Sesli Karşılama</div>
+                <div style={{fontSize:12,color:"#8c8c7e",marginBottom:10}}>
+                  {soundPref===true?"Her girişinizde sesli karşılama aktif ✅":soundPref===false?"Sesli karşılama kapalı 🔇":"Henüz tercih belirlenmedi"}
+                </div>
+                <div style={{display:"flex",gap:8}}>
+                  <button onClick={async()=>{
+                    setSoundPref(true);
+                    await sb.from("user_preferences").upsert({id:"sp_"+currentUser.replace(/\s/g,"_"),user_name:currentUser,sound_enabled:true});
+                    playWelcome(currentUser,healthRecs);
+                  }} style={{...S.btnPrimary,flex:1,padding:10,fontSize:12,opacity:soundPref===true?.4:1}}>
+                    🔊 Aç
+                  </button>
+                  <button onClick={async()=>{
+                    setSoundPref(false);
+                    window.speechSynthesis?.cancel();
+                    await sb.from("user_preferences").upsert({id:"sp_"+currentUser.replace(/\s/g,"_"),user_name:currentUser,sound_enabled:false});
+                  }} style={{...S.btnOutline,flex:1,padding:10,fontSize:12,opacity:soundPref===false?.4:1}}>
+                    🔇 Kapat
+                  </button>
+                </div>
+              </div>
+            )}
             {currentUser==="Veteriner Hekim" && (
               <div style={{...S.card,marginBottom:10,border:`1.5px solid ${guestAccess.isOpen?"#4A7C3F":"#E8E5DC"}`}}>
                 <div style={{fontWeight:800,fontSize:14,color:"#1e1e1e",marginBottom:8}}>👁 Misafir Erişimi</div>
