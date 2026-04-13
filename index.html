@@ -561,10 +561,10 @@ function AddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser }) 
 }
 
 function ModalWrap({title,onClose,children}){
-  return <div style={{position:"fixed",inset:0,zIndex:999,overflowY:"auto",backgroundColor:"rgba(0,0,0,.6)"}}>
-    <div style={{minHeight:"100%",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"50px 12px 80px"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,width:"100%",maxWidth:456,boxShadow:"0 20px 60px rgba(0,0,0,.3)"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 18px 12px",borderBottom:"1px solid #F2F0EA"}}>
+  return <div style={{position:"fixed",inset:0,zIndex:999,overflowY:"auto",backgroundColor:"rgba(0,0,0,.65)",WebkitOverflowScrolling:"touch"}}>
+    <div style={{minHeight:"100%",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px 100px"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#FAFAF5",borderRadius:16,width:"100%",maxWidth:456,marginTop:8}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 18px 12px",borderBottom:"1px solid #F2F0EA",position:"sticky",top:0,background:"#FAFAF5",borderRadius:"16px 16px 0 0",zIndex:1}}>
           <div style={{fontWeight:800,fontSize:15,color:"#1e1e1e",flex:1,paddingRight:10}}>{title}</div>
           <button onClick={onClose} style={{background:"#F2F0EA",border:"none",borderRadius:"50%",width:32,height:32,fontSize:16,cursor:"pointer",color:"#555",flexShrink:0}}>✕</button>
         </div>
