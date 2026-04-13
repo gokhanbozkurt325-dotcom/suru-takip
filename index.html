@@ -2137,9 +2137,23 @@ function App(){
     setArchiveConfirm(null);
   };
 
+  // Swipe ile geri
+  useEffect(()=>{
+    let startX=0;
+    const onStart = e=>{ startX=e.touches[0].clientX; };
+    const onEnd = e=>{
+      const dx = e.changedTouches[0].clientX - startX;
+      if(dx>80 && startX<60) goBack();
+    };
+    document.addEventListener("touchstart",onStart,{passive:true});
+    document.addEventListener("touchend",onEnd,{passive:true});
+    return ()=>{
+      document.removeEventListener("touchstart",onStart);
+      document.removeEventListener("touchend",onEnd);
+    };
+  },[page,selBreed,selGoat]);
   const showBack = showBackBtn;
   const breed=selBreed?BREEDS.find(b=>b.id===selBreed):null;
-  const goat=selGoat?goats.find(g=>g.id===selGoat):null;
   // Misafir girişi açma - UTC zaman kullan
   const openGuestAccess = async () => {
     const {error} = await sb.from("guest_access").update({
@@ -2464,9 +2478,9 @@ function App(){
       )}
 
       <div style={S.header}>
-        {showBackBtn
-          ? <button onClick={goBack} style={{...S.ghost,color:"#fff",fontSize:22,padding:"0 6px 0 0",lineHeight:1}}>‹</button>
-          : <span onClick={()=>navigate("home")} style={{fontSize:20,cursor:"pointer"}}>🐐</span>
+        {page==="home"
+          ? <span style={{fontSize:20}}>🐐</span>
+          : <button onClick={goBack} style={{...S.ghost,color:"#fff",fontSize:26,padding:"0 8px 0 0",lineHeight:1,fontWeight:300}}>‹</button>
         }
         <div style={{flex:1}}>
           <div style={{color:"#fff",fontWeight:800,fontSize:15}}>{selGoat&&goat?goat.name:selBreed&&breed?breed.name:page==="home"?"Sürü Takip":page==="health"?"Sağlık Kayıtları":page==="vaccines"?"Aşı Takvimi":page==="births"?"Doğum Kayıtları":page==="deaths"?"Ölüm Kayıtları":page==="group_tx"?"Toplu Tedavi":page==="reports"?"Raporlar":page==="profile"?"Profil":"Sürü Takip"}</div>
@@ -2482,14 +2496,7 @@ function App(){
         }
       </div>
 
-      <div
-        style={{padding:"10px 14px "+(page==="home"?"20px":"84px")}}
-        onTouchStart={e=>{window._swipeStartX=e.touches[0].clientX;}}
-        onTouchEnd={e=>{
-          const dx=e.changedTouches[0].clientX-window._swipeStartX;
-          if(dx>80) goBack();
-        }}
-      >
+      <div style={{padding:"10px 14px "+(page==="home"?"20px":"84px")}}>
 
         {/* HOME */}
         {page==="home" && (
