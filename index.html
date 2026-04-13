@@ -62,8 +62,8 @@ const DEMO_USERS = [
 // Supabase dönüşümleri
 const toGoat    = r => ({ id:r.id, name:r.name, earTag:r.ear_tag, gender:r.gender, breed:r.breed, category:r.category, birthDate:r.birth_date||"", weight:r.weight||"", color:r.color||"", motherTag:r.mother_tag||"", fatherTag:r.father_tag||"", abortHistory:r.abort_history||"hayır", reproductionStatus:r.reproduction_status||"", lastBirthDate:r.last_birth_date||"", kidCount:r.kid_count||"0", notes:r.notes||"", abortDetails:r.abort_details||"", archived:r.archived||false, archiveReason:r.archive_reason||"" });
 const fromGoat  = g => ({ id:g.id, name:g.name, ear_tag:g.earTag, gender:g.gender, breed:g.breed, category:g.category, birth_date:g.birthDate||null, weight:g.weight||null, color:g.color||null, mother_tag:g.motherTag||null, father_tag:g.fatherTag||null, abort_history:g.abortHistory||"hayır", reproduction_status:g.reproductionStatus||null, last_birth_date:g.lastBirthDate||null, kid_count:g.kidCount||"0", notes:g.notes||null, abort_details:g.abortDetails||null, archived:false });
-const toHealth  = r => ({ id:r.id, goatId:r.goat_id, breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false });
-const fromHealth= h => ({ id:h.id, goat_id:h.goatId, breed:h.breed, date:h.date, condition:h.condition, treatment:h.treatment||null, status:h.status, veterinarian:h.veterinarian||null, cost:h.cost||null, created_by_name:h.createdByName||null, notes:h.notes||null, closed:false });
+const toHealth  = r => ({ id:r.id, goatId:r.goat_id, goatEarTag:r.goat_ear_tag||"", breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false });
+const fromHealth= h => ({ id:h.id, goat_id:h.goatId, goat_ear_tag:h.goatEarTag||null, breed:h.breed, date:h.date, condition:h.condition, treatment:h.treatment||null, status:h.status, veterinarian:h.veterinarian||null, cost:h.cost||null, created_by_name:h.createdByName||null, notes:h.notes||null, closed:false });
 const toVaccine = r => ({ id:r.id, goatId:r.goat_id, breed:r.breed, date:r.date, vaccineType:r.vaccine_type, batchNo:r.batch_no||"", createdByName:r.created_by_name||"" });
 const fromVaccine=v => ({ id:v.id, goat_id:v.goatId, breed:v.breed, date:v.date, vaccine_type:v.vaccineType, batch_no:v.batchNo||null, created_by_name:v.createdByName||null });
 const toReport  = r => ({ id:r.id, goatId:r.goat_id, goatName:r.goat_name, goatEarTag:r.goat_ear_tag||"", breed:r.breed, dateStarted:r.date_started, dateClosed:r.date_closed, condition:r.condition, treatment:r.treatment||"", closeReason:r.close_reason, closeNote:r.close_note||"", veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"" });
@@ -368,8 +368,8 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
 
 // ── Sağlık Kaydı Ekle ──
 function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUser }) {
-  const filtered = breedFilter ? goats.filter(g=>g.breed===breedFilter&&!g.archived) : goats.filter(g=>!g.archived);
-  const [goatId,setGoatId]=useState(preGoatId||"");
+  const [breed, setBreed] = useState(breedFilter||"");
+  const [earTag, setEarTag] = useState("");
   const [date,setDate]=useState(todayISO());
   const [condition,setCondition]=useState("");
   const [condCustom,setCondCustom]=useState("");
@@ -381,16 +381,18 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
   const [saving,setSaving]=useState(false);
 
   const save = async () => {
-    if (!goatId){setErr("Keçi seçiniz");return;}
+    if(!breed){setErr("Irk seçiniz");return;}
+    if(!earTag.trim()){setErr("Küpe no giriniz");return;}
     const cond = condition==="Diğer"?condCustom.trim():condition;
-    if (!cond){setErr("Hastalık/durum giriniz");return;}
+    if(!cond){setErr("Hastalık/durum giriniz");return;}
     setSaving(true);
-    const g = goats.find(x=>x.id===goatId);
-    const rec = { id:"h"+Date.now(), goatId, breed:g.breed, date, condition:cond, treatment, status, veterinarian:currentUser, cost:"", createdByName:currentUser, notes };
-    const { error } = await sb.from("health_records").insert(fromHealth(rec));
-    if (error){setErr("Kayıt hatası: "+error.message);setSaving(false);return;}
-    await addLog(rec.id, goatId, g.breed, "açılış", `${cond} — ${currentUser} tarafından açıldı`, currentUser);
-    // Tedavi günlerini oluştur
+    // Sürüde bu küpe no'lu hayvan var mı kontrol et
+    const existingGoat = goats.find(g=>g.earTag===earTag.trim()&&!g.archived);
+    const goatId = existingGoat ? existingGoat.id : "ext_"+earTag.trim().replace(/\s/g,"_");
+    const rec = { id:"h"+Date.now(), goatId, goatEarTag:earTag.trim(), breed, date, condition:cond, treatment, status, veterinarian:currentUser, cost:"", createdByName:currentUser, notes };
+    const { error } = await sb.from("health_records").insert({...fromHealth(rec), goat_ear_tag:earTag.trim()});
+    if(error){setErr("Kayıt hatası: "+error.message);setSaving(false);return;}
+    await addLog(rec.id, goatId, breed, "açılış", `${cond} — ${currentUser} tarafından açıldı`, currentUser);
     if(treatmentDays>0){
       const days=[];
       for(let i=0;i<treatmentDays;i++){
@@ -413,11 +415,17 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
 
   return <ModalWrap title="🩺 Sağlık Kaydı Ekle" onClose={onClose}>
     {err&&<ErrBox msg={err}/>}
-    <FL>Keçi *</FL>
-    <select value={goatId} onChange={e=>setGoatId(e.target.value)} style={S.select}>
-      <option value="">— Keçi seçin —</option>
-      {filtered.map(g=>{const b=BREEDS.find(x=>x.id===g.breed);return<option key={g.id} value={g.id}>{b?.emoji} {g.name} ({g.earTag})</option>;})}
-    </select>
+    <FL>Irk *</FL>
+    <div style={{display:"flex",gap:6}}>
+      {BREEDS.map(b=>(
+        <button key={b.id} onClick={()=>setBreed(b.id)}
+          style={{flex:1,padding:"9px 0",borderRadius:8,border:`1.5px solid ${breed===b.id?b.color:"#E8E5DC"}`,background:breed===b.id?b.bg:"#fff",color:breed===b.id?b.color:"#8c8c7e",fontWeight:breed===b.id?700:400,fontSize:12,cursor:"pointer"}}>
+          {b.emoji} {b.name}
+        </button>
+      ))}
+    </div>
+    <FL>Küpe No *</FL>
+    <input value={earTag} onChange={e=>setEarTag(e.target.value)} style={S.input} placeholder="TR-15-0042"/>
     <FL>Tarih *</FL>
     <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={S.input}/>
     <FL>Hastalık / Durum *</FL>
@@ -2693,7 +2701,7 @@ function App(){
                               <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                                 <div style={{flex:1}}>
                                   <div style={{fontSize:12,fontWeight:700,color:b.color,marginBottom:2}}>
-                                    {g?.name} <span style={{fontWeight:400,color:"#8c8c7e"}}>({g?.earTag})</span>
+                                    {g?.name ? `${g.name} ` : ""}<span style={{fontWeight:400,color:"#8c8c7e"}}>({h.goatEarTag||g?.earTag||"—"})</span>
                                   </div>
                                   <div style={{fontWeight:700,fontSize:13,color:"#1e1e1e"}}>{h.condition}</div>
                                   {h.treatment&&<div style={{fontSize:11,color:"#333",marginTop:3}}>💊 {h.treatment}</div>}
