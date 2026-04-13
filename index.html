@@ -203,8 +203,10 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
     const { error } = await sb.from("health_records").update({ status, treatment, notes }).eq("id", record.id);
     if (!error) {
       const detail = changes.length>0 ? changes.join(" · ") : "Kayıt güncellendi";
-      await addLog(record.id, goat.id, goat.breed, "güncelleme", detail, currentUser);
-      const newLog = { id:"l"+Date.now(), healthRecordId:record.id, goatId:goat.id, breed:goat.breed, action:"güncelleme", actionDetail:detail, userName:currentUser, createdAt:new Date().toISOString() };
+      const gId = goat?.id || record.goatId;
+      const gBreed = goat?.breed || record.breed;
+      await addLog(record.id, gId, gBreed, "güncelleme", detail, currentUser);
+      const newLog = { id:"l"+Date.now(), healthRecordId:record.id, goatId:gId, breed:gBreed, action:"güncelleme", actionDetail:detail, userName:currentUser, createdAt:new Date().toISOString() };
       onLogsUpdate(newLog);
       onUpdate({ ...record, status, treatment, notes });
     }
@@ -215,13 +217,13 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
     if (!closeReason) return;
     setSaving(true);
     const report = {
-      id:"r"+Date.now(), goatId:goat.id, goatName:goat.name, goatEarTag:goat.earTag, breed:goat.breed,
+      id:"r"+Date.now(), goatId:goat?.id||record.goatId, goatName:goat?.name||record.goatEarTag||"—", goatEarTag:goat?.earTag||record.goatEarTag||"—", breed:goat?.breed||record.breed,
       dateStarted:record.date, dateClosed:todayISO(), condition:record.condition,
       treatment, closeReason, closeNote, veterinarian:record.veterinarian, cost:"", createdByName:currentUser, notes
     };
     await sb.from("health_records").update({ closed:true, status:closeReason==="Hayvan Öldü"?"öldü":"iyileşti" }).eq("id", record.id);
     await sb.from("reports").insert(fromReport(report));
-    await addLog(record.id, goat.id, goat.breed, "sonlandırma", `Neden: ${closeReason}${closeNote?" — "+closeNote:""}`, currentUser);
+    await addLog(record.id, goat?.id||record.goatId, goat?.breed||record.breed, "sonlandırma", `Neden: ${closeReason}${closeNote?" — "+closeNote:""}`, currentUser);
     onFinalize(record.id, report);
     setSaving(false);
   };
@@ -2155,6 +2157,7 @@ function App(){
   },[page,selBreed,selGoat]);
   const showBack = showBackBtn;
   const breed=selBreed?BREEDS.find(b=>b.id===selBreed):null;
+  const goat=selGoat?goats.find(g=>g.id===selGoat):null;
   // Misafir girişi açma - UTC zaman kullan
   const openGuestAccess = async () => {
     const {error} = await sb.from("guest_access").update({
