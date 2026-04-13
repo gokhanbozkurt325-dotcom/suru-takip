@@ -173,7 +173,6 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
   const [status,    setStatus]    = useState(record.status);
   const [treatment, setTreatment] = useState(record.treatment||"");
   const [notes,     setNotes]     = useState(record.notes||"");
-  const [cost,      setCost]      = useState(record.cost||"");
   const [saving,    setSaving]    = useState(false);
   const [showClose, setShowClose] = useState(false);
   const [closeReason, setCloseReason] = useState("");
@@ -200,15 +199,14 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
     const changes = [];
     if (status!==record.status) changes.push(`Durum değişti: "${record.status}" → "${status}"`);
     if (treatment!==record.treatment) changes.push(`Tedavi güncellendi`);
-    if (cost!==record.cost && cost) changes.push(`Maliyet: ${cost}₺`);
     if (notes!==record.notes && notes) changes.push(`Not eklendi`);
-    const { error } = await sb.from("health_records").update({ status, treatment, notes, cost }).eq("id", record.id);
+    const { error } = await sb.from("health_records").update({ status, treatment, notes }).eq("id", record.id);
     if (!error) {
       const detail = changes.length>0 ? changes.join(" · ") : "Kayıt güncellendi";
       await addLog(record.id, goat.id, goat.breed, "güncelleme", detail, currentUser);
       const newLog = { id:"l"+Date.now(), healthRecordId:record.id, goatId:goat.id, breed:goat.breed, action:"güncelleme", actionDetail:detail, userName:currentUser, createdAt:new Date().toISOString() };
       onLogsUpdate(newLog);
-      onUpdate({ ...record, status, treatment, notes, cost });
+      onUpdate({ ...record, status, treatment, notes });
     }
     setSaving(false);
   };
@@ -219,7 +217,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
     const report = {
       id:"r"+Date.now(), goatId:goat.id, goatName:goat.name, goatEarTag:goat.earTag, breed:goat.breed,
       dateStarted:record.date, dateClosed:todayISO(), condition:record.condition,
-      treatment, closeReason, closeNote, veterinarian:record.veterinarian, cost, createdByName:currentUser, notes
+      treatment, closeReason, closeNote, veterinarian:record.veterinarian, cost:"", createdByName:currentUser, notes
     };
     await sb.from("health_records").update({ closed:true, status:closeReason==="Hayvan Öldü"?"öldü":"iyileşti" }).eq("id", record.id);
     await sb.from("reports").insert(fromReport(report));
@@ -378,7 +376,6 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
   const [condCustom,setCondCustom]=useState("");
   const [treatment,setTreatment]=useState("");
   const [status,setStatus]=useState("tedavi_altında");
-  const [cost,setCost]=useState("");
   const [notes,setNotes]=useState("");
   const [treatmentDays,setTreatmentDays]=useState(0);
   const [err,setErr]=useState("");
@@ -390,7 +387,7 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     if (!cond){setErr("Hastalık/durum giriniz");return;}
     setSaving(true);
     const g = goats.find(x=>x.id===goatId);
-    const rec = { id:"h"+Date.now(), goatId, breed:g.breed, date, condition:cond, treatment, status, veterinarian:currentUser, cost, createdByName:currentUser, notes };
+    const rec = { id:"h"+Date.now(), goatId, breed:g.breed, date, condition:cond, treatment, status, veterinarian:currentUser, cost:"", createdByName:currentUser, notes };
     const { error } = await sb.from("health_records").insert(fromHealth(rec));
     if (error){setErr("Kayıt hatası: "+error.message);setSaving(false);return;}
     await addLog(rec.id, goatId, g.breed, "açılış", `${cond} — ${currentUser} tarafından açıldı`, currentUser);
@@ -753,7 +750,7 @@ function ReportsPage({reports, goats, logs, vaccineReports, currentUser, onDelet
                 </div>
                 {r.treatment&&<div style={{fontSize:12,color:"#333",marginBottom:4}}>💊 {r.treatment}</div>}
                 {r.closeNote&&<div style={{fontSize:12,color:"#555",fontStyle:"italic",marginBottom:4}}>📝 {r.closeNote}</div>}
-                <div style={{fontSize:10,color:"#aaa",marginBottom:8}}>Ekleyen: {r.createdByName}{r.cost?` · 💰 ${r.cost}₺`:""}</div>
+                <div style={{fontSize:10,color:"#aaa",marginBottom:8}}>Ekleyen: {r.createdByName}</div>
                 <button onClick={()=>setExpandedReport(isExpanded?null:r.id)}
                   style={{...S.btnSm,background:"#F2F0EA",color:"#555",fontSize:11,width:"100%",padding:"6px 0",textAlign:"center"}}>
                   {isExpanded?"▲ Geçmişi Gizle":"▼ İşlem Geçmişini Göster"} ({rLogs.length})
@@ -1591,7 +1588,13 @@ function App(){
 
   const navigate=p=>{setPage(p);setSelBreed(null);setSelGoat(null);setBreedTab("surü");setCatTab("anac");setDetailTab("info");};
   const goBack=()=>{if(selGoat){setSelGoat(null);setDetailTab("info");}else if(selBreed){setSelBreed(null);}else navigate("home");};
-  const saveHealth=rec=>{setHealthRecs(p=>[rec,...p]);setHModal(null);};
+  const saveHealth=rec=>{
+    setHealthRecs(p=>[rec,...p]);
+    if(rec.treatmentDays && rec.treatmentDays.length>0){
+      setTreatmentDaysData(p=>[...rec.treatmentDays,...p]);
+    }
+    setHModal(null);
+  };
   const saveVaccines=recs=>{setVaccines(p=>[...recs,...p]);setVModal(null);};
   const saveGoat=g=>{setGoats(p=>[...p,g]);setAddGoatModal(null);};
   const updateHealth=updated=>{setHealthRecs(p=>p.map(h=>h.id===updated.id?updated:h));};
