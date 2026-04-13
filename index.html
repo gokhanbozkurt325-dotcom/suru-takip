@@ -672,6 +672,291 @@ function AnnouncementBox({ announcements, setAnnouncements, currentUser, vaccine
 }
 
 function Empty({text}){return <div style={{textAlign:"center",padding:30,color:"#8c8c7e",fontSize:13}}>{text}</div>;}
+const DEATH_CAUSES = ["Pnömoni","Doğum komplikasyonu","Yaralanma","Zehirlenme","Parazit","Bilinmiyor","Diğer"];
+
+function DeathsPage({ deaths, currentUser, onDelete }) {
+  const [local, setLocal] = useState(deaths);
+  const [showForm, setShowForm] = useState(false);
+  const [breed, setBreed] = useState("");
+  const [earTag, setEarTag] = useState("");
+  const [deathDate, setDeathDate] = useState(todayISO());
+  const [deathTime, setDeathTime] = useState("");
+  const [cause, setCause] = useState("");
+  const [causeCustom, setCauseCustom] = useState("");
+  const [notes, setNotes] = useState("");
+  const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [selBreed, setSelBreed] = useState("all");
+  const isVet = currentUser==="Veteriner Hekim";
+
+  useEffect(()=>setLocal(deaths),[deaths]);
+
+  const reset = () => { setBreed("");setEarTag("");setDeathDate(todayISO());setDeathTime("");setCause("");setCauseCustom("");setNotes("");setErr(""); };
+
+  const save = async () => {
+    if(!breed){setErr("Irk seçiniz");return;}
+    if(!earTag.trim()){setErr("Küpe no giriniz");return;}
+    if(!cause){setErr("Ölüm sebebi seçiniz");return;}
+    setSaving(true);
+    const finalCause = cause==="Diğer" ? causeCustom.trim() : cause;
+    const rec = {id:"d"+Date.now(), breed, ear_tag:earTag.trim(), death_date:deathDate, death_time:deathTime||null, cause:finalCause, notes:notes||null, created_by:currentUser};
+    const {error} = await sb.from("deaths").insert(rec);
+    if(error){setErr("Hata: "+error.message);setSaving(false);return;}
+    const obj = {id:rec.id, breed, earTag:earTag.trim(), deathDate, deathTime, cause:finalCause, notes, createdBy:currentUser};
+    setLocal(p=>[obj,...p]);
+    onDelete && onDelete(null, obj);
+    setShowForm(false);
+    reset();
+    setSaving(false);
+  };
+
+  const del = async (id) => {
+    await sb.from("deaths").delete().eq("id",id);
+    setLocal(p=>p.filter(x=>x.id!==id));
+    onDelete(id);
+  };
+
+  const filtered = selBreed==="all" ? local : local.filter(d=>d.breed===selBreed);
+
+  return (
+    <div className="anim-fade">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <h2 style={S.title}>💀 Ölüm Kayıtları</h2>
+        <button onClick={()=>setShowForm(!showForm)} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13}}>
+          {showForm?"✕ Kapat":"+ Ekle"}
+        </button>
+      </div>
+
+      {showForm && (
+        <div style={{...S.card,marginBottom:12,background:"#FFF8F8",border:"1.5px solid #F5C0BA"}}>
+          <div style={{fontWeight:700,fontSize:14,color:"#BE3B31",marginBottom:10}}>➕ Ölüm Kaydı</div>
+          {err&&<ErrBox msg={err}/>}
+          <FL>Irk *</FL>
+          <div style={{display:"flex",gap:6,marginBottom:4}}>
+            {BREEDS.map(b=><button key={b.id} onClick={()=>setBreed(b.id)} style={{flex:1,padding:"7px 0",borderRadius:8,border:`1.5px solid ${breed===b.id?b.color:"#E8E5DC"}`,background:breed===b.id?b.bg:"#fff",color:breed===b.id?b.color:"#8c8c7e",fontWeight:breed===b.id?700:400,fontSize:11,cursor:"pointer"}}>{b.emoji} {b.name}</button>)}
+          </div>
+          <FL>Küpe No *</FL>
+          <input value={earTag} onChange={e=>setEarTag(e.target.value)} style={S.input} placeholder="TR-15-0042"/>
+          <div style={{display:"flex",gap:8}}>
+            <div style={{flex:1}}>
+              <FL>Tarih *</FL>
+              <input type="date" value={deathDate} onChange={e=>setDeathDate(e.target.value)} style={S.input}/>
+            </div>
+            <div style={{flex:1}}>
+              <FL>Saat</FL>
+              <input type="time" value={deathTime} onChange={e=>setDeathTime(e.target.value)} style={S.input}/>
+            </div>
+          </div>
+          <FL>Ölüm Sebebi *</FL>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {DEATH_CAUSES.map(c=><button key={c} onClick={()=>setCause(c)} style={{padding:"6px 10px",borderRadius:8,border:`1.5px solid ${cause===c?"#BE3B31":"#E8E5DC"}`,background:cause===c?"#FFF0EE":"#fff",color:cause===c?"#BE3B31":"#8c8c7e",fontWeight:cause===c?700:400,fontSize:11,cursor:"pointer"}}>{c}</button>)}
+          </div>
+          {cause==="Diğer"&&<input value={causeCustom} onChange={e=>setCauseCustom(e.target.value)} style={{...S.input,marginTop:6}} placeholder="Sebebi yazın..."/>}
+          <FL>Notlar</FL>
+          <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical"}}/>
+          <div style={{display:"flex",gap:8,marginTop:4}}>
+            <button onClick={()=>{setShowForm(false);reset();}} style={{...S.btnOutline,flex:1,padding:11}}>İptal</button>
+            <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:11,background:"#BE3B31",opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
+          </div>
+        </div>
+      )}
+
+      <div style={{display:"flex",gap:6,marginBottom:10,overflowX:"auto",paddingBottom:4}}>
+        <button onClick={()=>setSelBreed("all")} style={{...S.btnSm,background:selBreed==="all"?"#4A7C3F":"#F2F0EA",color:selBreed==="all"?"#fff":"#555",whiteSpace:"nowrap",padding:"6px 14px"}}>Tümü ({local.length})</button>
+        {BREEDS.map(b=><button key={b.id} onClick={()=>setSelBreed(b.id)} style={{...S.btnSm,background:selBreed===b.id?b.color:b.bg,color:selBreed===b.id?"#fff":b.color,whiteSpace:"nowrap",padding:"6px 14px"}}>{b.emoji} {b.name}</button>)}
+      </div>
+
+      {filtered.length===0 && <Empty text="Ölüm kaydı yok"/>}
+      {[...filtered].sort((a,b)=>new Date(b.deathDate)-new Date(a.deathDate)).map(d=>{
+        const b=BREEDS.find(x=>x.id===d.breed);
+        return (
+          <div key={d.id} style={{...S.card,padding:12,marginBottom:8,border:"1.5px solid #F5C0BA"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · 📅 {fmt(d.deathDate)}{d.deathTime?` · ⏰ ${d.deathTime}`:""}</div>
+                <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>Küpe: {d.earTag}</div>
+                <div style={{fontSize:12,color:"#BE3B31",marginTop:2,fontWeight:600}}>☠️ {d.cause}</div>
+                {d.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:2}}>📝 {d.notes}</div>}
+                <div style={{fontSize:10,color:"#aaa",marginTop:4}}>Ekleyen: {d.createdBy}</div>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+                <span style={{background:"#FFF0EE",color:"#BE3B31",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8}}>Öldü</span>
+                {isVet&&<button onClick={()=>del(d.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Toplu Tedavi ──
+function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, onAdd, onUpdate, onDelete, onTreatmentDayUpdate }) {
+  const [local, setLocal] = useState(groupTreatments);
+  const [showForm, setShowForm] = useState(false);
+  const [breed, setBreed] = useState("");
+  const [groupName, setGroupName] = useState("");
+  const [condition, setCondition] = useState("");
+  const [condCustom, setCondCustom] = useState("");
+  const [treatment, setTreatment] = useState("");
+  const [txDays, setTxDays] = useState(0);
+  const [notes, setNotes] = useState("");
+  const [err, setErr] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [selBreed, setSelBreed] = useState("all");
+  const [markingDay, setMarkingDay] = useState(null);
+  const isVet = currentUser==="Veteriner Hekim";
+  const today = todayISO();
+
+  useEffect(()=>setLocal(groupTreatments),[groupTreatments]);
+
+  const reset = ()=>{setBreed("");setGroupName("");setCondition("");setCondCustom("");setTreatment("");setTxDays(0);setNotes("");setErr("");};
+
+  const save = async () => {
+    if(!breed){setErr("Irk seçiniz");return;}
+    if(!groupName.trim()){setErr("Grup adı giriniz");return;}
+    const cond = condition==="Diğer"?condCustom.trim():condition;
+    if(!cond){setErr("Hastalık giriniz");return;}
+    setSaving(true);
+    const startDate = todayISO();
+    const rec = {id:"gt"+Date.now(), breed, group_name:groupName.trim(), condition:cond, treatment:treatment||null, treatment_days:txDays, status:"tedavi_altında", notes:notes||null, created_by:currentUser};
+    const {error} = await sb.from("group_treatments").insert(rec);
+    if(error){setErr("Hata: "+error.message);setSaving(false);return;}
+    // Tedavi günleri oluştur
+    if(txDays>0){
+      const days=[];
+      for(let i=0;i<txDays;i++){
+        const d=new Date(startDate);d.setDate(d.getDate()+i);
+        days.push({id:"gtd"+Date.now()+i,health_record_id:rec.id,goat_id:"group",day_number:i+1,planned_date:d.toISOString().split("T")[0],done:false,done_by:null,done_at:null});
+      }
+      await sb.from("treatment_days").insert(days);
+      days.forEach(d=>onTreatmentDayUpdate({...d,healthRecordId:d.health_record_id,goatId:d.goat_id,dayNumber:d.day_number,plannedDate:d.planned_date,doneBy:"",doneAt:""}));
+    }
+    const obj={id:rec.id,breed,groupName:groupName.trim(),condition:cond,treatment,treatmentDays:txDays,status:"tedavi_altında",notes,createdBy:currentUser};
+    setLocal(p=>[obj,...p]);
+    onAdd(obj);
+    setShowForm(false);
+    reset();
+    setSaving(false);
+  };
+
+  const del = async (id) => {
+    await sb.from("group_treatments").delete().eq("id",id);
+    await sb.from("treatment_days").delete().eq("health_record_id",id);
+    setLocal(p=>p.filter(x=>x.id!==id));
+    onDelete(id);
+  };
+
+  const markDay = async (day) => {
+    setMarkingDay(day.id);
+    const now = new Date().toISOString();
+    await sb.from("treatment_days").update({done:true,done_by:currentUser,done_at:now}).eq("id",day.id);
+    onTreatmentDayUpdate({...day,done:true,doneBy:currentUser,doneAt:now});
+    setMarkingDay(null);
+  };
+
+  const filtered = selBreed==="all" ? local : local.filter(g=>g.breed===selBreed);
+
+  return (
+    <div className="anim-fade">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <h2 style={S.title}>🏥 Toplu Tedavi</h2>
+        <button onClick={()=>setShowForm(!showForm)} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13}}>{showForm?"✕ Kapat":"+ Ekle"}</button>
+      </div>
+
+      {showForm && (
+        <div style={{...S.card,marginBottom:12,background:"#F5FAF0",border:"1.5px solid #D4E8C2"}}>
+          <div style={{fontWeight:700,fontSize:14,color:"#3D5A25",marginBottom:10}}>➕ Toplu Tedavi Kaydı</div>
+          {err&&<ErrBox msg={err}/>}
+          <FL>Irk *</FL>
+          <div style={{display:"flex",gap:6,marginBottom:4}}>
+            {BREEDS.map(b=><button key={b.id} onClick={()=>setBreed(b.id)} style={{flex:1,padding:"7px 0",borderRadius:8,border:`1.5px solid ${breed===b.id?b.color:"#E8E5DC"}`,background:breed===b.id?b.bg:"#fff",color:breed===b.id?b.color:"#8c8c7e",fontWeight:breed===b.id?700:400,fontSize:11,cursor:"pointer"}}>{b.emoji} {b.name}</button>)}
+          </div>
+          <FL>Grup Adı *</FL>
+          <input value={groupName} onChange={e=>setGroupName(e.target.value)} style={S.input} placeholder="örn: Grup A, Doğu Ağıl"/>
+          <FL>Hastalık / Durum *</FL>
+          <select value={condition} onChange={e=>setCondition(e.target.value)} style={S.select}>
+            <option value="">— Seçin —</option>
+            {CONDITION_OPTIONS.map(c=><option key={c} value={c}>{c}</option>)}
+          </select>
+          {condition==="Diğer"&&<input value={condCustom} onChange={e=>setCondCustom(e.target.value)} style={{...S.input,marginTop:6}} placeholder="Açıklayın..."/>}
+          <FL>Tedavi</FL>
+          <textarea value={treatment} onChange={e=>setTreatment(e.target.value)} rows={2} style={{...S.input,resize:"vertical"}} placeholder="İlaç, doz, işlem..."/>
+          <FL>Tedavi Süresi (gün)</FL>
+          <div style={{display:"flex",gap:6}}>
+            {[0,1,2,3,4,5].map(d=><button key={d} onClick={()=>setTxDays(d)} style={{flex:1,padding:"8px 0",borderRadius:8,border:`2px solid ${txDays===d?"#4A7C3F":"#E8E5DC"}`,background:txDays===d?"#E3F0DC":"#fff",color:txDays===d?"#3D5A25":"#555",fontWeight:700,fontSize:13,cursor:"pointer"}}>{d===0?"—":d}</button>)}
+          </div>
+          <FL>Notlar</FL>
+          <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical"}}/>
+          <div style={{display:"flex",gap:8,marginTop:4}}>
+            <button onClick={()=>{setShowForm(false);reset();}} style={{...S.btnOutline,flex:1,padding:11}}>İptal</button>
+            <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:11,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
+          </div>
+        </div>
+      )}
+
+      <div style={{display:"flex",gap:6,marginBottom:10,overflowX:"auto",paddingBottom:4}}>
+        <button onClick={()=>setSelBreed("all")} style={{...S.btnSm,background:selBreed==="all"?"#4A7C3F":"#F2F0EA",color:selBreed==="all"?"#fff":"#555",whiteSpace:"nowrap",padding:"6px 14px"}}>Tümü ({local.length})</button>
+        {BREEDS.map(b=><button key={b.id} onClick={()=>setSelBreed(b.id)} style={{...S.btnSm,background:selBreed===b.id?b.color:b.bg,color:selBreed===b.id?"#fff":b.color,whiteSpace:"nowrap",padding:"6px 14px"}}>{b.emoji} {b.name}</button>)}
+      </div>
+
+      {filtered.length===0 && <Empty text="Toplu tedavi kaydı yok"/>}
+      {[...filtered].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).map(gt=>{
+        const b=BREEDS.find(x=>x.id===gt.breed);
+        const days=treatmentDaysData.filter(d=>d.healthRecordId===gt.id).sort((a,b)=>a.dayNumber-b.dayNumber);
+        const doneDays=days.filter(d=>d.done).length;
+        return (
+          <div key={gt.id} style={{...S.card,padding:12,marginBottom:8,border:`1.5px solid ${b?.color}22`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:6}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · {gt.groupName}</div>
+                <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{gt.condition}</div>
+                {gt.treatment&&<div style={{fontSize:12,color:"#333",marginTop:2}}>💊 {gt.treatment}</div>}
+                {days.length>0&&<div style={{fontSize:10,background:"#E3F0DC",color:"#3D5A25",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
+                  📅 {doneDays}/{days.length} gün · {doneDays<days.length?`${doneDays+1}. günde`:"Tamamlandı"}
+                </div>}
+                {gt.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:2}}>📝 {gt.notes}</div>}
+                <div style={{fontSize:10,color:"#aaa",marginTop:4}}>Ekleyen: {gt.createdBy}</div>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end"}}>
+                <StatusBadge status={gt.status}/>
+                {isVet&&<button onClick={()=>del(gt.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
+              </div>
+            </div>
+            {days.length>0&&(
+              <div style={{borderTop:"1px solid #F2F0EA",paddingTop:8}}>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {days.map(day=>{
+                    const isPast=day.plannedDate<today;
+                    const isToday=day.plannedDate===today;
+                    const isFuture=day.plannedDate>today;
+                    return (
+                      <div key={day.id} style={{flex:1,minWidth:55,borderRadius:8,padding:"6px 8px",textAlign:"center",
+                        background:day.done?"#E3F0DC":isToday?"#EEF6FC":isPast?"#FFF0EE":"#F9F9F6",
+                        border:`1.5px solid ${day.done?"#4A7C3F":isToday?"#2873A8":isPast?"#F5C0BA":"#E8E5DC"}`}}>
+                        <div style={{fontSize:11,fontWeight:700,color:day.done?"#3D5A25":isToday?"#2873A8":isPast?"#BE3B31":"#aaa"}}>
+                          {day.done?"✅":isToday?"🔵":isPast?"⚠️":"⏳"} {day.dayNumber}.gün
+                        </div>
+                        {day.done&&<div style={{fontSize:9,color:"#3D5A25"}}>{day.doneBy}</div>}
+                        {!day.done&&!isFuture&&(
+                          <button onClick={()=>markDay(day)} disabled={markingDay===day.id}
+                            style={{marginTop:4,padding:"3px 6px",borderRadius:6,background:"#4A7C3F",color:"#fff",border:"none",fontSize:9,cursor:"pointer",width:"100%"}}>
+                            {markingDay===day.id?"...":"Yapıldı"}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 function BirthModal({ onSave, onClose, currentUser }) {
   const [breed, setBreed] = useState("");
   const [motherEarTag, setMotherEarTag] = useState("");
@@ -1701,6 +1986,8 @@ function App(){
   const [vaccineReports,setVaccineReports]=useState([]);
   const [treatmentDaysData,setTreatmentDaysData]=useState([]);
   const [births,setBirths]=useState([]);
+  const [deaths,setDeaths]=useState([]);
+  const [groupTreatments,setGroupTreatments]=useState([]);
 
   const [hModal,setHModal]=useState(null);
   const [vModal,setVModal]=useState(null);
@@ -1711,7 +1998,7 @@ function App(){
     if(showLogin) return;
     const load=async()=>{
       setLoading(true);
-      const [gRes,hRes,vRes,rRes,lRes,vgRes,vgmRes,vrRes,tdRes,bRes]=await Promise.all([
+      const [gRes,hRes,vRes,rRes,lRes,vgRes,vgmRes,vrRes,tdRes,bRes,dRes,gtRes]=await Promise.all([
         sb.from("goats").select("*"),
         sb.from("health_records").select("*").eq("closed",false),
         sb.from("vaccines").select("*"),
@@ -1722,6 +2009,8 @@ function App(){
         sb.from("vaccine_reports").select("*"),
         sb.from("treatment_days").select("*"),
         sb.from("births").select("*"),
+        sb.from("deaths").select("*"),
+        sb.from("group_treatments").select("*"),
       ]);
       const groupMembers = (vgmRes.data||[]);
       const groups = (vgRes.data||[]).map(gr=>({
@@ -1753,6 +2042,18 @@ function App(){
         kidCount:r.kid_count||0, kids:r.kids||[],
         notes:r.notes||"", createdBy:r.created_by||"",
         createdAt:r.created_at
+      })));
+      setDeaths((dRes.data||[]).map(r=>({
+        id:r.id, breed:r.breed, earTag:r.ear_tag,
+        deathDate:r.death_date, deathTime:r.death_time||"",
+        cause:r.cause||"", notes:r.notes||"",
+        createdBy:r.created_by||"", createdAt:r.created_at
+      })));
+      setGroupTreatments((gtRes.data||[]).map(r=>({
+        id:r.id, breed:r.breed, groupName:r.group_name,
+        condition:r.condition, treatment:r.treatment||"",
+        treatmentDays:r.treatment_days||0, status:r.status||"tedavi_altında",
+        notes:r.notes||"", createdBy:r.created_by||"", createdAt:r.created_at
       })));
       setLoading(false);
     };
@@ -2448,6 +2749,22 @@ function App(){
 
         {page==="births" && <BirthsPage births={births} currentUser={currentUser} onDelete={id=>setBirths(p=>p.filter(b=>b.id!==id))}/>}
 
+        {page==="deaths" && <DeathsPage deaths={deaths} currentUser={currentUser}
+          onDelete={(id,obj)=>{
+            if(id) setDeaths(p=>p.filter(d=>d.id!==id));
+            else if(obj) setDeaths(p=>[obj,...p]);
+          }}/>}
+
+        {page==="group_tx" && <GroupTreatmentsPage
+          groupTreatments={groupTreatments}
+          treatmentDaysData={treatmentDaysData}
+          currentUser={currentUser}
+          onAdd={g=>setGroupTreatments(p=>[g,...p])}
+          onUpdate={g=>setGroupTreatments(p=>p.map(x=>x.id===g.id?g:x))}
+          onDelete={id=>setGroupTreatments(p=>p.filter(x=>x.id!==id))}
+          onTreatmentDayUpdate={day=>setTreatmentDaysData(p=>p.map(d=>d.id===day.id?day:{...d,...(d.id===day.id?day:{})}))}
+        />}
+
         {page==="vaccines" && <GlobalVaccinePage
           vaccineGroups={vaccineGroups}
           vaccineReports={vaccineReports}
@@ -2542,10 +2859,10 @@ function App(){
       </div>
 
       <div style={S.nav}>
-        {[["home","🏠","Ana"],["goats","🐐","Sürü"],["health","🩺","Sağlık"],["births","🐣","Doğum"],["vaccines","💉","Aşı"],["reports","📊","Rapor"]].map(([k,ic,l])=>(
-          <button key={k} onClick={()=>navigate(k)} style={{...S.ghost,display:"flex",flexDirection:"column",alignItems:"center",gap:1,padding:"4px 6px",color:page===k?"#4A7C3F":"#8c8c7e"}}>
-            <span style={{fontSize:17}}>{ic}</span>
-            <span style={{fontSize:9,fontWeight:page===k?700:500}}>{l}</span>
+        {[["home","🏠","Ana"],["goats","🐐","Sürü"],["health","🩺","Sağlık"],["births","🐣","Doğum"],["deaths","💀","Ölüm"],["group_tx","🏥","Toplu"],["vaccines","💉","Aşı"],["reports","📊","Rapor"]].map(([k,ic,l])=>(
+          <button key={k} onClick={()=>navigate(k)} style={{...S.ghost,display:"flex",flexDirection:"column",alignItems:"center",gap:1,padding:"3px 4px",color:page===k?"#4A7C3F":"#8c8c7e"}}>
+            <span style={{fontSize:16}}>{ic}</span>
+            <span style={{fontSize:8,fontWeight:page===k?700:500}}>{l}</span>
           </button>
         ))}
       </div>
