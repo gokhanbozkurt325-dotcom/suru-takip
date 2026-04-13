@@ -1669,17 +1669,23 @@ function App(){
       : `Merhaba ${userName}, hoş geldiniz! Burdur Açık Ceza Evi İşyurtları Hayvancılık Birimi olarak size hayırlı günler diliyoruz. Sürümüzdeki tüm keçilerimiz sağlıklı. İyi günler!`;
 
     const doSpeak = () => {
-      const u = new SpeechSynthesisUtterance(metin);
-      u.lang = "tr-TR";
-      u.rate = 0.88;
-      u.pitch = 1.4;
-      u.volume = 1;
-      const sesler = window.speechSynthesis.getVoices();
-      const bayanSes = sesler.find(s=>(s.lang==="tr-TR"||s.lang==="tr")&&(s.name.toLowerCase().includes("female")||s.name.toLowerCase().includes("kadın")))
-        || sesler.find(s=>s.lang==="tr-TR"||s.lang==="tr")
-        || sesler.find(s=>s.name.toLowerCase().includes("female")||s.name.toLowerCase().includes("samantha")||s.name.toLowerCase().includes("karen")||s.name.toLowerCase().includes("victoria"));
-      if(bayanSes) u.voice = bayanSes;
-      window.speechSynthesis.speak(u);
+      // iOS unlock
+      const unlock = new SpeechSynthesisUtterance(" ");
+      unlock.volume = 0;
+      window.speechSynthesis.speak(unlock);
+      setTimeout(()=>{
+        const u = new SpeechSynthesisUtterance(metin);
+        u.lang = "tr-TR";
+        u.rate = 0.92;
+        u.pitch = 1.0;
+        u.volume = 1;
+        const sesler = window.speechSynthesis.getVoices();
+        const bayanSes = sesler.find(s=>(s.lang==="tr-TR"||s.lang==="tr")&&(s.name.toLowerCase().includes("female")||s.name.toLowerCase().includes("kadın")))
+          || sesler.find(s=>s.lang==="tr-TR"||s.lang==="tr")
+          || sesler.find(s=>s.name.toLowerCase().includes("female")||s.name.toLowerCase().includes("samantha")||s.name.toLowerCase().includes("karen")||s.name.toLowerCase().includes("victoria"));
+        if(bayanSes) u.voice = bayanSes;
+        window.speechSynthesis.speak(u);
+      }, 150);
     };
 
     const sesler = window.speechSynthesis.getVoices();
