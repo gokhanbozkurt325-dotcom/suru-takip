@@ -561,17 +561,29 @@ function AddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser }) 
 }
 
 function ModalWrap({title,onClose,children}){
-  return <div style={{position:"fixed",inset:0,zIndex:999,overflowY:"auto",backgroundColor:"rgba(0,0,0,.65)",WebkitOverflowScrolling:"touch"}}>
-    <div style={{minHeight:"100%",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px 100px"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#FAFAF5",borderRadius:16,width:"100%",maxWidth:456,marginTop:8}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 18px 12px",borderBottom:"1px solid #F2F0EA",position:"sticky",top:0,background:"#FAFAF5",borderRadius:"16px 16px 0 0",zIndex:1}}>
-          <div style={{fontWeight:800,fontSize:15,color:"#1e1e1e",flex:1,paddingRight:10}}>{title}</div>
-          <button onClick={onClose} style={{background:"#F2F0EA",border:"none",borderRadius:"50%",width:32,height:32,fontSize:16,cursor:"pointer",color:"#555",flexShrink:0}}>✕</button>
+  const el = React.useMemo(()=>document.createElement('div'),[]);
+  React.useEffect(()=>{
+    document.body.appendChild(el);
+    document.body.style.overflow='hidden';
+    return ()=>{
+      document.body.removeChild(el);
+      document.body.style.overflow='';
+    };
+  },[el]);
+  return ReactDOM.createPortal(
+    <div style={{position:"fixed",inset:0,zIndex:9999,overflowY:"auto",backgroundColor:"rgba(0,0,0,.65)",WebkitOverflowScrolling:"touch"}}>
+      <div style={{minHeight:"100%",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px 100px"}}>
+        <div onClick={e=>e.stopPropagation()} style={{background:"#FAFAF5",borderRadius:16,width:"100%",maxWidth:456,marginTop:8}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 18px 12px",borderBottom:"1px solid #F2F0EA",position:"sticky",top:0,background:"#FAFAF5",borderRadius:"16px 16px 0 0",zIndex:1}}>
+            <div style={{fontWeight:800,fontSize:15,color:"#1e1e1e",flex:1,paddingRight:10}}>{title}</div>
+            <button onClick={onClose} style={{background:"#F2F0EA",border:"none",borderRadius:"50%",width:32,height:32,fontSize:16,cursor:"pointer",color:"#555",flexShrink:0}}>✕</button>
+          </div>
+          <div style={{padding:"14px 18px 20px",display:"flex",flexDirection:"column",gap:10}}>{children}</div>
         </div>
-        <div style={{padding:"14px 18px 20px",display:"flex",flexDirection:"column",gap:10}}>{children}</div>
       </div>
-    </div>
-  </div>;
+    </div>,
+    el
+  );
 }
 function FL({children}){return <div style={{fontSize:12,fontWeight:700,color:"#555",marginBottom:3,marginTop:4}}>{children}</div>;}
 function ErrBox({msg}){return <div style={{background:"#FFF0EE",border:"1px solid #F5C0BA",borderRadius:8,padding:"8px 12px",fontSize:13,color:"#BE3B31",fontWeight:600}}>⚠️ {msg}</div>;}
