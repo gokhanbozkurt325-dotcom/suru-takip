@@ -301,6 +301,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
           const isPast = day.plannedDate < today;
           const isToday = day.plannedDate === today;
           const isFuture = day.plannedDate > today;
+          const canMark = (isToday || isPast) && !day.done;
           return (
             <div key={day.id} style={{
               borderRadius:12, padding:12, marginBottom:8,
@@ -308,33 +309,31 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
               border: `2px solid ${day.done?"#4A7C3F":isToday?"#2873A8":isPast?"#F5C0BA":"#E8E5DC"}`
             }}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div>
+                <div style={{flex:1}}>
                   <div style={{fontWeight:800,fontSize:15,color:day.done?"#3D5A25":isToday?"#2873A8":isPast?"#BE3B31":"#8c8c7e"}}>
                     {day.done?"✅":isToday?"🔵":isPast?"⚠️":"⏳"} {day.dayNumber}. Gün
                   </div>
-                  <div style={{fontSize:11,color:"#8c8c7e",marginTop:2}}>📅 {fmt(day.plannedDate)}
+                  <div style={{fontSize:11,color:"#8c8c7e",marginTop:2}}>
+                    📅 {fmt(day.plannedDate)}
                     {isToday && <span style={{color:"#2873A8",fontWeight:700}}> — Bugün</span>}
                   </div>
-                  {day.done && (
-                    <div style={{fontSize:11,color:"#3D5A25",fontWeight:700,marginTop:4,background:"rgba(255,255,255,.6)",padding:"4px 8px",borderRadius:6}}>
+                  {day.done && day.doneBy && (
+                    <div style={{fontSize:11,color:"#3D5A25",fontWeight:700,marginTop:4,background:"rgba(255,255,255,.7)",padding:"4px 8px",borderRadius:6,display:"inline-block"}}>
                       👤 {day.doneBy} · {fmtDT(day.doneAt)}
                     </div>
                   )}
                   {isPast && !day.done && (
-                    <div style={{fontSize:11,color:"#BE3B31",fontWeight:600,marginTop:2}}>❌ Yapılmadı</div>
+                    <div style={{fontSize:11,color:"#BE3B31",fontWeight:600,marginTop:2}}>❌ Henüz yapılmadı</div>
+                  )}
+                  {isFuture && (
+                    <div style={{fontSize:11,color:"#aaa",marginTop:2}}>⏳ {daysUntil(day.plannedDate)} gün sonra</div>
                   )}
                 </div>
-                {!day.done && !isFuture && (
+                {canMark && (
                   <button onClick={()=>markDay(day)} disabled={markingDay===day.id}
-                    style={{...S.btnPrimary,fontSize:12,padding:"10px 16px",opacity:markingDay===day.id?.6:1,borderRadius:10}}>
+                    style={{...S.btnPrimary,fontSize:12,padding:"10px 16px",opacity:markingDay===day.id?.6:1,borderRadius:10,marginLeft:8,flexShrink:0}}>
                     {markingDay===day.id?"⏳":"✅ Yapıldı"}
                   </button>
-                )}
-                {isFuture && (
-                  <div style={{fontSize:11,color:"#aaa",textAlign:"right"}}>
-                    <div style={{fontSize:16}}>⏳</div>
-                    <div>{daysUntil(day.plannedDate)} gün</div>
-                  </div>
                 )}
               </div>
             </div>
@@ -508,11 +507,11 @@ function VaccineModal({ breed, goats, onSave, onClose, currentUser }) {
 }
 
 // ── Hayvan Ekle ──
-function AddGoatModal({ breed, onSave, onClose, currentUser }) {
+function AddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser }) {
   const [name,setName]=useState("");
   const [earTag,setEarTag]=useState("");
   const [gender,setGender]=useState("dişi");
-  const [category,setCategory]=useState("anac");
+  const [category,setCategory]=useState(defaultCategory||"anac");
   const [birthDate,setBirthDate]=useState("");
   const [weight,setWeight]=useState("");
   const [color,setColor]=useState("");
@@ -1559,7 +1558,7 @@ function App(){
       setTreatmentDaysData((tdRes.data||[]).map(r=>({
         id:r.id, healthRecordId:r.health_record_id, goatId:r.goat_id,
         dayNumber:r.day_number, plannedDate:r.planned_date,
-        done:r.done||false, doneBy:r.done_by||"", doneAt:r.done_at||""
+        done: r.done === true, doneBy:r.done_by||"", doneAt:r.done_at||""
       })));
       setLoading(false);
     };
@@ -1846,7 +1845,7 @@ function App(){
     <div style={S.app}><style>{css}</style>
       {hModal&&!isGuest&&<HealthModal goats={goats} breedFilter={hModal.breedId||null} preGoatId={hModal.goatId||""} onSave={saveHealth} onClose={()=>setHModal(null)} currentUser={currentUser}/>}
       {vModal&&!isGuest&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
-      {addGoatModal&&!isGuest&&<AddGoatModal breed={BREEDS.find(b=>b.id===addGoatModal)} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser}/>}
+      {addGoatModal&&!isGuest&&<AddGoatModal breed={BREEDS.find(b=>b.id===(addGoatModal.breedId||addGoatModal))} defaultCategory={addGoatModal.defaultCategory||"anac"} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser}/>}
 
       {archiveConfirm && (
         <div onClick={()=>setArchiveConfirm(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
@@ -2011,7 +2010,7 @@ function App(){
                     🍼 Oğlaklar ({goats.filter(g=>g.breed===breed.id&&g.category==="oglak"&&!g.archived).length})
                   </button>
                 </div>
-                {!isGuest && <button onClick={()=>setAddGoatModal(breed.id)} style={{...S.btnPrimary,width:"100%",marginBottom:8,fontSize:13}}>+ {catTab==="anac"?"Anaç":"Oğlak"} Ekle</button>}
+                {!isGuest && <button onClick={()=>setAddGoatModal({breedId:breed.id, defaultCategory:catTab})} style={{...S.btnPrimary,width:"100%",marginBottom:8,fontSize:13}}>+ {catTab==="anac"?"Anaç":"Oğlak"} Ekle</button>}
                 {goats.filter(g=>g.breed===breed.id&&g.category===catTab&&!g.archived).map((g,i)=>(
                   <div key={g.id} className="anim-fade"
                     style={{...S.card,padding:"10px 12px",marginBottom:5,display:"flex",alignItems:"center",gap:10,animationDelay:`${i*.04}s`}}>
@@ -2041,23 +2040,49 @@ function App(){
 
             {breedTab==="saglik" && (
               <div>
-                {!isGuest && <button onClick={()=>setHModal({breedId:breed.id})} style={{...S.btnPrimary,width:"100%",marginBottom:8,fontSize:13}}>+ Sağlık Kaydı Ekle</button>}
+                {!isGuest && <button onClick={()=>setHModal({breedId:breed.id})} style={{...S.btnPrimary,width:"100%",marginBottom:10,fontSize:13}}>+ Sağlık Kaydı Ekle</button>}
                 {healthRecs.filter(h=>h.breed===breed.id&&!h.closed).length===0 && <Empty text="Aktif sağlık kaydı yok"/>}
-                {[...healthRecs].filter(h=>h.breed===breed.id&&!h.closed).sort((a,b)=>new Date(b.date)-new Date(a.date)).map(h=>{
-                  const g=goats.find(x=>x.id===h.goatId);
+                {/* Kategori bazlı gruplama */}
+                {[["anac","🐐 Anaç"],["oglak","🍼 Oğlak"]].map(([cat, catLabel])=>{
+                  const catRecs = [...healthRecs].filter(h=>h.breed===breed.id&&!h.closed&&(()=>{const g=goats.find(x=>x.id===h.goatId);return g?.category===cat;})()).sort((a,b)=>new Date(b.date)-new Date(a.date));
+                  if(catRecs.length===0) return null;
                   return (
-                    <div key={h.id} style={{...S.card,padding:12,marginBottom:5,cursor:"pointer"}}
-                      onClick={()=>{setSelGoat(h.goatId);setDetailTab("health");}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
-                        <div>
-                          <div style={{fontSize:11,fontWeight:700,color:breed.color,marginBottom:2}}>{breed.emoji} {g?.name} <span style={{color:"#8c8c7e",fontWeight:400}}>({g?.earTag})</span></div>
-                          <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{h.condition}</div>
-                          <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(h.date)} · {h.createdByName}</div>
-                        </div>
-                        <StatusBadge status={h.status}/>
+                    <div key={cat} style={{marginBottom:12}}>
+                      <div style={{fontWeight:800,fontSize:13,color:breed.color,marginBottom:6,display:"flex",alignItems:"center",gap:6}}>
+                        <span>{catLabel}</span>
+                        <PillTag bg={breed.bg} color={breed.color} text={`${catRecs.length} kayıt`}/>
                       </div>
-                      {h.treatment&&<div style={{fontSize:12,marginTop:5,color:"#333"}}>💊 {h.treatment}</div>}
-                      <div style={{fontSize:10,color:"#4A7C3F",marginTop:4,fontWeight:600}}>👆 Detay / Güncelle / Geçmiş</div>
+                      {catRecs.map(h=>{
+                        const g=goats.find(x=>x.id===h.goatId);
+                        const hDays=treatmentDaysData.filter(d=>d.healthRecordId===h.id);
+                        const doneDays=hDays.filter(d=>d.done).length;
+                        return (
+                          <div key={h.id} style={{...S.card,padding:12,marginBottom:5,cursor:"pointer",border:`1.5px solid ${breed.color}22`}}
+                            onClick={()=>{setSelGoat(h.goatId);setDetailTab("health");}}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                              <div style={{flex:1}}>
+                                <div style={{fontSize:11,fontWeight:700,color:breed.color,marginBottom:2}}>
+                                  {breed.emoji} {g?.name} <span style={{color:"#8c8c7e",fontWeight:400}}>({g?.earTag})</span>
+                                </div>
+                                <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{h.condition}</div>
+                                <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(h.date)} · {h.createdByName}</div>
+                                {h.treatment&&<div style={{fontSize:12,color:"#333",marginTop:4}}>💊 {h.treatment}</div>}
+                                {h.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
+                                {hDays.length>0&&(
+                                  <div style={{marginTop:4,display:"flex",gap:4,alignItems:"center"}}>
+                                    <span style={{fontSize:10,background:"#E3F0DC",color:"#3D5A25",padding:"2px 8px",borderRadius:8,fontWeight:700}}>
+                                      📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+                                <StatusBadge status={h.status}/>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })}
