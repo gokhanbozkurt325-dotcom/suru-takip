@@ -694,6 +694,7 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
   const [local, setLocal] = useState(deaths);
   const [showForm, setShowForm] = useState(false);
   const [breed, setBreed] = useState("");
+  const [category, setCategory] = useState("anac");
   const [earTag, setEarTag] = useState("");
   const [deathDate, setDeathDate] = useState(todayISO());
   const [deathTime, setDeathTime] = useState("");
@@ -707,7 +708,7 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
 
   useEffect(()=>setLocal(deaths),[deaths]);
 
-  const reset = () => { setBreed("");setEarTag("");setDeathDate(todayISO());setDeathTime("");setCause("");setCauseCustom("");setNotes("");setErr(""); };
+  const reset = () => { setBreed("");setCategory("anac");setEarTag("");setDeathDate(todayISO());setDeathTime("");setCause("");setCauseCustom("");setNotes("");setErr(""); };
 
   const save = async () => {
     if(!breed){setErr("Irk seçiniz");return;}
@@ -715,10 +716,10 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
     if(!cause){setErr("Ölüm sebebi seçiniz");return;}
     setSaving(true);
     const finalCause = cause==="Diğer" ? causeCustom.trim() : cause;
-    const rec = {id:"d"+Date.now(), breed, ear_tag:earTag.trim(), death_date:deathDate, death_time:deathTime||null, cause:finalCause, notes:notes||null, created_by:currentUser};
+    const rec = {id:"d"+Date.now(), breed, category, ear_tag:earTag.trim(), death_date:deathDate, death_time:deathTime||null, cause:finalCause, notes:notes||null, created_by:currentUser};
     const {error} = await sb.from("deaths").insert(rec);
     if(error){setErr("Hata: "+error.message);setSaving(false);return;}
-    const obj = {id:rec.id, breed, earTag:earTag.trim(), deathDate, deathTime, cause:finalCause, notes, createdBy:currentUser};
+    const obj = {id:rec.id, breed, category, earTag:earTag.trim(), deathDate, deathTime, cause:finalCause, notes, createdBy:currentUser};
     setLocal(p=>[obj,...p]);
     onDelete && onDelete(null, obj);
     setShowForm(false);
@@ -750,6 +751,11 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
           <FL>Irk *</FL>
           <div style={{display:"flex",gap:6,marginBottom:4}}>
             {BREEDS.map(b=><button key={b.id} onClick={()=>setBreed(b.id)} style={{flex:1,padding:"7px 0",borderRadius:8,border:`1.5px solid ${breed===b.id?b.color:"#E8E5DC"}`,background:breed===b.id?b.bg:"#fff",color:breed===b.id?b.color:"#8c8c7e",fontWeight:breed===b.id?700:400,fontSize:11,cursor:"pointer"}}>{b.emoji} {b.name}</button>)}
+          </div>
+          <FL>Kategori *</FL>
+          <div style={{display:"flex",gap:6}}>
+            <button onClick={()=>setCategory("anac")} style={{flex:1,padding:"8px 0",borderRadius:8,border:`1.5px solid ${category==="anac"?"#4A7C3F":"#E8E5DC"}`,background:category==="anac"?"#E3F0DC":"#fff",color:category==="anac"?"#3D5A25":"#8c8c7e",fontWeight:category==="anac"?700:400,fontSize:13,cursor:"pointer"}}>🐐 Anaç</button>
+            <button onClick={()=>setCategory("oglak")} style={{flex:1,padding:"8px 0",borderRadius:8,border:`1.5px solid ${category==="oglak"?"#B8602A":"#E8E5DC"}`,background:category==="oglak"?"#FFF4E6":"#fff",color:category==="oglak"?"#8B5A1B":"#8c8c7e",fontWeight:category==="oglak"?700:400,fontSize:13,cursor:"pointer"}}>🍼 Oğlak</button>
           </div>
           <FL>Küpe No *</FL>
           <input value={earTag} onChange={e=>setEarTag(e.target.value)} style={S.input} placeholder="TR-15-0042"/>
@@ -789,7 +795,7 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
           <div key={d.id} style={{...S.card,padding:12,marginBottom:8,border:"1.5px solid #F5C0BA"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
               <div style={{flex:1}}>
-                <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · 📅 {fmt(d.deathDate)}{d.deathTime?` · ⏰ ${d.deathTime}`:""}</div>
+                <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · {d.category==="oglak"?"🍼 Oğlak":"🐐 Anaç"} · 📅 {fmt(d.deathDate)}{d.deathTime?` · ⏰ ${d.deathTime}`:""}</div>
                 <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>Küpe: {d.earTag}</div>
                 <div style={{fontSize:12,color:"#BE3B31",marginTop:2,fontWeight:600}}>☠️ {d.cause}</div>
                 {d.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:2}}>📝 {d.notes}</div>}
@@ -817,6 +823,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
   const [condCustom, setCondCustom] = useState("");
   const [treatment, setTreatment] = useState("");
   const [txDays, setTxDays] = useState(0);
+  const [startDate, setStartDate] = useState(todayISO());
   const [notes, setNotes] = useState("");
   const [err, setErr] = useState("");
   const [saving, setSaving] = useState(false);
@@ -827,7 +834,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
 
   useEffect(()=>setLocal(groupTreatments),[groupTreatments]);
 
-  const reset = ()=>{setBreed("");setGroupName("");setCondition("");setCondCustom("");setTreatment("");setTxDays(0);setNotes("");setErr("");};
+  const reset = ()=>{setBreed("");setGroupName("");setCondition("");setCondCustom("");setTreatment("");setTxDays(0);setStartDate(todayISO());setNotes("");setErr("");};
 
   const save = async () => {
     if(!breed){setErr("Irk seçiniz");return;}
@@ -835,8 +842,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
     const cond = condition==="Diğer"?condCustom.trim():condition;
     if(!cond){setErr("Hastalık giriniz");return;}
     setSaving(true);
-    const startDate = todayISO();
-    const rec = {id:"gt"+Date.now(), breed, group_name:groupName.trim(), condition:cond, treatment:treatment||null, treatment_days:txDays, status:"tedavi_altında", notes:notes||null, created_by:currentUser};
+    const rec = {id:"gt"+Date.now(), breed, group_name:groupName.trim(), condition:cond, treatment:treatment||null, treatment_days:txDays, start_date:startDate, status:"tedavi_altında", notes:notes||null, created_by:currentUser};
     const {error} = await sb.from("group_treatments").insert(rec);
     if(error){setErr("Hata: "+error.message);setSaving(false);return;}
     // Tedavi günleri oluştur
@@ -849,7 +855,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
       await sb.from("treatment_days").insert(days);
       days.forEach(d=>onTreatmentDayUpdate({...d,healthRecordId:d.health_record_id,goatId:d.goat_id,dayNumber:d.day_number,plannedDate:d.planned_date,doneBy:"",doneAt:""}));
     }
-    const obj={id:rec.id,breed,groupName:groupName.trim(),condition:cond,treatment,treatmentDays:txDays,status:"tedavi_altında",notes,createdBy:currentUser};
+    const obj={id:rec.id,breed,groupName:groupName.trim(),condition:cond,treatment,treatmentDays:txDays,startDate,status:"tedavi_altında",notes,createdBy:currentUser};
     setLocal(p=>[obj,...p]);
     onAdd(obj);
     setShowForm(false);
@@ -903,6 +909,8 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
           <div style={{display:"flex",gap:6}}>
             {[0,1,2,3,4,5].map(d=><button key={d} onClick={()=>setTxDays(d)} style={{flex:1,padding:"8px 0",borderRadius:8,border:`2px solid ${txDays===d?"#4A7C3F":"#E8E5DC"}`,background:txDays===d?"#E3F0DC":"#fff",color:txDays===d?"#3D5A25":"#555",fontWeight:700,fontSize:13,cursor:"pointer"}}>{d===0?"—":d}</button>)}
           </div>
+          <FL>Başlangıç Tarihi *</FL>
+          <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} style={S.input}/>
           <FL>Notlar</FL>
           <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical"}}/>
           <div style={{display:"flex",gap:8,marginTop:4}}>
@@ -926,7 +934,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
           <div key={gt.id} style={{...S.card,padding:12,marginBottom:8,border:`1.5px solid ${b?.color}22`}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:6}}>
               <div style={{flex:1}}>
-                <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · {gt.groupName}</div>
+                <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · {gt.groupName}{gt.startDate?` · 📅 ${fmt(gt.startDate)}`:""}</div>
                 <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{gt.condition}</div>
                 {gt.treatment&&<div style={{fontSize:12,color:"#333",marginTop:2}}>💊 {gt.treatment}</div>}
                 {days.length>0&&<div style={{fontSize:10,background:"#E3F0DC",color:"#3D5A25",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
@@ -2743,6 +2751,7 @@ function App(){
                           const g=goats.find(x=>x.id===h.goatId);
                           const hDays=treatmentDaysData.filter(d=>d.healthRecordId===h.id);
                           const doneDays=hDays.filter(d=>d.done).length;
+                          const lastLog=logs.filter(l=>l.healthRecordId===h.id).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt))[0];
                           return (
                             <div key={h.id} style={{...S.card,padding:"10px 12px",marginBottom:5,cursor:"pointer"}}
                               onClick={()=>setSelHealthRec(h)}>
@@ -2759,6 +2768,9 @@ function App(){
                                       📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
                                     </div>
                                   )}
+                                  {lastLog&&<div style={{fontSize:10,color:"#8c8c7e",marginTop:3}}>
+                                    🕐 Son: {lastLog.userName} · {fmtDT(lastLog.createdAt)}
+                                  </div>}
                                 </div>
                                 <StatusBadge status={h.status}/>
                               </div>
