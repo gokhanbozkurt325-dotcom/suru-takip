@@ -818,6 +818,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
   const [local, setLocal] = useState(groupTreatments);
   const [showForm, setShowForm] = useState(false);
   const [breed, setBreed] = useState("");
+  const [category, setCategory] = useState("anac");
   const [groupName, setGroupName] = useState("");
   const [condition, setCondition] = useState("");
   const [condCustom, setCondCustom] = useState("");
@@ -834,7 +835,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
 
   useEffect(()=>setLocal(groupTreatments),[groupTreatments]);
 
-  const reset = ()=>{setBreed("");setGroupName("");setCondition("");setCondCustom("");setTreatment("");setTxDays(0);setStartDate(todayISO());setNotes("");setErr("");};
+  const reset = ()=>{setBreed("");setCategory("anac");setGroupName("");setCondition("");setCondCustom("");setTreatment("");setTxDays(0);setStartDate(todayISO());setNotes("");setErr("");};
 
   const save = async () => {
     if(!breed){setErr("Irk seçiniz");return;}
@@ -842,7 +843,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
     const cond = condition==="Diğer"?condCustom.trim():condition;
     if(!cond){setErr("Hastalık giriniz");return;}
     setSaving(true);
-    const rec = {id:"gt"+Date.now(), breed, group_name:groupName.trim(), condition:cond, treatment:treatment||null, treatment_days:txDays, start_date:startDate, status:"tedavi_altında", notes:notes||null, created_by:currentUser};
+    const rec = {id:"gt"+Date.now(), breed, category, group_name:groupName.trim(), condition:cond, treatment:treatment||null, treatment_days:txDays, start_date:startDate, status:"tedavi_altında", notes:notes||null, created_by:currentUser};
     const {error} = await sb.from("group_treatments").insert(rec);
     if(error){setErr("Hata: "+error.message);setSaving(false);return;}
     // Tedavi günleri oluştur
@@ -855,7 +856,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
       await sb.from("treatment_days").insert(days);
       days.forEach(d=>onTreatmentDayUpdate({...d,healthRecordId:d.health_record_id,goatId:d.goat_id,dayNumber:d.day_number,plannedDate:d.planned_date,doneBy:"",doneAt:""}));
     }
-    const obj={id:rec.id,breed,groupName:groupName.trim(),condition:cond,treatment,treatmentDays:txDays,startDate,status:"tedavi_altında",notes,createdBy:currentUser};
+    const obj={id:rec.id,breed,category,groupName:groupName.trim(),condition:cond,treatment,treatmentDays:txDays,startDate,status:"tedavi_altında",notes,createdBy:currentUser};
     setLocal(p=>[obj,...p]);
     onAdd(obj);
     setShowForm(false);
@@ -892,8 +893,13 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
           <div style={{fontWeight:700,fontSize:14,color:"#3D5A25",marginBottom:10}}>➕ Toplu Tedavi Kaydı</div>
           {err&&<ErrBox msg={err}/>}
           <FL>Irk *</FL>
-          <div style={{display:"flex",gap:6,marginBottom:4}}>
+          <div style={{display:"flex",gap:6}}>
             {BREEDS.map(b=><button key={b.id} onClick={()=>setBreed(b.id)} style={{flex:1,padding:"7px 0",borderRadius:8,border:`1.5px solid ${breed===b.id?b.color:"#E8E5DC"}`,background:breed===b.id?b.bg:"#fff",color:breed===b.id?b.color:"#8c8c7e",fontWeight:breed===b.id?700:400,fontSize:11,cursor:"pointer"}}>{b.emoji} {b.name}</button>)}
+          </div>
+          <FL>Kategori *</FL>
+          <div style={{display:"flex",gap:6}}>
+            <button onClick={()=>setCategory("anac")} style={{flex:1,padding:"8px 0",borderRadius:8,border:`1.5px solid ${category==="anac"?"#4A7C3F":"#E8E5DC"}`,background:category==="anac"?"#E3F0DC":"#fff",color:category==="anac"?"#3D5A25":"#8c8c7e",fontWeight:category==="anac"?700:400,fontSize:13,cursor:"pointer"}}>🐐 Anaç</button>
+            <button onClick={()=>setCategory("oglak")} style={{flex:1,padding:"8px 0",borderRadius:8,border:`1.5px solid ${category==="oglak"?"#B8602A":"#E8E5DC"}`,background:category==="oglak"?"#FFF4E6":"#fff",color:category==="oglak"?"#8B5A1B":"#8c8c7e",fontWeight:category==="oglak"?700:400,fontSize:13,cursor:"pointer"}}>🍼 Oğlak</button>
           </div>
           <FL>Grup Adı *</FL>
           <input value={groupName} onChange={e=>setGroupName(e.target.value)} style={S.input} placeholder="örn: Grup A, Doğu Ağıl"/>
@@ -934,7 +940,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
           <div key={gt.id} style={{...S.card,padding:12,marginBottom:8,border:`1.5px solid ${b?.color}22`}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:6}}>
               <div style={{flex:1}}>
-                <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · {gt.groupName}{gt.startDate?` · 📅 ${fmt(gt.startDate)}`:""}</div>
+                <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · {gt.category==="oglak"?"🍼 Oğlak":"🐐 Anaç"} · {gt.groupName}{gt.startDate?` · 📅 ${fmt(gt.startDate)}`:""}</div>
                 <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{gt.condition}</div>
                 {gt.treatment&&<div style={{fontSize:12,color:"#333",marginTop:2}}>💊 {gt.treatment}</div>}
                 {days.length>0&&<div style={{fontSize:10,background:"#E3F0DC",color:"#3D5A25",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
@@ -1158,7 +1164,7 @@ function MiniPill({label,val,color}){return <div style={{display:"flex",alignIte
 function PillTag({bg,color,text}){return <span style={{background:bg,color,fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:8,whiteSpace:"nowrap"}}>{text}</span>;}
 
 // ── Raporlar ──
-function ReportsPage({reports, goats, logs, vaccineReports, currentUser, onDeleteReport}) {
+function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, groupTreatments, treatmentDaysData, currentUser, onDeleteReport}) {
   const [mainTab, setMainTab] = useState("saglik");
   const [selBreed, setSelBreed] = useState("all");
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -1178,6 +1184,10 @@ function ReportsPage({reports, goats, logs, vaccineReports, currentUser, onDelet
   const filteredVR = (selBreed==="all" ? vaccineReportsLocal : vaccineReportsLocal.filter(r=>r.breed===selBreed))
     .filter(r=>r.recordType==="uygulama" || r.status==="uygulandı");
   const sortedVR = [...filteredVR].sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+  const filteredBirths = selBreed==="all" ? births : births.filter(b=>b.breed===selBreed);
+  const filteredDeaths = selBreed==="all" ? deaths : deaths.filter(d=>d.breed===selBreed);
+  const filteredGT = selBreed==="all" ? groupTreatments : groupTreatments.filter(g=>g.breed===selBreed);
 
   const handleDelete = async (id) => {
     await sb.from("reports").delete().eq("id", id);
@@ -1202,10 +1212,12 @@ function ReportsPage({reports, goats, logs, vaccineReports, currentUser, onDelet
 
       <h2 style={{...S.title,marginBottom:12}}>📊 Raporlar</h2>
 
-      {/* Ana sekme - Sağlık / Aşı */}
-      <div style={{display:"flex",background:"#fff",borderRadius:12,marginBottom:12,border:"1px solid #E8E5DC",overflow:"hidden"}}>
-        <button onClick={()=>setMainTab("saglik")} style={{...S.tabBtn,background:mainTab==="saglik"?"#BE3B31":"transparent",color:mainTab==="saglik"?"#fff":"#8c8c7e",fontSize:13}}>🩺 Sağlık Raporları</button>
-        <button onClick={()=>setMainTab("asi")} style={{...S.tabBtn,background:mainTab==="asi"?"#2873A8":"transparent",color:mainTab==="asi"?"#fff":"#8c8c7e",fontSize:13}}>💉 Aşı Raporları</button>
+      <div style={{display:"flex",gap:6,marginBottom:12,overflowX:"auto",paddingBottom:4}}>
+        {[["saglik","🩺","Sağlık","#BE3B31"],["asi","💉","Aşı","#2873A8"],["dogum","🐣","Doğum","#B8750A"],["olum","💀","Ölüm","#555"],["toplu","🏥","Toplu Tx","#4A7C3F"]].map(([k,ic,l,c])=>(
+          <button key={k} onClick={()=>setMainTab(k)} style={{...S.btnSm,background:mainTab===k?c:"#F2F0EA",color:mainTab===k?"#fff":"#555",whiteSpace:"nowrap",padding:"7px 14px",fontSize:12}}>
+            {ic} {l}
+          </button>
+        ))}
       </div>
 
       {/* Irk filtresi */}
@@ -1310,6 +1322,97 @@ function ReportsPage({reports, goats, logs, vaccineReports, currentUser, onDelet
           })}
         </div>
       )}
+
+      {/* DOĞUM RAPORLARI */}
+      {mainTab==="dogum" && (
+        <div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:12}}>
+            <Stat v={filteredBirths.length} l="Toplam" bg="#E8E5DC" c="#444"/>
+            <Stat v={filteredBirths.filter(b=>b.birthType==="normal").length} l="Normal" bg="#E3F0DC" c="#3D5A25"/>
+            <Stat v={filteredBirths.filter(b=>b.birthType==="atik").length} l="Atık" bg="#FFF0EE" c="#BE3B31"/>
+          </div>
+          {filteredBirths.length===0&&<Empty text="Doğum kaydı yok"/>}
+          {[...filteredBirths].sort((a,b)=>new Date(b.birthDate)-new Date(a.birthDate)).map(birth=>{
+            const br=BREEDS.find(x=>x.id===birth.breed);
+            const kids=typeof birth.kids==="string"?JSON.parse(birth.kids||"[]"):(birth.kids||[]);
+            const typeBg={normal:{bg:"#E3F0DC",c:"#3D5A25"},gunsuz:{bg:"#FFF8EC",c:"#B8750A"},atik:{bg:"#FFF0EE",c:"#BE3B31"}};
+            const tc=typeBg[birth.birthType]||{bg:"#F2F0EA",c:"#555"};
+            return (
+              <div key={birth.id} style={{...S.card,padding:12,marginBottom:8,border:`1.5px solid ${br?.color}22`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:6}}>
+                  <div>
+                    <div style={{fontSize:11,fontWeight:700,color:br?.color}}>{br?.emoji} {br?.name} · 📅 {fmt(birth.birthDate)}</div>
+                    <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>Ana: {birth.motherEarTag}</div>
+                    {birth.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic"}}>📝 {birth.notes}</div>}
+                  </div>
+                  <span style={{background:tc.bg,color:tc.c,fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8}}>{birth.birthType==="normal"?"Normal":birth.birthType==="gunsuz"?"Günsüz":"Atık"}</span>
+                </div>
+                {kids.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {kids.map((k,i)=><div key={i} style={{background:"#F5FAF0",borderRadius:8,padding:"4px 10px",fontSize:11}}>🍼 {k.earTag||"—"} · {k.gender==="dişi"?"♀":"♂"}</div>)}
+                </div>}
+                <div style={{fontSize:10,color:"#aaa",marginTop:4}}>Ekleyen: {birth.createdBy}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ÖLÜM RAPORLARI */}
+      {mainTab==="olum" && (
+        <div>
+          <div style={{marginBottom:10}}><Stat v={filteredDeaths.length} l="Toplam Ölüm" bg="#FFF0EE" c="#BE3B31"/></div>
+          {filteredDeaths.length===0&&<Empty text="Ölüm kaydı yok"/>}
+          {[...filteredDeaths].sort((a,b)=>new Date(b.deathDate)-new Date(a.deathDate)).map(d=>{
+            const br=BREEDS.find(x=>x.id===d.breed);
+            return (
+              <div key={d.id} style={{...S.card,padding:12,marginBottom:8,border:"1.5px solid #F5C0BA"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                  <div>
+                    <div style={{fontSize:11,fontWeight:700,color:br?.color}}>{br?.emoji} {br?.name} · {d.category==="oglak"?"🍼 Oğlak":"🐐 Anaç"} · 📅 {fmt(d.deathDate)}{d.deathTime?` · ⏰ ${d.deathTime}`:""}</div>
+                    <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>Küpe: {d.earTag}</div>
+                    <div style={{fontSize:12,color:"#BE3B31",fontWeight:600}}>☠️ {d.cause}</div>
+                    {d.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic"}}>📝 {d.notes}</div>}
+                    <div style={{fontSize:10,color:"#aaa",marginTop:4}}>Ekleyen: {d.createdBy}</div>
+                  </div>
+                  <span style={{background:"#FFF0EE",color:"#BE3B31",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8}}>Öldü</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* TOPLU TEDAVİ RAPORLARI */}
+      {mainTab==="toplu" && (
+        <div>
+          <div style={{marginBottom:10}}><Stat v={filteredGT.length} l="Toplam Kayıt" bg="#E3F0DC" c="#3D5A25"/></div>
+          {filteredGT.length===0&&<Empty text="Toplu tedavi kaydı yok"/>}
+          {[...filteredGT].sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0)).map(gt=>{
+            const br=BREEDS.find(x=>x.id===gt.breed);
+            const days=(treatmentDaysData||[]).filter(d=>d.healthRecordId===gt.id);
+            const doneDays=days.filter(d=>d.done).length;
+            return (
+              <div key={gt.id} style={{...S.card,padding:12,marginBottom:8,border:`1.5px solid ${br?.color}22`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:11,fontWeight:700,color:br?.color}}>{br?.emoji} {br?.name} · {gt.category==="oglak"?"🍼 Oğlak":"🐐 Anaç"} · {gt.groupName}</div>
+                    <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{gt.condition}</div>
+                    {gt.treatment&&<div style={{fontSize:12,color:"#333"}}>💊 {gt.treatment}</div>}
+                    {gt.startDate&&<div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(gt.startDate)}</div>}
+                    {days.length>0&&<div style={{fontSize:10,background:"#E3F0DC",color:"#3D5A25",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
+                      📅 {doneDays}/{days.length} gün · {doneDays<days.length?`${doneDays+1}. günde`:"Tamamlandı"}
+                    </div>}
+                    {gt.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:2}}>📝 {gt.notes}</div>}
+                    <div style={{fontSize:10,color:"#aaa",marginTop:4}}>Ekleyen: {gt.createdBy}</div>
+                  </div>
+                  <StatusBadge status={gt.status}/>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
     </div>
   );
 }
@@ -2863,7 +2966,7 @@ function App(){
           }}
           currentUser={currentUser}/>}
 
-        {page==="reports" && <ReportsPage reports={reports} goats={goats} logs={logs} vaccineReports={vaccineReports} currentUser={currentUser} onDeleteReport={deleteReport}/>}
+        {page==="reports" && <ReportsPage reports={reports} goats={goats} logs={logs} vaccineReports={vaccineReports} births={births} deaths={deaths} groupTreatments={groupTreatments} treatmentDaysData={treatmentDaysData} currentUser={currentUser} onDeleteReport={deleteReport}/>}
 
         {/* PROFILE */}
         {page==="profile" && (
