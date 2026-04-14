@@ -50,13 +50,13 @@ const CONDITION_OPTIONS = ["Mastitis","Topallık","İshal","Parazit","Abort","Pn
 const CLOSE_REASONS = ["İyileşti","Tedavi Tamamlandı","Kronik Hastalık","Hayvan Öldü","Başka Tesise Nakil","Diğer"];
 
 const DEMO_USERS = [
-  { id:"u1", name:"Veteriner Hekim", role:"veteriner", emoji:"👨‍⚕️", members:"", pin:"0000" },
-  { id:"u2", name:"Şef",             role:"sef",       emoji:"👤",    members:"", pin:"1111" },
-  { id:"u3", name:"Vardiya 1",       role:"vardiya",   emoji:"👷",    members:"Uğur · Erdem · Hakan", pin:"1453" },
-  { id:"u4", name:"Vardiya 2",       role:"vardiya",   emoji:"👷",    members:"Mehmet · Zafer · Turan", pin:"2222" },
-  { id:"u5", name:"Vardiya 3",       role:"vardiya",   emoji:"👷",    members:"İsmail · Süleyman · Ramazan", pin:"3333" },
-  { id:"u6", name:"Vardiya 4",       role:"vardiya",   emoji:"👷",    members:"M. Ali · Mustafa · Hüseyin", pin:"4444" },
-  { id:"u7", name:"Misafir",         role:"misafir",   emoji:"👁",    members:"Sadece görüntüleme", pin:"" },
+  { id:"u1", name:"Veteriner Hekim", role:"veteriner", emoji:"👨‍⚕️", members:[], pin:"" },
+  { id:"u2", name:"Şef",             role:"sef",       emoji:"👤",    members:[], pin:"" },
+  { id:"u3", name:"Vardiya 1",       role:"vardiya",   emoji:"👷",    members:["Uğur","Erdem","Hakan"] },
+  { id:"u4", name:"Vardiya 2",       role:"vardiya",   emoji:"👷",    members:["Mehmet","Zafer","Turan"] },
+  { id:"u5", name:"Vardiya 3",       role:"vardiya",   emoji:"👷",    members:["İsmail","Süleyman","Ramazan"] },
+  { id:"u6", name:"Vardiya 4",       role:"vardiya",   emoji:"👷",    members:["M. Ali","Mustafa","Hüseyin"] },
+  { id:"u7", name:"Misafir",         role:"misafir",   emoji:"👁",    members:[], pin:"" },
 ];
 
 // Supabase dönüşümleri
@@ -2263,8 +2263,12 @@ function App(){
 
   const [announcements, setAnnouncements] = useState([]);
   const [selUser, setSelUser] = useState(null);
+  const [selPerson, setSelPerson] = useState(null); // kişi seçimi (vardiya üyesi veya Vet/Şef)
   const [pinInput, setPinInput] = useState("");
+  const [pinConfirm, setPinConfirm] = useState("");
+  const [pinStep, setPinStep] = useState("enter"); // "enter" | "create" | "confirm"
   const [pinError, setPinError] = useState("");
+  const [userPins, setUserPins] = useState({}); // {personName: hashedPin}
 
   useEffect(()=>{
     const loadAnn = async()=>{
@@ -2275,20 +2279,68 @@ function App(){
       const {data} = await sb.from("guest_access").select("*").eq("id","singleton").single();
       if(data) setGuestAccess({isOpen:data.is_open, expiresAt:data.expires_at});
     };
+    const loadPins = async()=>{
+      const {data} = await sb.from("user_pins").select("*");
+      if(data){
+        const map={};
+        data.forEach(r=>map[r.user_name]=r.pin_hash);
+        setUserPins(map);
+      }
+    };
     loadAnn();
     loadGuest();
+    loadPins();
   },[]);
 
-  const handlePinSubmit = ()=>{
-    const user = DEMO_USERS.find(u=>u.id===selUser);
-    if(!user) return;
-    if(pinInput===user.pin){
-      setCurrentUser(user.name);
-      setShowLogin(false);
-      setPinError("");
-    } else {
-      setPinError("Hatalı PIN! Tekrar deneyin.");
+  const handlePinSubmit = ()=>{};
+
+  // PIN klavyesi ile giriş işlemi
+  const handlePinKey = async (k) => {
+    if(k==="⌫"){ setPinInput(p=>p.slice(0,-1)); setPinError(""); return; }
+    if(k==="") return;
+    const next = pinInput+k;
+    setPinInput(next);
+    if(next.length!==4) return;
+
+    const person = selPerson; // "Veteriner Hekim", "Şef", "Uğur" gibi
+    const hasPin = !!userPins[person];
+
+    if(pinStep==="enter"){
+      // PIN kontrolü
+      if(userPins[person]===next){
+        setPinInput("");
+        // Hangi kullanıcı grubuna ait bul
+        const grp = DEMO_USERS.find(u=>u.name===person||u.members.includes(person));
+        const loginName = grp?.members.length===0 ? person : person; // kişi adıyla giriş
+        handleLoginSuccess(loginName);
+        setPinError("");
+      } else {
+        setPinError("Hatalı PIN! Tekrar deneyin.");
+        setPinInput("");
+      }
+    } else if(pinStep==="create"){
+      // PIN oluşturma - ilk adım
+      setPinConfirm(next);
       setPinInput("");
+      setPinStep("confirm");
+      setPinError("");
+    } else if(pinStep==="confirm"){
+      // PIN onaylama
+      if(pinConfirm===next){
+        // Supabase'e kaydet
+        await sb.from("user_pins").upsert({id:"pin_"+person.replace(/\s/g,"_").replace(/\./g,""),user_name:person,pin_hash:next});
+        setUserPins(p=>({...p,[person]:next}));
+        setPinInput("");
+        setPinStep("enter");
+        setPinError("");
+        const grp = DEMO_USERS.find(u=>u.name===person||u.members.includes(person));
+        handleLoginSuccess(person);
+      } else {
+        setPinError("PIN'ler eşleşmedi! Tekrar deneyin.");
+        setPinInput("");
+        setPinStep("create");
+        setPinConfirm("");
+      }
     }
   };
 
@@ -2303,13 +2355,11 @@ function App(){
           <p style={{color:"rgba(255,255,255,.6)",fontSize:12,margin:0}}>☁️ Bulut Tabanlı · 3 Irk · Çok Kullanıcılı</p>
         </div>
 
-        {/* Duyurular - sadece okuma */}
+        {/* Duyurular */}
         <div style={{background:"rgba(255,255,255,.12)",borderRadius:14,padding:14,marginBottom:16,backdropFilter:"blur(10px)"}}>
           <div style={{color:"#fff",fontWeight:800,fontSize:14,marginBottom:10}}>📢 Duyurular</div>
           <div style={{maxHeight:140,overflowY:"auto"}}>
-            {announcements.length===0 && (
-              <div style={{color:"rgba(255,255,255,.5)",fontSize:12,textAlign:"center",padding:"10px 0"}}>Henüz duyuru yok</div>
-            )}
+            {announcements.length===0 && <div style={{color:"rgba(255,255,255,.5)",fontSize:12,textAlign:"center",padding:"10px 0"}}>Henüz duyuru yok</div>}
             {announcements.map(a=>(
               <div key={a.id} style={{background:"rgba(255,255,255,.1)",borderRadius:8,padding:"8px 10px",marginBottom:6}}>
                 <div style={{color:"#fff",fontSize:13,fontWeight:500,marginBottom:2}}>{a.message}</div>
@@ -2322,59 +2372,101 @@ function App(){
 
         {/* Giriş kutusu */}
         <div style={{background:"rgba(255,255,255,.95)",borderRadius:16,padding:20,boxShadow:"0 20px 60px rgba(0,0,0,.25)"}}>
-          {!selUser ? (
+
+          {/* Adım 1: Grup seç */}
+          {!selUser && !selPerson && (
             <>
               <h2 style={{margin:"0 0 12px",fontSize:16,fontWeight:800,color:"#1e1e1e"}}>Kimsiniz?</h2>
               {DEMO_USERS.filter(u=>u.id!=="u7").map(u=>(
-                <button key={u.id} onClick={()=>{setSelUser(u.id);setPinInput("");setPinError("");}}
+                <button key={u.id} onClick={()=>{setSelUser(u.id);setPinInput("");setPinError("");setPinStep("enter");setSelPerson(null);}}
                   style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:"1px solid #E0DDD4",background:"#fff",cursor:"pointer",width:"100%",marginBottom:6,textAlign:"left"}}>
                   <span style={{fontSize:18}}>{u.emoji}</span>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{u.name}</div>
-                    {u.members && <div style={{fontSize:10,color:"#8c8c7e"}}>{u.members}</div>}
+                    {u.members.length>0 && <div style={{fontSize:10,color:"#8c8c7e"}}>{u.members.join(" · ")}</div>}
                   </div>
                   <span style={{color:"#ccc",fontSize:16}}>›</span>
                 </button>
               ))}
-              {/* Misafir butonu */}
-              <button
-                onClick={async()=>{
-                  if(!guestAccess.isOpen) return;
-                  const {data} = await sb.from("guest_access").select("*").eq("id","singleton").single();
-                  if(!data || !data.is_open){
-                    setPinError("Misafir girişi kapalı.");
-                    return;
-                  }
-                  setCurrentUser("Misafir");
-                  setShowLogin(false);
-                }}
-                style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,
-                  border:`1px solid ${guestAccess.isOpen?"#4A7C3F":"#E0DDD4"}`,
-                  background:guestAccess.isOpen?"#F3F8F0":"#F9F9F6",
-                  cursor:guestAccess.isOpen?"pointer":"not-allowed",
-                  width:"100%",marginBottom:6,textAlign:"left",opacity:guestAccess.isOpen?1:.6}}>
+              {/* Misafir */}
+              <button onClick={async()=>{
+                if(!guestAccess.isOpen) return;
+                const {data} = await sb.from("guest_access").select("*").eq("id","singleton").single();
+                if(!data||!data.is_open){setPinError("Misafir girişi kapalı.");return;}
+                setCurrentUser("Misafir");setShowLogin(false);
+              }} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:`1px solid ${guestAccess.isOpen?"#4A7C3F":"#E0DDD4"}`,background:guestAccess.isOpen?"#F3F8F0":"#F9F9F6",cursor:guestAccess.isOpen?"pointer":"not-allowed",width:"100%",marginBottom:6,textAlign:"left",opacity:guestAccess.isOpen?1:.6}}>
                 <span style={{fontSize:18}}>👁</span>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:14,color:guestAccess.isOpen?"#3D5A25":"#8c8c7e"}}>Misafir</div>
-                  <div style={{fontSize:10,color:guestAccess.isOpen?"#4A7C3F":"#aaa"}}>
-                    {guestAccess.isOpen ? "✅ Açık — Giriş yapabilirsiniz" : "🔒 Kapalı — Veteriner Hekim açabilir"}
-                  </div>
+                  <div style={{fontSize:10,color:guestAccess.isOpen?"#4A7C3F":"#aaa"}}>{guestAccess.isOpen?"✅ Açık — Giriş yapabilirsiniz":"🔒 Kapalı — Veteriner Hekim açabilir"}</div>
                 </div>
-                {guestAccess.isOpen && <span style={{color:"#4A7C3F",fontSize:16}}>›</span>}
+                {guestAccess.isOpen&&<span style={{color:"#4A7C3F",fontSize:16}}>›</span>}
               </button>
-              {pinError&&<div style={{background:"#FFF0EE",border:"1px solid #F5C0BA",borderRadius:8,padding:"6px 10px",fontSize:12,color:"#BE3B31",fontWeight:600}}>{pinError}</div>}
+              {pinError&&<div style={{background:"#FFF0EE",border:"1px solid #F5C0BA",borderRadius:8,padding:"6px 10px",fontSize:12,color:"#BE3B31",fontWeight:600,marginTop:6}}>{pinError}</div>}
             </>
-          ) : (
+          )}
+
+          {/* Adım 2: Kişi seç (vardiya üyesi veya Vet/Şef direkt) */}
+          {selUser && !selPerson && (()=>{
+            const user = DEMO_USERS.find(u=>u.id===selUser);
+            if(!user) return null;
+            // Vet ve Şef için direkt PIN ekranına git
+            if(user.members.length===0){
+              setSelPerson(user.name);
+              setPinStep(userPins[user.name]?"enter":"create");
+              return null;
+            }
+            return (
+              <>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+                  <button onClick={()=>{setSelUser(null);setPinError("");}} style={{...S.ghost,fontSize:20,color:"#8c8c7e",padding:0}}>‹</button>
+                  <div style={{fontWeight:800,fontSize:15,color:"#1e1e1e"}}>{user.emoji} {user.name}</div>
+                </div>
+                <div style={{fontSize:13,color:"#555",marginBottom:10,fontWeight:600}}>Adınızı seçin:</div>
+                {user.members.map(m=>(
+                  <button key={m} onClick={()=>{setSelPerson(m);setPinInput("");setPinError("");setPinStep(userPins[m]?"enter":"create");}}
+                    style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:"1px solid #E0DDD4",background:"#fff",cursor:"pointer",width:"100%",marginBottom:6,textAlign:"left"}}>
+                    <div style={{width:32,height:32,borderRadius:"50%",background:"#E3F0DC",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#3D5A25"}}>{m[0]}</div>
+                    <div style={{flex:1}}>
+                      <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{m}</div>
+                      <div style={{fontSize:10,color:userPins[m]?"#4A7C3F":"#D4850A"}}>{userPins[m]?"🔐 PIN oluşturulmuş":"⚠️ Henüz PIN oluşturulmamış"}</div>
+                    </div>
+                    <span style={{color:"#ccc",fontSize:16}}>›</span>
+                  </button>
+                ))}
+              </>
+            );
+          })()}
+
+          {/* Adım 3: PIN gir veya oluştur */}
+          {selPerson && (
             <>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-                <button onClick={()=>{setSelUser(null);setPinInput("");setPinError("");}}
-                  style={{...S.ghost,fontSize:20,color:"#8c8c7e",padding:0}}>‹</button>
+                <button onClick={()=>{
+                  const u=DEMO_USERS.find(x=>x.id===selUser);
+                  if(u&&u.members.length===0){setSelUser(null);setSelPerson(null);}
+                  else{setSelPerson(null);}
+                  setPinInput("");setPinError("");setPinStep("enter");
+                }} style={{...S.ghost,fontSize:20,color:"#8c8c7e",padding:0}}>‹</button>
                 <div>
-                  <div style={{fontWeight:800,fontSize:15,color:"#1e1e1e"}}>{DEMO_USERS.find(u=>u.id===selUser)?.name}</div>
-                  <div style={{fontSize:11,color:"#8c8c7e"}}>{DEMO_USERS.find(u=>u.id===selUser)?.members||"Yönetici"}</div>
+                  <div style={{fontWeight:800,fontSize:15,color:"#1e1e1e"}}>{selPerson}</div>
+                  <div style={{fontSize:11,color:"#8c8c7e"}}>
+                    {pinStep==="enter"?"PIN kodunuzu girin":pinStep==="create"?"Yeni PIN oluşturun (4 hane)":"PIN'i tekrar girin"}
+                  </div>
                 </div>
               </div>
-              <div style={{fontSize:13,fontWeight:700,color:"#555",marginBottom:8,textAlign:"center"}}>PIN Kodunuzu Girin</div>
+
+              {pinStep==="create"&&(
+                <div style={{background:"#FFF8EC",border:"1px solid #F0D49A",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#8B5A1B",marginBottom:10}}>
+                  ⚠️ İlk girişiniz! Kendinize 4 haneli bir PIN oluşturun.
+                </div>
+              )}
+              {pinStep==="confirm"&&(
+                <div style={{background:"#E3F0DC",border:"1px solid #D4E8C2",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#3D5A25",marginBottom:10}}>
+                  ✅ PIN'i onaylamak için tekrar girin.
+                </div>
+              )}
+
               <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:12}}>
                 {[0,1,2,3].map(i=>(
                   <div key={i} style={{width:44,height:52,borderRadius:10,border:`2px solid ${pinInput.length>i?"#4A7C3F":"#E8E5DC"}`,background:pinInput.length>i?"#E3F0DC":"#F9F9F6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:900,color:"#4A7C3F"}}>
@@ -2382,30 +2474,18 @@ function App(){
                   </div>
                 ))}
               </div>
-              {pinError && <div style={{background:"#FFF0EE",border:"1px solid #F5C0BA",borderRadius:8,padding:"6px 10px",fontSize:12,color:"#BE3B31",fontWeight:600,marginBottom:10,textAlign:"center"}}>{pinError}</div>}
-              {/* PIN klavyesi */}
+              {pinError&&<div style={{background:"#FFF0EE",border:"1px solid #F5C0BA",borderRadius:8,padding:"6px 10px",fontSize:12,color:"#BE3B31",fontWeight:600,marginBottom:10,textAlign:"center"}}>{pinError}</div>}
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
                 {[1,2,3,4,5,6,7,8,9,"",0,"⌫"].map((k,i)=>(
-                  <button key={i} onClick={()=>{
-                    if(k==="⌫"){setPinInput(p=>p.slice(0,-1));setPinError("");}
-                    else if(k===""){ }
-                    else{
-                      const next=pinInput+k;
-                      setPinInput(next);
-                      if(next.length===4){
-                        const user=DEMO_USERS.find(u=>u.id===selUser);
-                        if(next===user.pin){handleLoginSuccess(user.name);setPinError("");}
-                        else{setPinError("Hatalı PIN! Tekrar deneyin.");setPinInput("");}
-                      }
-                    }
-                  }}
-                  style={{padding:"14px 0",borderRadius:10,border:"1px solid #E8E5DC",background:k===""?"transparent":"#fff",fontSize:k==="⌫"?18:20,fontWeight:700,color:"#1e1e1e",cursor:k===""?"default":"pointer",boxShadow:k===""?"none":"0 1px 3px rgba(0,0,0,.06)"}}>
+                  <button key={i} onClick={()=>handlePinKey(String(k==="⌫"?"⌫":k===""?"":k))}
+                    style={{padding:"14px 0",borderRadius:10,border:"1px solid #E8E5DC",background:k===""?"transparent":"#fff",fontSize:k==="⌫"?18:20,fontWeight:700,color:"#1e1e1e",cursor:k===""?"default":"pointer",boxShadow:k===""?"none":"0 1px 3px rgba(0,0,0,.06)"}}>
                     {k}
                   </button>
                 ))}
               </div>
             </>
           )}
+
         </div>
       </div>
     </div>
@@ -2792,7 +2872,7 @@ function App(){
               <div style={{fontSize:44}}>{currentUser==="Misafir"?"👁":"👤"}</div>
               <h2 style={{margin:"4px 0 2px",fontSize:20,fontWeight:900,color:"#1e1e1e"}}>{currentUser}</h2>
               <div style={{fontSize:12,color:"#8c8c7e",marginTop:4}}>
-                {currentUser==="Misafir"?"Sadece Görüntüleme":DEMO_USERS.find(u=>u.name===currentUser)?.members || (DEMO_USERS.find(u=>u.name===currentUser)?.role==="veteriner"?"Veteriner Hekim":"Şef")}
+                {currentUser==="Misafir"?"Sadece Görüntüleme":DEMO_USERS.find(u=>u.name===currentUser)?.members?.join(" · ") || (DEMO_USERS.find(u=>u.name===currentUser)?.role==="veteriner"?"Veteriner Hekim":"Şef")}
               </div>
               <div style={{marginTop:12}}>
                 <button onClick={()=>{setShowLogin(true);}} style={{...S.btnOutline,color:"#BE3B31",borderColor:"#BE3B31",fontSize:13}}>🚪 Çıkış Yap</button>
