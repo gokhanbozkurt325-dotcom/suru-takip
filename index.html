@@ -63,7 +63,7 @@ const DEMO_USERS = [
 const toGoat    = r => ({ id:r.id, name:r.name, earTag:r.ear_tag, gender:r.gender, breed:r.breed, category:r.category, birthDate:r.birth_date||"", weight:r.weight||"", color:r.color||"", motherTag:r.mother_tag||"", fatherTag:r.father_tag||"", abortHistory:r.abort_history||"hayır", reproductionStatus:r.reproduction_status||"", lastBirthDate:r.last_birth_date||"", kidCount:r.kid_count||"0", notes:r.notes||"", abortDetails:r.abort_details||"", archived:r.archived||false, archiveReason:r.archive_reason||"" });
 const fromGoat  = g => ({ id:g.id, name:g.name, ear_tag:g.earTag, gender:g.gender, breed:g.breed, category:g.category, birth_date:g.birthDate||null, weight:g.weight||null, color:g.color||null, mother_tag:g.motherTag||null, father_tag:g.fatherTag||null, abort_history:g.abortHistory||"hayır", reproduction_status:g.reproductionStatus||null, last_birth_date:g.lastBirthDate||null, kid_count:g.kidCount||"0", notes:g.notes||null, abort_details:g.abortDetails||null, archived:false });
 const toHealth  = r => ({ id:r.id, goatId:r.goat_id, goatEarTag:r.goat_ear_tag||"", breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false, category:r.category||"anac" });
-const fromHealth= h => ({ id:h.id, goat_id:h.goatId, goat_ear_tag:h.goatEarTag||null, breed:h.breed, date:h.date, condition:h.condition, treatment:h.treatment||null, status:h.status, veterinarian:h.veterinarian||null, cost:h.cost||null, created_by_name:h.createdByName||null, notes:h.notes||null, closed:false });
+const fromHealth= h => ({ id:h.id, goat_id:h.goatId, goat_ear_tag:h.goatEarTag||null, breed:h.breed, category:h.category||"anac", date:h.date, condition:h.condition, treatment:h.treatment||null, status:h.status, veterinarian:h.veterinarian||null, cost:h.cost||null, created_by_name:h.createdByName||null, notes:h.notes||null, closed:false });
 const toVaccine = r => ({ id:r.id, goatId:r.goat_id, breed:r.breed, date:r.date, vaccineType:r.vaccine_type, batchNo:r.batch_no||"", createdByName:r.created_by_name||"" });
 const fromVaccine=v => ({ id:v.id, goat_id:v.goatId, breed:v.breed, date:v.date, vaccine_type:v.vaccineType, batch_no:v.batchNo||null, created_by_name:v.createdByName||null });
 const toReport  = r => ({ id:r.id, goatId:r.goat_id, goatName:r.goat_name, goatEarTag:r.goat_ear_tag||"", breed:r.breed, dateStarted:r.date_started, dateClosed:r.date_closed, condition:r.condition, treatment:r.treatment||"", closeReason:r.close_reason, closeNote:r.close_note||"", veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"" });
@@ -393,7 +393,7 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     const existingGoat = goats.find(g=>g.earTag===earTag.trim()&&!g.archived);
     const goatId = existingGoat ? existingGoat.id : "ext_"+earTag.trim().replace(/\s/g,"_");
     const rec = { id:"h"+Date.now(), goatId, goatEarTag:earTag.trim(), breed, date, condition:cond, treatment, status, veterinarian:currentUser, cost:"", createdByName:currentUser, notes, category };
-    const { error } = await sb.from("health_records").insert({...fromHealth(rec), goat_ear_tag:earTag.trim(), category});
+    const { error } = await sb.from("health_records").insert({...fromHealth(rec), goat_ear_tag:earTag.trim()});
     if(error){setErr("Kayıt hatası: "+error.message);setSaving(false);return;}
     await addLog(rec.id, goatId, breed, "açılış", `${cond} — ${currentUser} tarafından açıldı`, currentUser);
     if(treatmentDays>0){
@@ -705,7 +705,7 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
   const [err, setErr] = useState("");
   const [saving, setSaving] = useState(false);
   const [selBreed, setSelBreed] = useState("all");
-  const isVet = currentUser==="Veteriner Hekim";
+  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Şef";
 
   useEffect(()=>setLocal(deaths),[deaths]);
 
@@ -849,7 +849,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
   const [saving, setSaving] = useState(false);
   const [selBreed, setSelBreed] = useState("all");
   const [markingDay, setMarkingDay] = useState(null);
-  const isVet = currentUser==="Veteriner Hekim";
+  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Şef";
   const today = todayISO();
 
   useEffect(()=>setLocal(groupTreatments),[groupTreatments]);
@@ -1034,10 +1034,21 @@ function BirthModal({ onSave, onClose, currentUser, editData }) {
     if(!birthType){setErr("Doğum türü seçiniz");return;}
     if(!birthDate){setErr("Tarih giriniz");return;}
     setSaving(true);
+    const kidsJson = JSON.stringify(kids);
+    if(editData){
+      // Güncelleme modu
+      await sb.from("births").update({
+        breed, mother_ear_tag:motherEarTag.trim(),
+        birth_type:birthType, birth_date:birthDate,
+        kid_count:kidCount, kids:kidsJson, notes:notes||null
+      }).eq("id",editData.id);
+      onSave({...editData, breed, motherEarTag:motherEarTag.trim(), birthType, birthDate, kidCount, kids, notes});
+      return;
+    }
     const record = {
       id:"b"+Date.now(), breed, mother_ear_tag:motherEarTag.trim(),
       birth_type:birthType, birth_date:birthDate,
-      kid_count:kidCount, kids:JSON.stringify(kids),
+      kid_count:kidCount, kids:kidsJson,
       notes:notes||null, created_by:currentUser
     };
     const {error} = await sb.from("births").insert(record);
@@ -1101,7 +1112,7 @@ function BirthsPage({ births, currentUser, onDelete }) {
   const [showModal, setShowModal] = useState(false);
   const [editBirth, setEditBirth] = useState(null);
   const [localBirths, setLocalBirths] = useState(births);
-  const isVet = currentUser==="Veteriner Hekim";
+  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Şef";
 
   useEffect(()=>setLocalBirths(births),[births]);
 
@@ -1130,12 +1141,7 @@ function BirthsPage({ births, currentUser, onDelete }) {
         onSave={b=>{setLocalBirths(p=>[b,...p]);setShowModal(false);}}
         onClose={()=>setShowModal(false)}/>}
       {editBirth && <BirthModal currentUser={currentUser} editData={editBirth}
-        onSave={async b=>{
-          const kids = typeof b.kids==="string"?b.kids:JSON.stringify(b.kids||[]);
-          await sb.from("births").update({
-            breed:b.breed, mother_ear_tag:b.motherEarTag, birth_type:b.birthType,
-            birth_date:b.birthDate, kid_count:b.kidCount, kids, notes:b.notes||null
-          }).eq("id",editBirth.id);
+        onSave={b=>{
           setLocalBirths(p=>p.map(x=>x.id===editBirth.id?{...b,id:editBirth.id}:x));
           setEditBirth(null);
         }}
@@ -1208,7 +1214,7 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
   const [expandedReport, setExpandedReport] = useState(null);
   const [vaccineReportsLocal, setVaccineReportsLocal] = useState(vaccineReports);
   useEffect(()=>{ setVaccineReportsLocal(vaccineReports); },[vaccineReports]);
-  const isVet = currentUser==="Veteriner Hekim";
+  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Şef";
 
   const filtered = selBreed==="all" ? reports : reports.filter(r=>r.breed===selBreed);
   const sorted = [...filtered].sort((a,b)=>new Date(b.dateClosed)-new Date(a.dateClosed));
@@ -1638,7 +1644,7 @@ function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCr
   const [editMembersGroup, setEditMembersGroup] = useState(null);
   const [confirmDeleteGroup, setConfirmDeleteGroup] = useState(null);
   const [viewTab, setViewTab] = useState("gruplar");
-  const isVet = currentUser==="Veteriner Hekim";
+  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Şef";
 
   const breedGroups = vaccineGroups.filter(g=>g.breed===breed.id);
   const breedReports = [...vaccineReports].filter(r=>r.breed===breed.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
@@ -1834,7 +1840,7 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
   const [editSchedule, setEditSchedule] = useState(null);
   const [localReports, setLocalReports] = useState(vaccineReports);
   const [applyingId, setApplyingId] = useState(null);
-  const isVet = currentUser==="Veteriner Hekim";
+  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Şef";
 
   useEffect(()=>setLocalReports(vaccineReports),[vaccineReports]);
 
@@ -2324,7 +2330,7 @@ function App(){
   const openGuestAccess = async () => {
     const {error} = await sb.from("guest_access").update({
       is_open: true,
-      opened_by: "Veteriner Hekim",
+      opened_by: currentUser,
       opened_at: new Date().toISOString(),
       expires_at: null
     }).eq("id","singleton");
@@ -2456,38 +2462,54 @@ function App(){
     setPinInput(next);
     if(next.length!==4) return;
 
-    const person = selPerson; // "Veteriner Hekim", "Şef", "Uğur" gibi
-    const hasPin = !!userPins[person];
+    const person = selPerson;
+
+    // Supabase'den güncel PIN'i kontrol et (cache sorunu için)
+    let currentPin = userPins[person];
+    if(!currentPin){
+      const {data} = await sb.from("user_pins").select("pin_hash").eq("user_name",person).single();
+      if(data?.pin_hash){
+        currentPin = data.pin_hash;
+        setUserPins(p=>({...p,[person]:data.pin_hash}));
+        setPinStep("enter");
+      }
+    }
 
     if(pinStep==="enter"){
-      // PIN kontrolü
-      if(userPins[person]===next){
+      if(currentPin===next){
         setPinInput("");
-        // Hangi kullanıcı grubuna ait bul
-        const grp = DEMO_USERS.find(u=>u.name===person||u.members.includes(person));
-        const loginName = grp?.members.length===0 ? person : person; // kişi adıyla giriş
-        handleLoginSuccess(loginName);
+        handleLoginSuccess(person);
         setPinError("");
       } else {
         setPinError("Hatalı PIN! Tekrar deneyin.");
         setPinInput("");
       }
     } else if(pinStep==="create"){
-      // PIN oluşturma - ilk adım
+      // Önce Supabase'de gerçekten PIN yoksa oluştur
+      const {data:existing} = await sb.from("user_pins").select("pin_hash").eq("user_name",person).single();
+      if(existing?.pin_hash){
+        // PIN zaten var — direkt giriş moduna geç
+        setUserPins(p=>({...p,[person]:existing.pin_hash}));
+        setPinStep("enter");
+        setPinInput("");
+        setPinError("PIN zaten oluşturulmuş. Lütfen PIN'inizi girin.");
+        return;
+      }
       setPinConfirm(next);
       setPinInput("");
       setPinStep("confirm");
       setPinError("");
     } else if(pinStep==="confirm"){
-      // PIN onaylama
       if(pinConfirm===next){
-        // Supabase'e kaydet
-        await sb.from("user_pins").upsert({id:"pin_"+person.replace(/\s/g,"_").replace(/\./g,""),user_name:person,pin_hash:next});
+        await sb.from("user_pins").upsert({
+          id:"pin_"+person.replace(/\s/g,"_").replace(/\./g,"").replace(/ğ/g,"g").replace(/ü/g,"u").replace(/ş/g,"s").replace(/ı/g,"i").replace(/ö/g,"o").replace(/ç/g,"c"),
+          user_name:person,
+          pin_hash:next
+        });
         setUserPins(p=>({...p,[person]:next}));
         setPinInput("");
         setPinStep("enter");
         setPinError("");
-        const grp = DEMO_USERS.find(u=>u.name===person||u.members.includes(person));
         handleLoginSuccess(person);
       } else {
         setPinError("PIN'ler eşleşmedi! Tekrar deneyin.");
@@ -3058,7 +3080,7 @@ function App(){
                 </div>
               </div>
             )}
-            {currentUser==="Veteriner Hekim" && (
+            {currentUser==="Veteriner Hekim"||currentUser==="Şef" && (
               <div style={{...S.card,marginBottom:10,border:`1.5px solid ${guestAccess.isOpen?"#4A7C3F":"#E8E5DC"}`}}>
                 <div style={{fontWeight:800,fontSize:14,color:"#1e1e1e",marginBottom:8}}>👁 Misafir Erişimi</div>
                 {guestAccess.isOpen ? (
