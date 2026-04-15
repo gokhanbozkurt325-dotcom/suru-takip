@@ -174,7 +174,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
       {CLOSE_REASONS.map(r=><option key={r} value={r}>{r}</option>)}
     </select>
     <FL>Ek Not</FL>
-    <textarea value={closeNote} onChange={e=>setCloseNote(e.target.value)} rows={3} style={{...S.input,resize:"vertical",lineHeight:1.5}} placeholder="Sonuç hakkında not..."/>
+    <textarea value={closeNote} onChange={e=>setCloseNote(e.target.value)} rows={3} placeholder="Sonuç hakkında not..."/>
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={()=>setShowClose(false)} style={{...S.btnOutline,flex:1,padding:12}}>Geri</button>
       <button onClick={finalize} disabled={!closeReason||saving} style={{...S.btnPrimary,flex:2,padding:12,background:"#BE3B31",opacity:(!closeReason||saving)?.5:1}}>{saving?"Kaydediliyor...":"✅ Sonlandır"}</button>
@@ -203,11 +203,9 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
           Aynı tedavi devam ediyor (değişiklik yok)
         </label>
       </div>
-      <textarea value={treatment} onChange={e=>{setTreatment(e.target.value);setTreatmentChanged(true);}} rows={3}
-        style={{...S.input,resize:"vertical",lineHeight:1.5,opacity:treatmentChanged?1:.7}}
-        placeholder="İlaç, doz, işlem..."/>
+      <VoiceInput value={treatment} onChange={v=>{setTreatment(v);setTreatmentChanged(true);}} placeholder="İlaç, doz, işlem..." multiline rows={3}/>
       <FL>Notlar</FL>
-      <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
+      <VoiceInput value={notes} onChange={setNotes} placeholder="Not ekle..." multiline rows={2}/>
       <div style={{display:"flex",gap:8,marginTop:4}}>
         <button onClick={()=>setShowClose(true)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",padding:"10px 14px",fontSize:12}}>📋 Sonlandır</button>
         <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:1,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Güncelle"}</button>
@@ -305,118 +303,88 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
 }
 
 // ── Küpe No Tarayıcı ──
-function EarTagScanner({ onRead, label }) {
-  const [scanning, setScanning] = useState(false);
-  const [progress, setProgress] = useState("");
-  const [scanned, setScanned] = useState([]);
-  const fileRef = useRef(null);
-  const cameraRef = useRef(null);
+// ── Sesli Yazma Butonu ──
+function MicBtn({ onResult, style }) {
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef(null);
 
-  const runOCR = async (file) => {
-    setScanning(true);
-    setProgress("Fotoğraf okunuyor...");
-    try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const base64 = e.target.result.split(",")[1];
-        const mediaType = file.type || "image/jpeg";
-        try {
-          const res = await fetch("https://api.anthropic.com/v1/messages", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: "claude-sonnet-4-20250514",
-              max_tokens: 200,
-              messages: [{
-                role: "user",
-                content: [
-                  { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
-                  { type: "text", text: "Bu görselde hayvan küpe etiketleri var. Küpelerdeki TÜM numaraları oku ve sadece numaraları virgülle ayırarak yaz. Örnek: TR-15-0042, TR-15-0043. Numara göremiyorsan sadece 'bulunamadı' yaz. Başka hiçbir şey yazma." }
-                ]
-              }]
-            })
-          });
-          const data = await res.json();
-          const text = (data.content?.[0]?.text || "").trim();
-          if (!text || text === "bulunamadı") {
-            setProgress("⚠️ Numara bulunamadı, tekrar deneyin");
-            setScanning(false);
-            setTimeout(() => setProgress(""), 3000);
-            return;
-          }
-          // Virgülle ayrılmış numaraları parse et
-          const nums = text.split(/[,\n]+/).map(n => n.trim()).filter(n => n.length >= 3);
-          if (nums.length > 0) {
-            setScanned(p => [...p, ...nums]);
-            onRead(nums);
-            setProgress(`✅ ${nums.length} numara okundu`);
-          } else {
-            setProgress("⚠️ Numara bulunamadı");
-          }
-        } catch (err) {
-          if (!navigator.onLine) {
-            setProgress("❌ İnternet bağlantısı yok");
-          } else {
-            setProgress("❌ Okuma başarısız, tekrar deneyin");
-          }
-        }
-        setScanning(false);
-        setTimeout(() => setProgress(""), 4000);
-      };
-      reader.readAsDataURL(file);
-    } catch (e) {
-      setProgress("❌ Dosya okunamadı");
-      setScanning(false);
+  const toggle = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Tarayıcınız sesli yazma desteklemiyor. Chrome kullanın.");
+      return;
     }
-  };
-
-  const handleFile = (e) => {
-    const files = Array.from(e.target.files);
-    files.forEach(f => runOCR(f));
-    e.target.value = "";
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const r = new SpeechRecognition();
+    r.lang = "tr-TR";
+    r.continuous = false;
+    r.interimResults = false;
+    r.onresult = (e) => {
+      const text = e.results[0][0].transcript;
+      onResult(text);
+      setListening(false);
+    };
+    r.onerror = () => setListening(false);
+    r.onend = () => setListening(false);
+    recognitionRef.current = r;
+    r.start();
+    setListening(true);
   };
 
   return (
-    <div style={{ marginBottom: 4 }}>
-      {label && <FL>{label}</FL>}
-      <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-        <button type="button" onClick={() => cameraRef.current?.click()}
-          disabled={scanning}
-          style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1.5px solid #4A7C3F", background: "#E3F0DC", color: "#3D5A25", fontWeight: 700, fontSize: 12, cursor: "pointer", opacity: scanning ? .6 : 1 }}>
-          📷 Kamera ile Çek
-        </button>
-        <button type="button" onClick={() => fileRef.current?.click()}
-          disabled={scanning}
-          style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1.5px solid #2873A8", background: "#E6F1FB", color: "#0C447C", fontWeight: 700, fontSize: 12, cursor: "pointer", opacity: scanning ? .6 : 1 }}>
-          🖼️ Galeriden Seç
-        </button>
+    <button
+      type="button"
+      onClick={toggle}
+      title={listening ? "Dinleniyor... tıkla durdur" : "Sesli yaz"}
+      style={{
+        background: listening ? "#BE3B31" : "#E6F1FB",
+        border: `1.5px solid ${listening ? "#BE3B31" : "#B5D4F4"}`,
+        borderRadius: 8,
+        padding: "0 10px",
+        cursor: "pointer",
+        fontSize: 16,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minWidth: 38,
+        height: "100%",
+        animation: listening ? "pulse 1s infinite" : "none",
+        ...style
+      }}>
+      {listening ? "⏹" : "🎤"}
+    </button>
+  );
+}
+
+// Sesli yazma destekli input sarmalayıcı
+function VoiceInput({ value, onChange, placeholder, style, multiline, rows }) {
+  if (multiline) {
+    return (
+      <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
+        <textarea
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          rows={rows || 3}
+          placeholder={placeholder}
+          style={{ ...S.input, resize: "vertical", lineHeight: 1.5, flex: 1, ...style }}
+        />
+        <MicBtn onResult={t => onChange(value ? value + " " + t : t)} style={{ height: 38, marginTop: 2 }} />
       </div>
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment"
-        style={{ display: "none" }} onChange={handleFile} />
-      <input ref={fileRef} type="file" accept="image/*" multiple
-        style={{ display: "none" }} onChange={handleFile} />
-
-      {progress && <div style={{ fontSize: 11, color: progress.startsWith("✅") ? "#3D5A25" : progress.startsWith("❌") ? "#BE3B31" : "#2873A8", padding: "6px 10px", background: progress.startsWith("✅") ? "#E3F0DC" : progress.startsWith("❌") ? "#FFF0EE" : "#E6F1FB", borderRadius: 8, marginBottom: 6, fontWeight: 600 }}>
-        {scanning && "⏳ "}{progress}
-      </div>}
-
-      {scanned.length > 0 && (
-        <div style={{ background: "#F5F3ED", borderRadius: 8, padding: "6px 10px", marginBottom: 4 }}>
-          <div style={{ fontSize: 10, color: "#8c8c7e", marginBottom: 4 }}>Okunan numaralar (tıklayarak seç):</div>
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-            {scanned.map((n, i) => (
-              <button key={i} type="button" onClick={() => onRead([n])}
-                style={{ padding: "4px 10px", borderRadius: 8, border: "1px solid #4A7C3F", background: "#fff", color: "#3D5A25", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-                {n}
-              </button>
-            ))}
-          </div>
-          <button type="button" onClick={() => setScanned([])}
-            style={{ fontSize: 10, color: "#BE3B31", background: "none", border: "none", cursor: "pointer", marginTop: 4 }}>
-            × Temizle
-          </button>
-        </div>
-      )}
+    );
+  }
+  return (
+    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+      <input
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={{ ...S.input, flex: 1, ...style }}
+      />
+      <MicBtn onResult={t => onChange(t)} style={{ height: 38 }} />
     </div>
   );
 }
@@ -486,11 +454,8 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
       <button onClick={()=>setCategory("oglak")} style={{flex:1,padding:"9px 0",borderRadius:8,border:`1.5px solid ${category==="oglak"?"#B8602A":"#E8E5DC"}`,background:category==="oglak"?"#FFF4E6":"#fff",color:category==="oglak"?"#8B5A1B":"#8c8c7e",fontWeight:category==="oglak"?700:400,fontSize:13,cursor:"pointer"}}>🍼 Oğlak</button>
     </div>
     <FL>Küpe No *</FL>
-    <EarTagScanner label="Küpe No *" onRead={nums=>{
-      // İlk okunan numarayı direkt yaz, sonraki girişler için hazır tut
-      if(nums.length>0) setEarTag(nums[0]);
-    }}/>
-    <input value={earTag} onChange={e=>setEarTag(e.target.value)} style={{...S.input,marginTop:4}} placeholder="TR-15-0042"/>
+    <FL>Küpe No *</FL>
+    <VoiceInput value={earTag} onChange={setEarTag} placeholder="TR-15-0042"/>
     <FL>Tarih *</FL>
     <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={S.input}/>
     <FL>Hastalık / Durum *</FL>
@@ -498,9 +463,9 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
       <option value="">— Seçin —</option>
       {CONDITION_OPTIONS.map(c=><option key={c} value={c}>{c}</option>)}
     </select>
-    {condition==="Diğer"&&<input style={{...S.input,marginTop:6}} placeholder="Açıklayın..." value={condCustom} onChange={e=>setCondCustom(e.target.value)}/>}
+    {condition==="Diğer"&&<VoiceInput value={condCustom} onChange={setCondCustom} placeholder="Açıklayın..."/>}
     <FL>Tedavi</FL>
-    <textarea value={treatment} onChange={e=>setTreatment(e.target.value)} rows={3} placeholder="İlaç, doz, işlem..." style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
+    <VoiceInput value={treatment} onChange={setTreatment} placeholder="İlaç, doz, işlem..." multiline rows={3}/>
     <FL>Tedavi Süresi (gün)</FL>
     <div style={{display:"flex",gap:6}}>
       {[0,1,2,3,4,5].map(d=>(
@@ -516,7 +481,7 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     <FL>Durum *</FL>
     <StatusPicker value={status} onChange={setStatus}/>
     <FL>Notlar</FL>
-    <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
+    <VoiceInput value={notes} onChange={setNotes} placeholder="Notlar..." multiline rows={2}/>
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
       <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
@@ -556,7 +521,7 @@ function VaccineModal({ breed, goats, onSave, onClose, currentUser }) {
     <FL>Aşı Türü *</FL>
     <select value={vaccineType} onChange={e=>setVaccineType(e.target.value)} style={S.select}><option value="">— Seçin —</option>{VACCINE_DEFS.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select>
     <FL>Tarih *</FL><input type="date" value={date} onChange={e=>setDate(e.target.value)} style={S.input}/>
-    <FL>Parti / Seri No</FL><input value={batchNo} onChange={e=>setBatchNo(e.target.value)} style={S.input} placeholder="örn. ENT-2026-A12"/>
+    <FL>Parti / Seri No</FL><VoiceInput value={batchNo} onChange={setBatchNo} placeholder="örn. ENT-2026-A12"/>
     <FL>Hayvan Seçimi ({selected.size}/{breedGoats.length} seçili)</FL>
     {anacList.length>0&&<>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
@@ -813,9 +778,9 @@ function AddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser }) 
   return <ModalWrap title={`${breed.emoji} ${breed.name} — Hayvan Ekle`} onClose={onClose}>
     {err&&<ErrBox msg={err}/>}
     <FL>İsim *</FL>
-    <input value={name} onChange={e=>setName(e.target.value)} style={S.input} placeholder="Keçi adı"/>
-    <EarTagScanner label="Küpe No *" onRead={nums=>setEarTag(nums[0]||earTag)}/>
-    <input value={earTag} onChange={e=>setEarTag(e.target.value)} style={{...S.input,marginTop:4}} placeholder="TR-15-0001"/>
+    <VoiceInput value={name} onChange={setName} placeholder="Keçi adı"/>
+    <FL>Küpe No *</FL>
+    <VoiceInput value={earTag} onChange={setEarTag} placeholder="TR-15-0001"/>
     <FL>Cinsiyet</FL>
     <select value={gender} onChange={e=>setGender(e.target.value)} style={S.select}><option value="dişi">Dişi</option><option value="erkek">Erkek</option></select>
     <FL>Kategori</FL>
@@ -825,9 +790,9 @@ function AddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser }) 
     <FL>Ağırlık (kg)</FL>
     <input type="number" value={weight} onChange={e=>setWeight(e.target.value)} style={S.input} placeholder="0"/>
     <FL>Renk</FL>
-    <input value={color} onChange={e=>setColor(e.target.value)} style={S.input} placeholder="Beyaz, Siyah..."/>
+    <VoiceInput value={color} onChange={setColor} placeholder="Beyaz, Siyah..."/>
     <FL>Notlar</FL>
-    <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
+    <VoiceInput value={notes} onChange={setNotes} placeholder="Notlar..." multiline rows={2}/>
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
       <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
@@ -1088,7 +1053,7 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
             <button onClick={()=>setCategory("oglak")} style={{flex:1,padding:"8px 0",borderRadius:8,border:`1.5px solid ${category==="oglak"?"#B8602A":"#E8E5DC"}`,background:category==="oglak"?"#FFF4E6":"#fff",color:category==="oglak"?"#8B5A1B":"#8c8c7e",fontWeight:category==="oglak"?700:400,fontSize:13,cursor:"pointer"}}>🍼 Oğlak</button>
           </div>
           <FL>Küpe No *</FL>
-          <input value={earTag} onChange={e=>setEarTag(e.target.value)} style={S.input} placeholder="TR-15-0042"/>
+          <VoiceInput value={earTag} onChange={setEarTag} placeholder="TR-15-0042"/>
           <div style={{display:"flex",gap:8}}>
             <div style={{flex:1}}>
               <FL>Tarih *</FL>
@@ -1103,7 +1068,7 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             {DEATH_CAUSES.map(c=><button key={c} onClick={()=>setCause(c)} style={{padding:"6px 10px",borderRadius:8,border:`1.5px solid ${cause===c?"#BE3B31":"#E8E5DC"}`,background:cause===c?"#FFF0EE":"#fff",color:cause===c?"#BE3B31":"#8c8c7e",fontWeight:cause===c?700:400,fontSize:11,cursor:"pointer"}}>{c}</button>)}
           </div>
-          {cause==="Diğer"&&<input value={causeCustom} onChange={e=>setCauseCustom(e.target.value)} style={{...S.input,marginTop:6}} placeholder="Sebebi yazın..."/>}
+          {cause==="Diğer"&&<VoiceInput value={causeCustom} onChange={setCauseCustom} placeholder="Sebebi yazın..."/>}
           <FL>Notlar</FL>
           <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical"}}/>
           <FL>Fotoğraf Ekle</FL>
@@ -1255,15 +1220,15 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
             <button onClick={()=>setCategory("oglak")} style={{flex:1,padding:"8px 0",borderRadius:8,border:`1.5px solid ${category==="oglak"?"#B8602A":"#E8E5DC"}`,background:category==="oglak"?"#FFF4E6":"#fff",color:category==="oglak"?"#8B5A1B":"#8c8c7e",fontWeight:category==="oglak"?700:400,fontSize:13,cursor:"pointer"}}>🍼 Oğlak</button>
           </div>
           <FL>Grup Adı *</FL>
-          <input value={groupName} onChange={e=>setGroupName(e.target.value)} style={S.input} placeholder="örn: Grup A, Doğu Ağıl"/>
+          <VoiceInput value={groupName} onChange={setGroupName} placeholder="örn: Grup A, Doğu Ağıl"/>
           <FL>Hastalık / Durum *</FL>
           <select value={condition} onChange={e=>setCondition(e.target.value)} style={S.select}>
             <option value="">— Seçin —</option>
             {CONDITION_OPTIONS.map(c=><option key={c} value={c}>{c}</option>)}
           </select>
-          {condition==="Diğer"&&<input value={condCustom} onChange={e=>setCondCustom(e.target.value)} style={{...S.input,marginTop:6}} placeholder="Açıklayın..."/>}
+          {condition==="Diğer"&&<VoiceInput value={condCustom} onChange={setCondCustom} placeholder="Açıklayın..."/>}
           <FL>Tedavi</FL>
-          <textarea value={treatment} onChange={e=>setTreatment(e.target.value)} rows={2} style={{...S.input,resize:"vertical"}} placeholder="İlaç, doz, işlem..."/>
+          <VoiceInput value={treatment} onChange={setTreatment} placeholder="İlaç, doz, işlem..." multiline rows={2}/>
           <FL>Tedavi Süresi (gün)</FL>
           <div style={{display:"flex",gap:6}}>
             {[0,1,2,3,4,5].map(d=><button key={d} onClick={()=>setTxDays(d)} style={{flex:1,padding:"8px 0",borderRadius:8,border:`2px solid ${txDays===d?"#4A7C3F":"#E8E5DC"}`,background:txDays===d?"#E3F0DC":"#fff",color:txDays===d?"#3D5A25":"#555",fontWeight:700,fontSize:13,cursor:"pointer"}}>{d===0?"—":d}</button>)}
@@ -1408,7 +1373,7 @@ function BirthModal({ onSave, onClose, currentUser, editData }) {
     <BtnGroup label="Irk *" options={BREEDS.map(b=>[b.id,b.emoji+" "+b.name])} value={breed} onChange={setBreed}
       colorMap={{saanen:{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"},honamli:{bg:"#F0E6F6",color:"#5B2D8E",border:"#7B4B94"},halep:{bg:"#FFF0E6",color:"#7A3B1E",border:"#B8602A"}}}/>
     <FL>Ana Hayvan Küpe No *</FL>
-    <input value={motherEarTag} onChange={e=>setMotherEarTag(e.target.value)} style={S.input} placeholder="TR-15-0042"/>
+    <VoiceInput value={motherEarTag} onChange={setMotherEarTag} placeholder="TR-15-0042"/>
     <BtnGroup label="Doğum Türü *" options={[["normal","✅ Normal"],["gunsuz","⚠️ Günsüz"],["atik","❌ Atık"]]} value={birthType} onChange={v=>{setBirthType(v);if(v==="atik"){setKidCount(0);setKids([]);}}}
       colorMap={{normal:{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"},gunsuz:{bg:"#FFF8EC",color:"#B8750A",border:"#D4850A"},atik:{bg:"#FFF0EE",color:"#BE3B31",border:"#BE3B31"}}}/>
     {birthType!=="atik" && <>
@@ -2032,7 +1997,7 @@ function GroupVaccineModal({ group, goats, onSave, onClose, currentUser }) {
     <FL>Tarih *</FL>
     <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={S.input}/>
     <FL>Parti / Seri No</FL>
-    <input value={batchNo} onChange={e=>setBatchNo(e.target.value)} style={S.input} placeholder="örn. VAK-2026-A1"/>
+    <VoiceInput value={batchNo} onChange={setBatchNo} placeholder="örn. VAK-2026-A1"/>
     <FL>Notlar</FL>
     <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
     <div style={{display:"flex",gap:8,marginTop:4}}>
@@ -2125,9 +2090,9 @@ function CreateGroupModal({ breed, goats, onSave, onClose, currentUser }) {
   return <ModalWrap title={`➕ ${breed.emoji} ${breed.name} — Yeni Grup`} onClose={onClose}>
     {err&&<ErrBox msg={err}/>}
     <FL>Grup Adı *</FL>
-    <input value={name} onChange={e=>setName(e.target.value)} style={S.input} placeholder="örn. Saanen Oğlakları"/>
+    <VoiceInput value={name} onChange={setName} placeholder="örn. Saanen Oğlakları"/>
     <FL>Açıklama</FL>
-    <input value={desc} onChange={e=>setDesc(e.target.value)} style={S.input} placeholder="İsteğe bağlı..."/>
+    <VoiceInput value={desc} onChange={setDesc} placeholder="İsteğe bağlı..."/>
     <FL>Hayvan Seç (opsiyonel — sonradan da eklenebilir)</FL>
     <div style={{fontSize:11,color:"#8c8c7e",marginBottom:8}}>{selected.size} hayvan seçildi</div>
     {breedGoats.length===0 && <div style={{fontSize:12,color:"#aaa",textAlign:"center",padding:8,background:"#F9F9F6",borderRadius:8}}>Bu ırkta henüz hayvan yok</div>}
