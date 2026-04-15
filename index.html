@@ -23,6 +23,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script type="text/babel">
 const { useState, useMemo, useEffect, useRef } = React;
 
@@ -702,12 +703,51 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
   const [cause, setCause] = useState("");
   const [causeCustom, setCauseCustom] = useState("");
   const [notes, setNotes] = useState("");
+  const [photos, setPhotos] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [viewPhotos, setViewPhotos] = useState(null); // {deathId, urls:[]}
   const [err, setErr] = useState("");
   const [saving, setSaving] = useState(false);
   const [selBreed, setSelBreed] = useState("all");
+  const [deathPhotos, setDeathPhotos] = useState({}); // {deathId: [url,...]}
   const isVet = currentUser==="Veteriner Hekim"||currentUser==="Şef";
 
   useEffect(()=>setLocal(deaths),[deaths]);
+
+  // Fotoğrafları yükle
+  useEffect(()=>{
+    const loadPhotos = async () => {
+      const {data} = await sb.storage.from("death-photos").list("", {limit:1000});
+      if(!data) return;
+      const map = {};
+      data.forEach(f=>{
+        const parts = f.name.split("_");
+        const deathId = parts[0];
+        if(!map[deathId]) map[deathId]=[];
+        const {data:{publicUrl}} = sb.storage.from("death-photos").getPublicUrl(f.name);
+        map[deathId].push(publicUrl);
+      });
+      setDeathPhotos(map);
+    };
+    loadPhotos();
+  },[]);
+
+  const uploadPhotos = async (deathId, files) => {
+    setUploading(true);
+    const urls = [];
+    for(const file of files){
+      const ext = file.name.split(".").pop();
+      const path = `${deathId}_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const {error} = await sb.storage.from("death-photos").upload(path, file, {contentType:file.type});
+      if(!error){
+        const {data:{publicUrl}} = sb.storage.from("death-photos").getPublicUrl(path);
+        urls.push(publicUrl);
+      }
+    }
+    setDeathPhotos(p=>({...p,[deathId]:[...(p[deathId]||[]),...urls]}));
+    setUploading(false);
+    return urls;
+  };
 
   const openEdit = (d) => {
     setEditDeath(d);
@@ -715,11 +755,11 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
     setDeathDate(d.deathDate);setDeathTime(d.deathTime||"");
     setCause(DEATH_CAUSES.includes(d.cause)?d.cause:"Diğer");
     setCauseCustom(DEATH_CAUSES.includes(d.cause)?"":d.cause);
-    setNotes(d.notes||"");setErr("");
+    setNotes(d.notes||"");setErr("");setPhotos([]);
     setShowForm(true);
   };
 
-  const reset = () => { setBreed("");setCategory("anac");setEarTag("");setDeathDate(todayISO());setDeathTime("");setCause("");setCauseCustom("");setNotes("");setErr("");setEditDeath(null); };
+  const reset = () => { setBreed("");setCategory("anac");setEarTag("");setDeathDate(todayISO());setDeathTime("");setCause("");setCauseCustom("");setNotes("");setErr("");setEditDeath(null);setPhotos([]); };
 
   const save = async () => {
     if(!breed){setErr("Irk seçiniz");return;}
@@ -728,15 +768,16 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
     setSaving(true);
     const finalCause = cause==="Diğer" ? causeCustom.trim() : cause;
     if(editDeath){
-      // Güncelleme
       await sb.from("deaths").update({breed,category,ear_tag:earTag.trim(),death_date:deathDate,death_time:deathTime||null,cause:finalCause,notes:notes||null}).eq("id",editDeath.id);
       const updated = {...editDeath,breed,category,earTag:earTag.trim(),deathDate,deathTime,cause:finalCause,notes};
+      if(photos.length>0) await uploadPhotos(editDeath.id, photos);
       setLocal(p=>p.map(x=>x.id===editDeath.id?updated:x));
       setShowForm(false);reset();setSaving(false);return;
     }
     const rec = {id:"d"+Date.now(), breed, category, ear_tag:earTag.trim(), death_date:deathDate, death_time:deathTime||null, cause:finalCause, notes:notes||null, created_by:currentUser};
     const {error} = await sb.from("deaths").insert(rec);
     if(error){setErr("Hata: "+error.message);setSaving(false);return;}
+    if(photos.length>0) await uploadPhotos(rec.id, photos);
     const obj = {id:rec.id, breed, category, earTag:earTag.trim(), deathDate, deathTime, cause:finalCause, notes, createdBy:currentUser};
     setLocal(p=>[obj,...p]);
     onDelete && onDelete(null, obj);
@@ -755,6 +796,19 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
 
   return (
     <div className="anim-fade">
+
+      {/* Fotoğraf görüntüleme modalı */}
+      {viewPhotos && (
+        <div onClick={()=>setViewPhotos(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:9999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div style={{color:"#fff",fontSize:13,marginBottom:12,fontWeight:700}}>📷 Fotoğraflar ({viewPhotos.urls.length})</div>
+          <div style={{display:"flex",flexDirection:"column",gap:10,overflowY:"auto",maxHeight:"80vh",width:"100%",maxWidth:400}}>
+            {viewPhotos.urls.map((url,i)=>(
+              <img key={i} src={url} alt={`foto-${i}`} style={{width:"100%",borderRadius:12,objectFit:"cover"}} onClick={e=>e.stopPropagation()}/>
+            ))}
+          </div>
+          <button onClick={()=>setViewPhotos(null)} style={{marginTop:16,background:"#fff",border:"none",borderRadius:10,padding:"10px 28px",fontWeight:700,fontSize:14,cursor:"pointer"}}>Kapat</button>
+        </div>
+      )}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <h2 style={S.title}>💀 Ölüm Kayıtları</h2>
         <button onClick={()=>setShowForm(!showForm)} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13}}>
@@ -794,6 +848,22 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
           {cause==="Diğer"&&<input value={causeCustom} onChange={e=>setCauseCustom(e.target.value)} style={{...S.input,marginTop:6}} placeholder="Sebebi yazın..."/>}
           <FL>Notlar</FL>
           <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical"}}/>
+          <FL>Fotoğraf Ekle</FL>
+          <label style={{display:"block",background:"#FFF8F8",border:"1.5px dashed #BE3B31",borderRadius:10,padding:"12px",textAlign:"center",cursor:"pointer"}}>
+            <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>setPhotos(p=>[...p,...Array.from(e.target.files)])}/>
+            <div style={{fontSize:22}}>📷</div>
+            <div style={{fontSize:12,color:"#BE3B31",fontWeight:600,marginTop:2}}>Galeriden Seç</div>
+            <div style={{fontSize:10,color:"#8c8c7e"}}>Birden fazla seçilebilir</div>
+          </label>
+          {photos.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:6}}>
+            {photos.map((f,i)=>(
+              <div key={i} style={{position:"relative"}}>
+                <img src={URL.createObjectURL(f)} style={{width:64,height:64,objectFit:"cover",borderRadius:8,border:"1px solid #E8E5DC"}}/>
+                <button onClick={()=>setPhotos(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#BE3B31",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:11,cursor:"pointer",lineHeight:"18px",textAlign:"center",padding:0}}>×</button>
+              </div>
+            ))}
+          </div>}
+          {uploading&&<div style={{fontSize:11,color:"#4A7C3F",marginTop:4}}>⏳ Fotoğraflar yükleniyor...</div>}
           <div style={{display:"flex",gap:8,marginTop:4}}>
             <button onClick={()=>{setShowForm(false);reset();}} style={{...S.btnOutline,flex:1,padding:11}}>İptal</button>
             <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:11,background:"#BE3B31",opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
@@ -818,6 +888,12 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
                 <div style={{fontSize:12,color:"#BE3B31",marginTop:2,fontWeight:600}}>☠️ {d.cause}</div>
                 {d.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:2}}>📝 {d.notes}</div>}
                 <div style={{fontSize:10,color:"#aaa",marginTop:4}}>Ekleyen: {d.createdBy}</div>
+                {deathPhotos[d.id]?.length>0&&(
+                  <button onClick={()=>setViewPhotos({deathId:d.id,urls:deathPhotos[d.id]})}
+                    style={{...S.btnSm,background:"#E6F1FB",color:"#0C447C",fontSize:10,padding:"3px 8px",marginTop:6}}>
+                    📷 {deathPhotos[d.id].length} Fotoğraf
+                  </button>
+                )}
               </div>
               <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
                 <span style={{background:"#FFF0EE",color:"#BE3B31",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8}}>Öldü</span>
@@ -1238,6 +1314,92 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
     setConfirmDelete(null);
   };
 
+  const breedName = id => ({saanen:"Saanen",honamli:"Honamlı",halep:"Halep"}[id]||id);
+  const catName = c => c==="oglak"?"Oğlak":"Anaç";
+
+  const downloadExcel = () => {
+    const XLSX = window.XLSX;
+    if(!XLSX){ alert("Excel kütüphanesi yükleniyor, lütfen bekleyin..."); return; }
+    const wb = XLSX.utils.book_new();
+
+    // Sağlık Raporları
+    const saglikRows = sorted.map(r=>({
+      "Irk": breedName(r.breed),
+      "Küpe No": r.goatEarTag||"—",
+      "Hayvan": r.goatName||"—",
+      "Hastalık": r.condition,
+      "Tedavi": r.treatment||"—",
+      "Başlangıç": r.dateStarted||"—",
+      "Kapanış": r.dateClosed||"—",
+      "Kapanış Nedeni": r.closeReason||"—",
+      "Veteriner": r.veterinarian||"—",
+      "Ekleyen": r.createdByName||"—",
+    }));
+    const ws1 = XLSX.utils.json_to_sheet(saglikRows.length?saglikRows:[{"Irk":"","Küpe No":"","Hayvan":"","Hastalık":"","Tedavi":"","Başlangıç":"","Kapanış":"","Kapanış Nedeni":"","Veteriner":"","Ekleyen":""}]);
+    XLSX.utils.book_append_sheet(wb, ws1, "Sağlık Raporları");
+
+    // Aşı Raporları
+    const asiRows = sortedVR.map(r=>({
+      "Irk": breedName(r.breed),
+      "Grup": r.groupName||"—",
+      "Aşı Türü": r.vaccineType||"—",
+      "Tarih": r.date||"—",
+      "Parti No": r.batchNo||"—",
+      "Durum": r.status||"—",
+      "Ekleyen": r.createdBy||"—",
+    }));
+    const ws2 = XLSX.utils.json_to_sheet(asiRows.length?asiRows:[{"Irk":"","Grup":"","Aşı Türü":"","Tarih":"","Parti No":"","Durum":"","Ekleyen":""}]);
+    XLSX.utils.book_append_sheet(wb, ws2, "Aşı Raporları");
+
+    // Doğum Kayıtları
+    const dogumRows = [...filteredBirths].sort((a,b)=>new Date(b.birthDate)-new Date(a.birthDate)).map(b=>{
+      const kids = typeof b.kids==="string"?JSON.parse(b.kids||"[]"):(b.kids||[]);
+      return {
+        "Irk": breedName(b.breed),
+        "Ana Küpe": b.motherEarTag||"—",
+        "Doğum Türü": b.birthType==="normal"?"Normal":b.birthType==="gunsuz"?"Günsüz":"Atık",
+        "Tarih": b.birthDate||"—",
+        "Yavru Sayısı": kids.length,
+        "Yavrular": kids.map(k=>`${k.earTag||"?"} (${k.gender==="dişi"?"♀":"♂"})`).join(", ")||"—",
+        "Notlar": b.notes||"—",
+        "Ekleyen": b.createdBy||"—",
+      };
+    });
+    const ws3 = XLSX.utils.json_to_sheet(dogumRows.length?dogumRows:[{"Irk":"","Ana Küpe":"","Doğum Türü":"","Tarih":"","Yavru Sayısı":"","Yavrular":"","Notlar":"","Ekleyen":""}]);
+    XLSX.utils.book_append_sheet(wb, ws3, "Doğum Kayıtları");
+
+    // Ölüm Kayıtları
+    const olumRows = [...filteredDeaths].sort((a,b)=>new Date(b.deathDate)-new Date(a.deathDate)).map(d=>({
+      "Irk": breedName(d.breed),
+      "Kategori": catName(d.category),
+      "Küpe No": d.earTag||"—",
+      "Tarih": d.deathDate||"—",
+      "Saat": d.deathTime||"—",
+      "Ölüm Sebebi": d.cause||"—",
+      "Notlar": d.notes||"—",
+      "Ekleyen": d.createdBy||"—",
+    }));
+    const ws4 = XLSX.utils.json_to_sheet(olumRows.length?olumRows:[{"Irk":"","Kategori":"","Küpe No":"","Tarih":"","Saat":"","Ölüm Sebebi":"","Notlar":"","Ekleyen":""}]);
+    XLSX.utils.book_append_sheet(wb, ws4, "Ölüm Kayıtları");
+
+    // Toplu Tedavi
+    const topluRows = [...filteredGT].map(g=>({
+      "Irk": breedName(g.breed),
+      "Kategori": catName(g.category),
+      "Grup Adı": g.groupName||"—",
+      "Hastalık": g.condition||"—",
+      "Tedavi": g.treatment||"—",
+      "Tedavi Günü": g.treatmentDays||0,
+      "Başlangıç": g.startDate||"—",
+      "Durum": g.status||"—",
+      "Ekleyen": g.createdBy||"—",
+    }));
+    const ws5 = XLSX.utils.json_to_sheet(topluRows.length?topluRows:[{"Irk":"","Kategori":"","Grup Adı":"","Hastalık":"","Tedavi":"","Tedavi Günü":"","Başlangıç":"","Durum":"","Ekleyen":""}]);
+    XLSX.utils.book_append_sheet(wb, ws5, "Toplu Tedavi");
+
+    XLSX.writeFile(wb, `SuruTakip_Rapor_${todayISO()}.xlsx`);
+  };
+
   return (
     <div className="anim-fade">
       {confirmDelete && (
@@ -1253,7 +1415,12 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
         </div>
       )}
 
-      <h2 style={{...S.title,marginBottom:12}}>📊 Raporlar</h2>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <h2 style={{...S.title,margin:0}}>📊 Raporlar</h2>
+        <button onClick={downloadExcel} style={{...S.btnPrimary,padding:"8px 14px",fontSize:12,background:"#1D6A2E",display:"flex",alignItems:"center",gap:6}}>
+          📥 Excel İndir
+        </button>
+      </div>
 
       <div style={{display:"flex",gap:6,marginBottom:12,overflowX:"auto",paddingBottom:4}}>
         {[["saglik","🩺","Sağlık","#BE3B31"],["asi","💉","Aşı","#2873A8"],["dogum","🐣","Doğum","#B8750A"],["olum","💀","Ölüm","#555"],["toplu","🏥","Toplu Tx","#4A7C3F"]].map(([k,ic,l,c])=>(
