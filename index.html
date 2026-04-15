@@ -1317,87 +1317,91 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
   const breedName = id => ({saanen:"Saanen",honamli:"Honamlı",halep:"Halep"}[id]||id);
   const catName = c => c==="oglak"?"Oğlak":"Anaç";
 
-  const downloadExcel = () => {
+  const downloadExcel = (tab) => {
     const XLSX = window.XLSX;
-    if(!XLSX){ alert("Excel kütüphanesi yükleniyor, lütfen bekleyin..."); return; }
+    if(!XLSX){ alert("Excel kütüphanesi yükleniyor, lütfen tekrar deneyin."); return; }
     const wb = XLSX.utils.book_new();
 
-    // Sağlık Raporları
-    const saglikRows = sorted.map(r=>({
-      "Irk": breedName(r.breed),
-      "Küpe No": r.goatEarTag||"—",
-      "Hayvan": r.goatName||"—",
-      "Hastalık": r.condition,
-      "Tedavi": r.treatment||"—",
-      "Başlangıç": r.dateStarted||"—",
-      "Kapanış": r.dateClosed||"—",
-      "Kapanış Nedeni": r.closeReason||"—",
-      "Veteriner": r.veterinarian||"—",
-      "Ekleyen": r.createdByName||"—",
-    }));
-    const ws1 = XLSX.utils.json_to_sheet(saglikRows.length?saglikRows:[{"Irk":"","Küpe No":"","Hayvan":"","Hastalık":"","Tedavi":"","Başlangıç":"","Kapanış":"","Kapanış Nedeni":"","Veteriner":"","Ekleyen":""}]);
-    XLSX.utils.book_append_sheet(wb, ws1, "Sağlık Raporları");
-
-    // Aşı Raporları
-    const asiRows = sortedVR.map(r=>({
-      "Irk": breedName(r.breed),
-      "Grup": r.groupName||"—",
-      "Aşı Türü": r.vaccineType||"—",
-      "Tarih": r.date||"—",
-      "Parti No": r.batchNo||"—",
-      "Durum": r.status||"—",
-      "Ekleyen": r.createdBy||"—",
-    }));
-    const ws2 = XLSX.utils.json_to_sheet(asiRows.length?asiRows:[{"Irk":"","Grup":"","Aşı Türü":"","Tarih":"","Parti No":"","Durum":"","Ekleyen":""}]);
-    XLSX.utils.book_append_sheet(wb, ws2, "Aşı Raporları");
-
-    // Doğum Kayıtları
-    const dogumRows = [...filteredBirths].sort((a,b)=>new Date(b.birthDate)-new Date(a.birthDate)).map(b=>{
-      const kids = typeof b.kids==="string"?JSON.parse(b.kids||"[]"):(b.kids||[]);
-      return {
-        "Irk": breedName(b.breed),
-        "Ana Küpe": b.motherEarTag||"—",
-        "Doğum Türü": b.birthType==="normal"?"Normal":b.birthType==="gunsuz"?"Günsüz":"Atık",
-        "Tarih": b.birthDate||"—",
-        "Yavru Sayısı": kids.length,
-        "Yavrular": kids.map(k=>`${k.earTag||"?"} (${k.gender==="dişi"?"♀":"♂"})`).join(", ")||"—",
-        "Notlar": b.notes||"—",
-        "Ekleyen": b.createdBy||"—",
-      };
-    });
-    const ws3 = XLSX.utils.json_to_sheet(dogumRows.length?dogumRows:[{"Irk":"","Ana Küpe":"","Doğum Türü":"","Tarih":"","Yavru Sayısı":"","Yavrular":"","Notlar":"","Ekleyen":""}]);
-    XLSX.utils.book_append_sheet(wb, ws3, "Doğum Kayıtları");
-
-    // Ölüm Kayıtları
-    const olumRows = [...filteredDeaths].sort((a,b)=>new Date(b.deathDate)-new Date(a.deathDate)).map(d=>({
-      "Irk": breedName(d.breed),
-      "Kategori": catName(d.category),
-      "Küpe No": d.earTag||"—",
-      "Tarih": d.deathDate||"—",
-      "Saat": d.deathTime||"—",
-      "Ölüm Sebebi": d.cause||"—",
-      "Notlar": d.notes||"—",
-      "Ekleyen": d.createdBy||"—",
-    }));
-    const ws4 = XLSX.utils.json_to_sheet(olumRows.length?olumRows:[{"Irk":"","Kategori":"","Küpe No":"","Tarih":"","Saat":"","Ölüm Sebebi":"","Notlar":"","Ekleyen":""}]);
-    XLSX.utils.book_append_sheet(wb, ws4, "Ölüm Kayıtları");
-
-    // Toplu Tedavi
-    const topluRows = [...filteredGT].map(g=>({
-      "Irk": breedName(g.breed),
-      "Kategori": catName(g.category),
-      "Grup Adı": g.groupName||"—",
-      "Hastalık": g.condition||"—",
-      "Tedavi": g.treatment||"—",
-      "Tedavi Günü": g.treatmentDays||0,
-      "Başlangıç": g.startDate||"—",
-      "Durum": g.status||"—",
-      "Ekleyen": g.createdBy||"—",
-    }));
-    const ws5 = XLSX.utils.json_to_sheet(topluRows.length?topluRows:[{"Irk":"","Kategori":"","Grup Adı":"","Hastalık":"","Tedavi":"","Tedavi Günü":"","Başlangıç":"","Durum":"","Ekleyen":""}]);
-    XLSX.utils.book_append_sheet(wb, ws5, "Toplu Tedavi");
-
-    XLSX.writeFile(wb, `SuruTakip_Rapor_${todayISO()}.xlsx`);
+    if(tab==="saglik"){
+      const rows = sorted.map(r=>({
+        "Irk": breedName(r.breed),
+        "Küpe No": r.goatEarTag||"—",
+        "Hayvan": r.goatName||"—",
+        "Hastalık": r.condition,
+        "Tedavi": r.treatment||"—",
+        "Başlangıç": r.dateStarted||"—",
+        "Kapanış": r.dateClosed||"—",
+        "Kapanış Nedeni": r.closeReason||"—",
+        "Veteriner": r.veterinarian||"—",
+        "Ekleyen": r.createdByName||"—",
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows.length?rows:[{"Irk":"","Küpe No":"","Hayvan":"","Hastalık":"","Tedavi":"","Başlangıç":"","Kapanış":"","Kapanış Nedeni":"","Veteriner":"","Ekleyen":""}]);
+      XLSX.utils.book_append_sheet(wb, ws, "Sağlık Raporları");
+      XLSX.writeFile(wb, `Saglik_Raporlari_${todayISO()}.xlsx`);
+    }
+    else if(tab==="asi"){
+      const rows = sortedVR.map(r=>({
+        "Irk": breedName(r.breed),
+        "Grup": r.groupName||"—",
+        "Aşı Türü": r.vaccineType||"—",
+        "Tarih": r.date||"—",
+        "Parti No": r.batchNo||"—",
+        "Durum": r.status||"—",
+        "Ekleyen": r.createdBy||"—",
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows.length?rows:[{"Irk":"","Grup":"","Aşı Türü":"","Tarih":"","Parti No":"","Durum":"","Ekleyen":""}]);
+      XLSX.utils.book_append_sheet(wb, ws, "Aşı Raporları");
+      XLSX.writeFile(wb, `Asi_Raporlari_${todayISO()}.xlsx`);
+    }
+    else if(tab==="dogum"){
+      const rows = [...filteredBirths].sort((a,b)=>new Date(b.birthDate)-new Date(a.birthDate)).map(b=>{
+        const kids = typeof b.kids==="string"?JSON.parse(b.kids||"[]"):(b.kids||[]);
+        return {
+          "Irk": breedName(b.breed),
+          "Ana Küpe": b.motherEarTag||"—",
+          "Doğum Türü": b.birthType==="normal"?"Normal":b.birthType==="gunsuz"?"Günsüz":"Atık",
+          "Tarih": b.birthDate||"—",
+          "Yavru Sayısı": kids.length,
+          "Yavrular": kids.map(k=>`${k.earTag||"?"} (${k.gender==="dişi"?"Dişi":"Erkek"})`).join(", ")||"—",
+          "Notlar": b.notes||"—",
+          "Ekleyen": b.createdBy||"—",
+        };
+      });
+      const ws = XLSX.utils.json_to_sheet(rows.length?rows:[{"Irk":"","Ana Küpe":"","Doğum Türü":"","Tarih":"","Yavru Sayısı":"","Yavrular":"","Notlar":"","Ekleyen":""}]);
+      XLSX.utils.book_append_sheet(wb, ws, "Doğum Kayıtları");
+      XLSX.writeFile(wb, `Dogum_Kayitlari_${todayISO()}.xlsx`);
+    }
+    else if(tab==="olum"){
+      const rows = [...filteredDeaths].sort((a,b)=>new Date(b.deathDate)-new Date(a.deathDate)).map(d=>({
+        "Irk": breedName(d.breed),
+        "Kategori": catName(d.category),
+        "Küpe No": d.earTag||"—",
+        "Tarih": d.deathDate||"—",
+        "Saat": d.deathTime||"—",
+        "Ölüm Sebebi": d.cause||"—",
+        "Notlar": d.notes||"—",
+        "Ekleyen": d.createdBy||"—",
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows.length?rows:[{"Irk":"","Kategori":"","Küpe No":"","Tarih":"","Saat":"","Ölüm Sebebi":"","Notlar":"","Ekleyen":""}]);
+      XLSX.utils.book_append_sheet(wb, ws, "Ölüm Kayıtları");
+      XLSX.writeFile(wb, `Olum_Kayitlari_${todayISO()}.xlsx`);
+    }
+    else if(tab==="toplu"){
+      const rows = [...filteredGT].map(g=>({
+        "Irk": breedName(g.breed),
+        "Kategori": catName(g.category),
+        "Grup Adı": g.groupName||"—",
+        "Hastalık": g.condition||"—",
+        "Tedavi": g.treatment||"—",
+        "Tedavi Günü": g.treatmentDays||0,
+        "Başlangıç": g.startDate||"—",
+        "Durum": g.status||"—",
+        "Ekleyen": g.createdBy||"—",
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows.length?rows:[{"Irk":"","Kategori":"","Grup Adı":"","Hastalık":"","Tedavi":"","Tedavi Günü":"","Başlangıç":"","Durum":"","Ekleyen":""}]);
+      XLSX.utils.book_append_sheet(wb, ws, "Toplu Tedavi");
+      XLSX.writeFile(wb, `Toplu_Tedavi_${todayISO()}.xlsx`);
+    }
   };
 
   return (
@@ -1415,12 +1419,7 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
         </div>
       )}
 
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-        <h2 style={{...S.title,margin:0}}>📊 Raporlar</h2>
-        <button onClick={downloadExcel} style={{...S.btnPrimary,padding:"8px 14px",fontSize:12,background:"#1D6A2E",display:"flex",alignItems:"center",gap:6}}>
-          📥 Excel İndir
-        </button>
-      </div>
+      <h2 style={{...S.title,marginBottom:12}}>📊 Raporlar</h2>
 
       <div style={{display:"flex",gap:6,marginBottom:12,overflowX:"auto",paddingBottom:4}}>
         {[["saglik","🩺","Sağlık","#BE3B31"],["asi","💉","Aşı","#2873A8"],["dogum","🐣","Doğum","#B8750A"],["olum","💀","Ölüm","#555"],["toplu","🏥","Toplu Tx","#4A7C3F"]].map(([k,ic,l,c])=>(
@@ -1428,6 +1427,13 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
             {ic} {l}
           </button>
         ))}
+      </div>
+
+      {/* Seçili sekme için indir butonu */}
+      <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10}}>
+        <button onClick={()=>downloadExcel(mainTab)} style={{...S.btnSm,background:"#1D6A2E",color:"#fff",padding:"7px 14px",fontSize:12,display:"flex",alignItems:"center",gap:4}}>
+          📥 Excel İndir
+        </button>
       </div>
 
       {/* Irk filtresi */}
