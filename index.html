@@ -24,6 +24,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script type="text/babel">
 const { useState, useMemo, useEffect, useRef } = React;
 
@@ -369,7 +370,122 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
   </ModalWrap>;
 }
 
-// ── Sağlık Kaydı Ekle ──
+// ── Küpe No Tarayıcı ──
+function EarTagScanner({ onRead, label }) {
+  const [scanning, setScanning] = useState(false);
+  const [progress, setProgress] = useState("");
+  const [scanned, setScanned] = useState([]);
+  const fileRef = useRef(null);
+  const cameraRef = useRef(null);
+
+  const runOCR = async (file) => {
+    setScanning(true);
+    setProgress("Fotoğraf okunuyor...");
+    try {
+      if(typeof Tesseract === "undefined"){
+        setProgress("❌ OCR kütüphanesi yüklenmedi. İnternet bağlantısını kontrol edin.");
+        setScanning(false);
+        return;
+      }
+      const { createWorker } = Tesseract;
+      const worker = await createWorker("eng", 1, {
+        logger: m => {
+          if(m.status==="recognizing text") setProgress(`Okuma: %${Math.round(m.progress*100)}`);
+          if(m.status==="loading tesseract core") setProgress("Yükleniyor...");
+          if(m.status==="initializing tesseract") setProgress("Başlatılıyor...");
+          if(m.status==="loading language traineddata") setProgress("Dil paketi yükleniyor...");
+        }
+      });
+      await worker.setParameters({
+        tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-/ ",
+      });
+      const { data: { text } } = await worker.recognize(file);
+      await worker.terminate();
+
+      const lines = text.split(/[\n\r]+/).map(l=>l.trim()).filter(l=>l.length>2);
+      const matches = [];
+      lines.forEach(line => {
+        const patterns = line.match(/[A-Z]{0,3}[-\s]?\d{2,3}[-\s]?\d{3,6}/gi) || [];
+        patterns.forEach(p => {
+          const clean = p.trim().replace(/\s+/g,"-").toUpperCase();
+          if(!matches.includes(clean)) matches.push(clean);
+        });
+        const nums = line.match(/\d{4,10}/g) || [];
+        nums.forEach(n => { if(!matches.includes(n)) matches.push(n); });
+      });
+
+      if(matches.length>0){
+        setScanned(p=>[...p,...matches]);
+        onRead(matches);
+        setProgress(`✅ ${matches.length} numara okundu`);
+      } else {
+        setProgress("⚠️ Numara bulunamadı — manuel giriniz");
+      }
+    } catch(e) {
+      if(e.message && e.message.includes("network")){
+        setProgress("❌ İnternet bağlantısı gerekli (ilk kullanım)");
+      } else {
+        setProgress("❌ Okuma başarısız, tekrar deneyin");
+      }
+    }
+    setScanning(false);
+    setTimeout(()=>setProgress(""), 4000);
+  };
+
+  const handleFile = (e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(f => runOCR(f));
+    e.target.value = "";
+  };
+
+  return (
+    <div style={{marginBottom:4}}>
+      {label && <FL>{label}</FL>}
+      <div style={{display:"flex",gap:6,marginBottom:6}}>
+        <button type="button" onClick={()=>cameraRef.current?.click()}
+          disabled={scanning}
+          style={{flex:1,padding:"10px 0",borderRadius:10,border:"1.5px solid #4A7C3F",background:"#E3F0DC",color:"#3D5A25",fontWeight:700,fontSize:12,cursor:"pointer",opacity:scanning?.6:1}}>
+          📷 Kamera ile Çek
+        </button>
+        <button type="button" onClick={()=>fileRef.current?.click()}
+          disabled={scanning}
+          style={{flex:1,padding:"10px 0",borderRadius:10,border:"1.5px solid #2873A8",background:"#E6F1FB",color:"#0C447C",fontWeight:700,fontSize:12,cursor:"pointer",opacity:scanning?.6:1}}>
+          🖼️ Galeriden Seç
+        </button>
+      </div>
+      {/* Kamera input */}
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment"
+        style={{display:"none"}} onChange={handleFile}/>
+      {/* Galeri input */}
+      <input ref={fileRef} type="file" accept="image/*" multiple
+        style={{display:"none"}} onChange={handleFile}/>
+
+      {progress&&<div style={{fontSize:11,color:progress.startsWith("✅")?"#3D5A25":progress.startsWith("❌")?"#BE3B31":"#2873A8",padding:"6px 10px",background:progress.startsWith("✅")?"#E3F0DC":progress.startsWith("❌")?"#FFF0EE":"#E6F1FB",borderRadius:8,marginBottom:6,fontWeight:600}}>
+        {scanning&&"⏳ "}{progress}
+      </div>}
+
+      {scanned.length>0&&(
+        <div style={{background:"#F5F3ED",borderRadius:8,padding:"6px 10px",marginBottom:4}}>
+          <div style={{fontSize:10,color:"#8c8c7e",marginBottom:4}}>Okunan numaralar (tıklayarak seç):</div>
+          <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+            {scanned.map((n,i)=>(
+              <button key={i} type="button" onClick={()=>onRead([n])}
+                style={{padding:"4px 10px",borderRadius:8,border:"1px solid #4A7C3F",background:"#fff",color:"#3D5A25",fontSize:12,fontWeight:700,cursor:"pointer"}}>
+                {n}
+              </button>
+            ))}
+          </div>
+          <button type="button" onClick={()=>setScanned([])}
+            style={{fontSize:10,color:"#BE3B31",background:"none",border:"none",cursor:"pointer",marginTop:4}}>
+            × Temizle
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUser }) {
   const [breed, setBreed] = useState(breedFilter||"");
   const [category, setCategory] = useState("anac");
@@ -434,7 +550,11 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
       <button onClick={()=>setCategory("oglak")} style={{flex:1,padding:"9px 0",borderRadius:8,border:`1.5px solid ${category==="oglak"?"#B8602A":"#E8E5DC"}`,background:category==="oglak"?"#FFF4E6":"#fff",color:category==="oglak"?"#8B5A1B":"#8c8c7e",fontWeight:category==="oglak"?700:400,fontSize:13,cursor:"pointer"}}>🍼 Oğlak</button>
     </div>
     <FL>Küpe No *</FL>
-    <input value={earTag} onChange={e=>setEarTag(e.target.value)} style={S.input} placeholder="TR-15-0042"/>
+    <EarTagScanner label="Küpe No *" onRead={nums=>{
+      // İlk okunan numarayı direkt yaz, sonraki girişler için hazır tut
+      if(nums.length>0) setEarTag(nums[0]);
+    }}/>
+    <input value={earTag} onChange={e=>setEarTag(e.target.value)} style={{...S.input,marginTop:4}} placeholder="TR-15-0042"/>
     <FL>Tarih *</FL>
     <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={S.input}/>
     <FL>Hastalık / Durum *</FL>
@@ -535,7 +655,6 @@ function AddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser }) 
   const [notes,setNotes]=useState("");
   const [err,setErr]=useState("");
   const [saving,setSaving]=useState(false);
-  const [showScanner,setShowScanner]=useState(false);
 
   const save=async()=>{
     if(!name){setErr("İsim giriniz");return;}
@@ -547,17 +666,12 @@ function AddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser }) 
     onSave(g);
   };
 
-  if(showScanner) return <EarTagScanner onResult={tag=>{setEarTag(tag);setShowScanner(false);}} onClose={()=>setShowScanner(false)}/>;
-
   return <ModalWrap title={`${breed.emoji} ${breed.name} — Hayvan Ekle`} onClose={onClose}>
     {err&&<ErrBox msg={err}/>}
     <FL>İsim *</FL>
     <input value={name} onChange={e=>setName(e.target.value)} style={S.input} placeholder="Keçi adı"/>
-    <FL>Küpe No *</FL>
-    <div style={{display:"flex",gap:6}}>
-      <input value={earTag} onChange={e=>setEarTag(e.target.value)} style={{...S.input,flex:1}} placeholder="TR-15-0001"/>
-      <button onClick={()=>setShowScanner(true)} style={{...S.btnOutline,padding:"9px 12px",fontSize:12,whiteSpace:"nowrap"}}>📷 Oku</button>
-    </div>
+    <EarTagScanner label="Küpe No *" onRead={nums=>setEarTag(nums[0]||earTag)}/>
+    <input value={earTag} onChange={e=>setEarTag(e.target.value)} style={{...S.input,marginTop:4}} placeholder="TR-15-0001"/>
     <FL>Cinsiyet</FL>
     <select value={gender} onChange={e=>setGender(e.target.value)} style={S.select}><option value="dişi">Dişi</option><option value="erkek">Erkek</option></select>
     <FL>Kategori</FL>
@@ -897,7 +1011,7 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
               </div>
               <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
                 <span style={{background:"#FFF0EE",color:"#BE3B31",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8}}>Öldü</span>
-                <button onClick={()=>openEdit(d)} style={{...S.btnSm,background:"#EEF6FC",color:"#2873A8",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>
+                {currentUser!=="Misafir" && <button onClick={()=>openEdit(d)} style={{...S.btnSm,background:"#EEF6FC",color:"#2873A8",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>}
                 {isVet&&<button onClick={()=>del(d.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
               </div>
             </div>
@@ -1254,7 +1368,7 @@ function BirthsPage({ births, currentUser, onDelete }) {
               </div>
               <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
                 <span style={{background:tc.bg,color:tc.color,fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8}}>{typeLabel[birth.birthType]}</span>
-                <button onClick={()=>setEditBirth(birth)} style={{...S.btnSm,background:"#EEF6FC",color:"#2873A8",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>
+                {currentUser!=="Misafir" && <button onClick={()=>setEditBirth(birth)} style={{...S.btnSm,background:"#EEF6FC",color:"#2873A8",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>}
                 {isVet && <button onClick={()=>deleteBirth(birth.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
               </div>
             </div>
@@ -2402,15 +2516,16 @@ function App(){
         createdAt:r.created_at
       })));
       setDeaths((dRes.data||[]).map(r=>({
-        id:r.id, breed:r.breed, earTag:r.ear_tag,
+        id:r.id, breed:r.breed, category:r.category||"anac", earTag:r.ear_tag,
         deathDate:r.death_date, deathTime:r.death_time||"",
         cause:r.cause||"", notes:r.notes||"",
         createdBy:r.created_by||"", createdAt:r.created_at
       })));
       setGroupTreatments((gtRes.data||[]).map(r=>({
-        id:r.id, breed:r.breed, groupName:r.group_name,
+        id:r.id, breed:r.breed, category:r.category||"anac", groupName:r.group_name,
         condition:r.condition, treatment:r.treatment||"",
-        treatmentDays:r.treatment_days||0, status:r.status||"tedavi_altında",
+        treatmentDays:r.treatment_days||0, startDate:r.start_date||"",
+        status:r.status||"tedavi_altında",
         notes:r.notes||"", createdBy:r.created_by||"", createdAt:r.created_at
       })));
       setLoading(false);
