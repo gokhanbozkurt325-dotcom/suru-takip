@@ -612,7 +612,7 @@ function AnnouncementBox({ announcements, setAnnouncements, currentUser, vaccine
   const [newMsg, setNewMsg] = useState("");
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(true);
-  const isVet = currentUser === "Veteriner Hekim";
+  const isVet = currentUser === "Veteriner Hekim" || currentUser === "Şef";
 
   const today = todayISO();
   const urgentVaccines = (vaccineReports||[]).filter(r=>{
