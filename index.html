@@ -24,7 +24,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script type="text/babel">
 const { useState, useMemo, useEffect, useRef } = React;
 
@@ -317,54 +316,58 @@ function EarTagScanner({ onRead, label }) {
     setScanning(true);
     setProgress("Fotoğraf okunuyor...");
     try {
-      if(typeof Tesseract === "undefined"){
-        setProgress("❌ OCR kütüphanesi yüklenmedi. İnternet bağlantısını kontrol edin.");
-        setScanning(false);
-        return;
-      }
-      const { createWorker } = Tesseract;
-      const worker = await createWorker("eng", 1, {
-        logger: m => {
-          if(m.status==="recognizing text") setProgress(`Okuma: %${Math.round(m.progress*100)}`);
-          if(m.status==="loading tesseract core") setProgress("Yükleniyor...");
-          if(m.status==="initializing tesseract") setProgress("Başlatılıyor...");
-          if(m.status==="loading language traineddata") setProgress("Dil paketi yükleniyor...");
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target.result.split(",")[1];
+        const mediaType = file.type || "image/jpeg";
+        try {
+          const res = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 200,
+              messages: [{
+                role: "user",
+                content: [
+                  { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
+                  { type: "text", text: "Bu görselde hayvan küpe etiketleri var. Küpelerdeki TÜM numaraları oku ve sadece numaraları virgülle ayırarak yaz. Örnek: TR-15-0042, TR-15-0043. Numara göremiyorsan sadece 'bulunamadı' yaz. Başka hiçbir şey yazma." }
+                ]
+              }]
+            })
+          });
+          const data = await res.json();
+          const text = (data.content?.[0]?.text || "").trim();
+          if (!text || text === "bulunamadı") {
+            setProgress("⚠️ Numara bulunamadı, tekrar deneyin");
+            setScanning(false);
+            setTimeout(() => setProgress(""), 3000);
+            return;
+          }
+          // Virgülle ayrılmış numaraları parse et
+          const nums = text.split(/[,\n]+/).map(n => n.trim()).filter(n => n.length >= 3);
+          if (nums.length > 0) {
+            setScanned(p => [...p, ...nums]);
+            onRead(nums);
+            setProgress(`✅ ${nums.length} numara okundu`);
+          } else {
+            setProgress("⚠️ Numara bulunamadı");
+          }
+        } catch (err) {
+          if (!navigator.onLine) {
+            setProgress("❌ İnternet bağlantısı yok");
+          } else {
+            setProgress("❌ Okuma başarısız, tekrar deneyin");
+          }
         }
-      });
-      await worker.setParameters({
-        tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-/ ",
-      });
-      const { data: { text } } = await worker.recognize(file);
-      await worker.terminate();
-
-      const lines = text.split(/[\n\r]+/).map(l=>l.trim()).filter(l=>l.length>2);
-      const matches = [];
-      lines.forEach(line => {
-        const patterns = line.match(/[A-Z]{0,3}[-\s]?\d{2,3}[-\s]?\d{3,6}/gi) || [];
-        patterns.forEach(p => {
-          const clean = p.trim().replace(/\s+/g,"-").toUpperCase();
-          if(!matches.includes(clean)) matches.push(clean);
-        });
-        const nums = line.match(/\d{4,10}/g) || [];
-        nums.forEach(n => { if(!matches.includes(n)) matches.push(n); });
-      });
-
-      if(matches.length>0){
-        setScanned(p=>[...p,...matches]);
-        onRead(matches);
-        setProgress(`✅ ${matches.length} numara okundu`);
-      } else {
-        setProgress("⚠️ Numara bulunamadı — manuel giriniz");
-      }
-    } catch(e) {
-      if(e.message && e.message.includes("network")){
-        setProgress("❌ İnternet bağlantısı gerekli (ilk kullanım)");
-      } else {
-        setProgress("❌ Okuma başarısız, tekrar deneyin");
-      }
+        setScanning(false);
+        setTimeout(() => setProgress(""), 4000);
+      };
+      reader.readAsDataURL(file);
+    } catch (e) {
+      setProgress("❌ Dosya okunamadı");
+      setScanning(false);
     }
-    setScanning(false);
-    setTimeout(()=>setProgress(""), 4000);
   };
 
   const handleFile = (e) => {
@@ -374,44 +377,42 @@ function EarTagScanner({ onRead, label }) {
   };
 
   return (
-    <div style={{marginBottom:4}}>
+    <div style={{ marginBottom: 4 }}>
       {label && <FL>{label}</FL>}
-      <div style={{display:"flex",gap:6,marginBottom:6}}>
-        <button type="button" onClick={()=>cameraRef.current?.click()}
+      <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+        <button type="button" onClick={() => cameraRef.current?.click()}
           disabled={scanning}
-          style={{flex:1,padding:"10px 0",borderRadius:10,border:"1.5px solid #4A7C3F",background:"#E3F0DC",color:"#3D5A25",fontWeight:700,fontSize:12,cursor:"pointer",opacity:scanning?.6:1}}>
+          style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1.5px solid #4A7C3F", background: "#E3F0DC", color: "#3D5A25", fontWeight: 700, fontSize: 12, cursor: "pointer", opacity: scanning ? .6 : 1 }}>
           📷 Kamera ile Çek
         </button>
-        <button type="button" onClick={()=>fileRef.current?.click()}
+        <button type="button" onClick={() => fileRef.current?.click()}
           disabled={scanning}
-          style={{flex:1,padding:"10px 0",borderRadius:10,border:"1.5px solid #2873A8",background:"#E6F1FB",color:"#0C447C",fontWeight:700,fontSize:12,cursor:"pointer",opacity:scanning?.6:1}}>
+          style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1.5px solid #2873A8", background: "#E6F1FB", color: "#0C447C", fontWeight: 700, fontSize: 12, cursor: "pointer", opacity: scanning ? .6 : 1 }}>
           🖼️ Galeriden Seç
         </button>
       </div>
-      {/* Kamera input */}
       <input ref={cameraRef} type="file" accept="image/*" capture="environment"
-        style={{display:"none"}} onChange={handleFile}/>
-      {/* Galeri input */}
+        style={{ display: "none" }} onChange={handleFile} />
       <input ref={fileRef} type="file" accept="image/*" multiple
-        style={{display:"none"}} onChange={handleFile}/>
+        style={{ display: "none" }} onChange={handleFile} />
 
-      {progress&&<div style={{fontSize:11,color:progress.startsWith("✅")?"#3D5A25":progress.startsWith("❌")?"#BE3B31":"#2873A8",padding:"6px 10px",background:progress.startsWith("✅")?"#E3F0DC":progress.startsWith("❌")?"#FFF0EE":"#E6F1FB",borderRadius:8,marginBottom:6,fontWeight:600}}>
-        {scanning&&"⏳ "}{progress}
+      {progress && <div style={{ fontSize: 11, color: progress.startsWith("✅") ? "#3D5A25" : progress.startsWith("❌") ? "#BE3B31" : "#2873A8", padding: "6px 10px", background: progress.startsWith("✅") ? "#E3F0DC" : progress.startsWith("❌") ? "#FFF0EE" : "#E6F1FB", borderRadius: 8, marginBottom: 6, fontWeight: 600 }}>
+        {scanning && "⏳ "}{progress}
       </div>}
 
-      {scanned.length>0&&(
-        <div style={{background:"#F5F3ED",borderRadius:8,padding:"6px 10px",marginBottom:4}}>
-          <div style={{fontSize:10,color:"#8c8c7e",marginBottom:4}}>Okunan numaralar (tıklayarak seç):</div>
-          <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-            {scanned.map((n,i)=>(
-              <button key={i} type="button" onClick={()=>onRead([n])}
-                style={{padding:"4px 10px",borderRadius:8,border:"1px solid #4A7C3F",background:"#fff",color:"#3D5A25",fontSize:12,fontWeight:700,cursor:"pointer"}}>
+      {scanned.length > 0 && (
+        <div style={{ background: "#F5F3ED", borderRadius: 8, padding: "6px 10px", marginBottom: 4 }}>
+          <div style={{ fontSize: 10, color: "#8c8c7e", marginBottom: 4 }}>Okunan numaralar (tıklayarak seç):</div>
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+            {scanned.map((n, i) => (
+              <button key={i} type="button" onClick={() => onRead([n])}
+                style={{ padding: "4px 10px", borderRadius: 8, border: "1px solid #4A7C3F", background: "#fff", color: "#3D5A25", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                 {n}
               </button>
             ))}
           </div>
-          <button type="button" onClick={()=>setScanned([])}
-            style={{fontSize:10,color:"#BE3B31",background:"none",border:"none",cursor:"pointer",marginTop:4}}>
+          <button type="button" onClick={() => setScanned([])}
+            style={{ fontSize: 10, color: "#BE3B31", background: "none", border: "none", cursor: "pointer", marginTop: 4 }}>
             × Temizle
           </button>
         </div>
