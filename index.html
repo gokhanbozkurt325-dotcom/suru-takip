@@ -657,95 +657,156 @@ function VaccineModal({ breed, goats, onSave, onClose, currentUser }) {
 // ── Toplu Küpe Girişi (sesli + elle) ──
 function BulkEarTagInput({ value, onChange }) {
   const [listening, setListening] = useState(false);
+  const [interim, setInterim] = useState(""); // anlık dinlenen metin
   const recRef = useRef(null);
-  const taRef = useRef(null);
+  const bufferRef = useRef(""); // birikmiş rakamlar
 
-  // Sesten küpe oluştur: "on beş sıfır dört iki" → "0042"
-  const wordsToNums = (txt) => {
-    const map = {"sıfır":"0","bir":"1","iki":"2","üç":"3","dört":"4","beş":"5","altı":"6","yedi":"7","sekiz":"8","dokuz":"9","on":"10","onbir":"11","oniki":"12","onüç":"13","ondört":"14","onbeş":"15","onaltı":"16","onyedi":"17","onsekiz":"18","ondokuz":"19","yirmi":"20"};
-    // Önce rakamları al
-    const nums = txt.replace(/[^0-9]/g,"");
-    if(nums) return nums;
-    // Kelimeden rakama
-    let result = txt.toLowerCase();
-    Object.keys(map).forEach(k=>{ result = result.replace(new RegExp(k,"g"), map[k]); });
-    return result.replace(/[^0-9]/g,"");
+  // Ham metni TR-xx-xxxxxxx formatına çevir
+  const parseRaw = (raw) => {
+    const nums = raw.replace(/[^0-9]/g,"");
+    if(nums.length===0) return null;
+    const p1 = nums.slice(0,2);
+    const p2 = nums.slice(2);
+    return `TR-${p1}-${p2}`;
   };
+
+  // Türkçe kelimeden rakam çıkar
+  const toNums = (txt) => {
+    let s = txt.toLowerCase()
+      .replace(/sıfır|zero/g,"0")
+      .replace(/bir|one/g,"1")
+      .replace(/iki|two/g,"2")
+      .replace(/üç|uch|three/g,"3")
+      .replace(/dört|dort|four/g,"4")
+      .replace(/beş|bes|five/g,"5")
+      .replace(/altı|alti|six/g,"6")
+      .replace(/yedi|seven/g,"7")
+      .replace(/sekiz|eight/g,"8")
+      .replace(/dokuz|nine/g,"9")
+      .replace(/on\s?iki/g,"12")
+      .replace(/on\s?bir/g,"11")
+      .replace(/on\s?üç/g,"13")
+      .replace(/on\s?dört/g,"14")
+      .replace(/on\s?beş/g,"15")
+      .replace(/on\s?altı/g,"16")
+      .replace(/on\s?yedi/g,"17")
+      .replace(/on\s?sekiz/g,"18")
+      .replace(/on\s?dokuz/g,"19")
+      .replace(/\bon\b/g,"10")
+      .replace(/yirmi\s?/g,"2")
+      .replace(/otuz\s?/g,"3")
+      .replace(/kırk\s?/g,"4")
+      .replace(/elli\s?/g,"5");
+    return s.replace(/[^0-9]/g,"");
+  };
+
+  const isTR = (txt) => /^(tr|ti\s?ar|te\s?er|tı\s?er|tire|tiar)$/i.test(txt.trim());
 
   const startVoice = () => {
     const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!SR){ alert("Sesli yazma desteklenmiyor. Chrome kullanın."); return; }
-    if(listening){ recRef.current?.stop(); setListening(false); return; }
+    if(listening){ recRef.current?.stop(); setListening(false); setInterim(""); return; }
+
     const r = new SR();
-    r.lang="tr-TR"; r.continuous=true; r.interimResults=false;
+    r.lang = "tr-TR";
+    r.continuous = true;
+    r.interimResults = true;
+
     r.onresult = (e) => {
-      const txt = e.results[e.results.length-1][0].transcript.trim().toLowerCase();
-      // "TR", "te er", "tı er", "tire" → yeni küpe başlat
-      if(/^(tr|te\s?er|t[iı]\s?er|tire|ti\s?ar)$/i.test(txt)){
-        onChange(prev => {
-          const lines = (prev||"").split("\n").filter(l=>l.trim());
-          lines.push("TR--");
-          return lines.join("\n");
-        });
-      } else {
-        // Mevcut son satıra sayı ekle
-        const nums = wordsToNums(txt);
-        if(!nums) return;
-        onChange(prev => {
-          const lines = (prev||"").split("\n");
-          const lastIdx = lines.length-1;
-          const last = lines[lastIdx]||"";
-          if(last.startsWith("TR")){
-            const parts = last.split("-");
-            // TR-[p1]-[p2] formatı
-            const p1 = parts[1]||"";
-            const p2 = parts[2]||"";
-            if(p1.length<2){
-              // İlk iki hane dolmamış
-              const newP1 = (p1+nums).slice(0,2);
-              const rest = (p1+nums).slice(2);
-              lines[lastIdx] = `TR-${newP1}-${rest}`;
-            } else {
-              // İlk iki hane dolmuş, sonuna ekle
-              lines[lastIdx] = `TR-${p1}-${p2+nums}`;
+      let final = "";
+      let inter = "";
+      for(let i=e.resultIndex; i<e.results.length; i++){
+        if(e.results[i].isFinal) final += e.results[i][0].transcript;
+        else inter += e.results[i][0].transcript;
+      }
+      setInterim(inter);
+
+      if(!final) return;
+      const txt = final.trim();
+
+      if(isTR(txt)){
+        // Önce buffer'da birikmişse mevcut satırı tamamla
+        if(bufferRef.current){
+          const tag = parseRaw(bufferRef.current);
+          bufferRef.current = "";
+          onChange(prev=>{
+            const lines = (prev||"").split("\n").filter(l=>l.trim());
+            // Son satırı güncelle
+            if(lines.length>0 && lines[lines.length-1].startsWith("TR-")){
+              lines[lines.length-1] = tag||lines[lines.length-1];
             }
-          } else {
-            // TR ile başlayan satır yok, yenisine ekle
-            lines.push(`TR--${nums}`);
-          }
-          return lines.join("\n");
-        });
+            lines.push("TR--");
+            return lines.join("\n");
+          });
+        } else {
+          // Yeni satır ekle
+          onChange(prev=>{
+            const lines = (prev||"").split("\n").filter(l=>l.trim());
+            lines.push("TR--");
+            return lines.join("\n");
+          });
+        }
+        bufferRef.current = "";
+      } else {
+        // Rakam geldi - buffer'a ekle
+        const nums = toNums(txt);
+        if(nums){
+          bufferRef.current += nums;
+          const tag = parseRaw(bufferRef.current);
+          onChange(prev=>{
+            const lines = (prev||"").split("\n");
+            const lastIdx = lines.length-1;
+            if(lastIdx>=0 && lines[lastIdx].startsWith("TR")){
+              lines[lastIdx] = tag||lines[lastIdx];
+            }
+            return lines.join("\n");
+          });
+        }
       }
     };
-    r.onerror=()=>setListening(false);
-    r.onend=()=>{ setListening(false); };
-    recRef.current=r; r.start(); setListening(true);
+
+    r.onerror = () => { setListening(false); setInterim(""); };
+    r.onend = () => { setListening(false); setInterim(""); bufferRef.current=""; };
+    recRef.current = r;
+    r.start();
+    setListening(true);
+    bufferRef.current = "";
   };
 
-  const count = (value||"").split("\n").filter(l=>l.trim().match(/^TR-\d{1,2}-\d+$/)).length;
+  const validCount = (value||"").split("\n").filter(l=>/^TR-\d{2}-.+$/.test(l.trim())).length;
+  const totalCount = (value||"").split("\n").filter(l=>l.trim().startsWith("TR")).length;
 
   return (
     <div>
-      <div style={{display:"flex",gap:6,marginBottom:6,alignItems:"center"}}>
+      <div style={{display:"flex",gap:6,marginBottom:8,alignItems:"center",flexWrap:"wrap"}}>
         <button type="button" onClick={startVoice}
-          style={{padding:"9px 14px",borderRadius:10,border:`1.5px solid ${listening?"#BE3B31":"#4A7C3F"}`,background:listening?"#FFF0EE":"#E3F0DC",color:listening?"#BE3B31":"#3D5A25",fontWeight:700,fontSize:12,cursor:"pointer",animation:listening?"pulse 1s infinite":"none",display:"flex",alignItems:"center",gap:6}}>
-          {listening?"⏹ Durdur":"🎤 Sesli Gir"}
+          style={{padding:"10px 16px",borderRadius:10,border:`1.5px solid ${listening?"#BE3B31":"#4A7C3F"}`,background:listening?"#FFF0EE":"#E3F0DC",color:listening?"#BE3B31":"#3D5A25",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+          <span style={{fontSize:18,animation:listening?"pulse 1s infinite":"none"}}>{listening?"⏹":"🎤"}</span>
+          {listening?"Durdur":"Sesli Gir"}
         </button>
-        {listening&&<div style={{fontSize:11,color:"#BE3B31",fontWeight:600,display:"flex",alignItems:"center",gap:4}}>
-          <span style={{animation:"pulse 1s infinite"}}>●</span> "TR" = yeni küpe başlar
-        </div>}
+        {listening&&(
+          <div style={{fontSize:11,color:"#BE3B31",fontWeight:600,background:"#FFF0EE",padding:"6px 10px",borderRadius:8,flex:1}}>
+            ● Dinleniyor... "TR" = yeni küpe
+            {interim&&<span style={{color:"#555",marginLeft:6,fontStyle:"italic"}}>{interim}</span>}
+          </div>
+        )}
       </div>
+
       <textarea
-        ref={taRef}
         value={value}
         onChange={e=>onChange(e.target.value)}
-        rows={6}
-        placeholder={"TR-15-0001\nTR-15-0002\nTR-24-0042\n\n(Her satıra bir küpe, format: TR-xx-xxxxxx)"}
-        style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:13,fontFamily:"monospace",lineHeight:1.8,resize:"vertical",boxSizing:"border-box",outline:"none"}}
+        rows={5}
+        placeholder={"TR-15-0001234\nTR-23-3232322\nTR-15-0005678\n\n(Her satıra bir küpe — TR-xx-xxxxxxx)"}
+        style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:13,fontFamily:"monospace",lineHeight:2,resize:"vertical",boxSizing:"border-box",outline:"none"}}
       />
-      {count>0&&<div style={{fontSize:10,color:"#4A7C3F",marginTop:2,fontWeight:600}}>
-        ✅ {count} geçerli küpe formatı
-      </div>}
+
+      {totalCount>0&&(
+        <div style={{display:"flex",gap:8,marginTop:4}}>
+          <span style={{fontSize:11,color:"#4A7C3F",fontWeight:600}}>✅ {validCount} geçerli</span>
+          {totalCount>validCount&&<span style={{fontSize:11,color:"#BE3B31",fontWeight:600}}>⚠️ {totalCount-validCount} eksik</span>}
+          <span style={{fontSize:11,color:"#8c8c7e",marginLeft:"auto"}}>Format: TR-xx-xxxxxxx</span>
+        </div>
+      )}
     </div>
   );
 }
