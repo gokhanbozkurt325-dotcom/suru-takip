@@ -390,6 +390,7 @@ function EarTagInput({ value, onChange }) {
 function MicBtn({ onResult, style }) {
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
+  const listeningRef = useRef(false);
 
   const toggle = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -397,25 +398,43 @@ function MicBtn({ onResult, style }) {
       alert("Tarayıcınız sesli yazma desteklemiyor. Chrome kullanın.");
       return;
     }
-    if (listening) {
+    if (listeningRef.current) {
+      listeningRef.current = false;
       recognitionRef.current?.stop();
       setListening(false);
       return;
     }
-    const r = new SpeechRecognition();
-    r.lang = "tr-TR";
-    r.continuous = false;
-    r.interimResults = false;
-    r.onresult = (e) => {
-      const text = e.results[0][0].transcript;
-      onResult(text);
-      setListening(false);
-    };
-    r.onerror = () => setListening(false);
-    r.onend = () => setListening(false);
-    recognitionRef.current = r;
-    r.start();
+    listeningRef.current = true;
     setListening(true);
+
+    const startRec = () => {
+      if (!listeningRef.current) return;
+      const r = new SpeechRecognition();
+      r.lang = "tr-TR";
+      r.continuous = false;
+      r.interimResults = false;
+      r.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        onResult(text);
+        // iPhone'da tek sonuç alınca bitir
+        listeningRef.current = false;
+        setListening(false);
+      };
+      r.onerror = () => {
+        listeningRef.current = false;
+        setListening(false);
+      };
+      r.onend = () => {
+        listeningRef.current = false;
+        setListening(false);
+      };
+      recognitionRef.current = r;
+      try { r.start(); } catch(e) {
+        listeningRef.current = false;
+        setListening(false);
+      }
+    };
+    startRec();
   };
 
   return (
@@ -713,51 +732,79 @@ function BulkEarTagInput({ tags, onTagsChange }) {
     return { p1, p2, full: `TR-${p1}-${p2}` };
   };
 
+  const listeningRef = useRef(false);
+
+  const processResult = (txt) => {
+    if(!txt) return;
+    const parsed = parseSpeechToTags(txt);
+    if(parsed.length > 0){
+      const newTags = [...tagsRef.current, ...parsed.map(buildTag)];
+      tagsRef.current = newTags;
+      onTagsChange(newTags);
+    } else {
+      const nums = wordsToNums(txt);
+      if(!nums) return;
+      if(tagsRef.current.length > 0){
+        const last = tagsRef.current.length - 1;
+        const cur = tagsRef.current[last];
+        const combined = cur.p1 + cur.p2 + nums;
+        const updated = tagsRef.current.map((t,i)=> i===last ? buildTag(combined) : t);
+        tagsRef.current = updated;
+        onTagsChange(updated);
+      } else {
+        const newTags = [buildTag(nums)];
+        tagsRef.current = newTags;
+        onTagsChange(newTags);
+      }
+    }
+  };
+
   const startVoice = () => {
     const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!SR){ alert("Sesli yazma desteklenmiyor. Chrome kullanın."); return; }
-    if(listening){ recRef.current?.stop(); setListening(false); return; }
+    if(listeningRef.current){ recRef.current?.stop(); listeningRef.current=false; setListening(false); return; }
 
-    const r = new SR();
-    r.lang = "tr-TR";
-    r.continuous = true;
-    r.interimResults = false;
+    listeningRef.current = true;
+    setListening(true);
 
-    r.onresult = (e) => {
-      const txt = e.results[e.results.length-1][0].transcript.trim();
-      if(!txt) return;
+    const startSession = () => {
+      if(!listeningRef.current) return;
+      const r = new SR();
+      r.lang = "tr-TR";
+      // iPhone Safari continuous desteklemez — her oturumda 1 sonuç alıp tekrar başlat
+      r.continuous = false;
+      r.interimResults = false;
 
-      const parsed = parseSpeechToTags(txt);
+      r.onresult = (e) => {
+        const txt = e.results[0][0].transcript.trim();
+        processResult(txt);
+      };
 
-      if(parsed.length > 0){
-        // Her blok → ayrı küpe satırı (alt alta)
-        const newTags = [...tagsRef.current, ...parsed.map(buildTag)];
-        tagsRef.current = newTags;
-        onTagsChange(newTags);
-      } else {
-        // TR yoksa sadece rakam — son satıra ekle veya yeni satır aç
-        const nums = wordsToNums(txt);
-        if(!nums) return;
-        if(tagsRef.current.length > 0){
-          const last = tagsRef.current.length - 1;
-          const cur = tagsRef.current[last];
-          const combined = cur.p1 + cur.p2 + nums;
-          const updated = tagsRef.current.map((t,i)=> i===last ? buildTag(combined) : t);
-          tagsRef.current = updated;
-          onTagsChange(updated);
+      r.onerror = (e) => {
+        if(e.error === "no-speech") {
+          // Ses gelmedi, tekrar dene
+          setTimeout(()=>startSession(), 200);
         } else {
-          const newTags = [buildTag(nums)];
-          tagsRef.current = newTags;
-          onTagsChange(newTags);
+          listeningRef.current = false;
+          setListening(false);
         }
+      };
+
+      r.onend = () => {
+        // Oturum bitti — hâlâ dinleme modundaysa yeni oturum başlat (iPhone için)
+        if(listeningRef.current) {
+          setTimeout(()=>startSession(), 150);
+        }
+      };
+
+      recRef.current = r;
+      try { r.start(); } catch(err) {
+        listeningRef.current = false;
+        setListening(false);
       }
     };
 
-    r.onerror = ()=>setListening(false);
-    r.onend = ()=>setListening(false);
-    recRef.current = r;
-    r.start();
-    setListening(true);
+    startSession();
   };
 
   // Her satır için ayrı mikrofon: hangi satırın hangi bölümünü dolduracağını bilir
