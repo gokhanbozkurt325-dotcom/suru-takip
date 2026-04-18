@@ -395,6 +395,8 @@ function EarTagInput({ value, onChange }) {
     // Boşlukla ayrılmış rakam gruplarını (10 5 → 15 değil, 10 + 5 = ayrı)
     // Ama "10" + "5" yan yana gelince "105" olmamalı
     // Sadece rakamları al — boşlukları koru, sonra birleştir
+    // "10 5","20 3" gibi onluk+tek rakam → birleştir ("on 5" telefon karışık gönderir)
+    s = s.replace(/\b(10|20|30|40|50|60|70|80|90) ([0-9])\b/g, function(m,t,o){return String(parseInt(t)+parseInt(o));});
     const parts = s.match(/\d+/g);
     if(!parts) return "";
     // Eğer tek parça → direkt
@@ -788,6 +790,8 @@ function BulkEarTagInput({ tags, onTagsChange }) {
       .replace(/sıfır/g,"0").replace(/\bbir\b/g,"1").replace(/\biki\b/g,"2").replace(/\büç\b/g,"3")
       .replace(/\bdört\b/g,"4").replace(/\bbeş\b/g,"5").replace(/\baltı\b/g,"6")
       .replace(/\byedi\b/g,"7").replace(/\bsekiz\b/g,"8").replace(/\bdokuz\b/g,"9");
+    // "10 5","20 3" gibi onluk+tek rakam → birleştir
+    s = s.replace(/\b(10|20|30|40|50|60|70|80|90) ([0-9])\b/g, function(m,t,o){return String(parseInt(t)+parseInt(o));});
     const parts = s.match(/\d+/g);
     if(!parts) return "";
     return parts.join("");
