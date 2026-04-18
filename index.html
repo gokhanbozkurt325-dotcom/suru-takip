@@ -31,6 +31,18 @@ const SUPABASE_URL = "https://ybzxjsyvetcjchiooosi.supabase.co";
 const SUPABASE_KEY = "sb_publishable_UjiZoLFj5VkqXoK3NpIw0g_QgWk7tt1";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+
+// ── Renk Temaları ──
+const COLOR_THEMES = [
+  { id:"yesil",   name:"Orman Yeşili",  emoji:"🌿", primary:"#4A7C3F", dark:"#2D4A20", light:"#E3F0DC", bg:"#F5FAF0",  header:"linear-gradient(135deg,#2D4A20,#4A7C3F)", loginBg:"linear-gradient(155deg,#2D4A20 0%,#4A7C3F 40%,#6B9F5B 100%)" },
+  { id:"mavi",    name:"Okyanus Mavisi", emoji:"🌊", primary:"#1A6B9A", dark:"#0C3D5C", light:"#D6EAF8", bg:"#EBF5FB",  header:"linear-gradient(135deg,#0C3D5C,#1A6B9A)", loginBg:"linear-gradient(155deg,#0C3D5C 0%,#1A6B9A 40%,#2E86C1 100%)" },
+  { id:"mor",     name:"Asil Mor",       emoji:"🔮", primary:"#7B4B94", dark:"#4A2060", light:"#F0E6F6", bg:"#F9F3FC",  header:"linear-gradient(135deg,#4A2060,#7B4B94)", loginBg:"linear-gradient(155deg,#4A2060 0%,#7B4B94 40%,#9B6BB4 100%)" },
+  { id:"turuncu", name:"Gün Batımı",     emoji:"🌅", primary:"#C0550A", dark:"#7A3005", light:"#FDE8D8", bg:"#FEF4EE",  header:"linear-gradient(135deg,#7A3005,#C0550A)", loginBg:"linear-gradient(155deg,#7A3005 0%,#C0550A 40%,#E07030 100%)" },
+  { id:"lacivert", name:"Gece Laciveri", emoji:"🌙", primary:"#2C3E7A", dark:"#111A40", light:"#D6DCF5", bg:"#EEF0FA",  header:"linear-gradient(135deg,#111A40,#2C3E7A)", loginBg:"linear-gradient(155deg,#111A40 0%,#2C3E7A 40%,#3D5299 100%)" },
+  { id:"bordo",   name:"Koyu Bordo",     emoji:"🍷", primary:"#8B1A2F", dark:"#4A0010", light:"#F5D0D8", bg:"#FEF0F2",  header:"linear-gradient(135deg,#4A0010,#8B1A2F)", loginBg:"linear-gradient(155deg,#4A0010 0%,#8B1A2F 40%,#AA3050 100%)" },
+];
+const DEFAULT_THEME = COLOR_THEMES[0];
+
 const BREEDS = [
   { id:"saanen",  name:"Saanen",  emoji:"🤍", color:"#4A7C3F", bg:"#E3F0DC", bgCard:"#F5FAF0", desc:"Süt verimi yüksek, beyaz tüylü" },
   { id:"honamli", name:"Honamlı", emoji:"🖤", color:"#7B4B94", bg:"#F0E6F6", bgCard:"#F9F3FC", desc:"Yerli ırk, dayanıklı, uzun tüylü" },
@@ -52,7 +64,7 @@ const CLOSE_REASONS = ["İyileşti","Tedavi Tamamlandı","Kronik Hastalık","Hay
 
 const DEMO_USERS = [
   { id:"u1", name:"Veteriner Hekim", role:"veteriner", emoji:"👨‍⚕️", members:[], pin:"" },
-  { id:"u2", name:"Şef",             role:"sef",       emoji:"👤",    members:[], pin:"" },
+  { id:"u2", name:"Bekir Zengin",     role:"sef",       emoji:"👤",    members:["Bekir Zengin","Ali Özen"], pin:"" },
   { id:"u3", name:"Vardiya 1",       role:"vardiya",   emoji:"👷",    members:["Uğur","Erdem","Hakan"] },
   { id:"u4", name:"Vardiya 2",       role:"vardiya",   emoji:"👷",    members:["Mehmet","Zafer","Turan"] },
   { id:"u5", name:"Vardiya 3",       role:"vardiya",   emoji:"👷",    members:["İsmail","Süleyman","Ramazan"] },
@@ -443,8 +455,8 @@ function MicBtn({ onResult, style }) {
       onClick={toggle}
       title={listening ? "Dinleniyor... tıkla durdur" : "Sesli yaz"}
       style={{
-        background: listening ? "#BE3B31" : "#E6F1FB",
-        border: `1.5px solid ${listening ? "#BE3B31" : "#B5D4F4"}`,
+        background: listening ? "#BE3B31" : "var(--primary-light,#E3F0DC)",
+        border: `1.5px solid ${listening ? "#BE3B31" : "var(--primary,#4A7C3F)"}`,
         borderRadius: 8,
         padding: "0 10px",
         cursor: "pointer",
@@ -834,7 +846,7 @@ function BulkEarTagInput({ tags, onTagsChange }) {
       {/* Sürekli dinleme modu (toplu sesli giriş için) */}
       <div style={{display:"flex",gap:6,marginBottom:8,alignItems:"center"}}>
         <button type="button" onClick={startVoice}
-          style={{padding:"8px 14px",borderRadius:10,border:`1.5px solid ${listening?"#BE3B31":"#4A7C3F"}`,background:listening?"#FFF0EE":"#E3F0DC",color:listening?"#BE3B31":"#3D5A25",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+          style={{padding:"8px 14px",borderRadius:10,border:`1.5px solid ${listening?"#BE3B31":"var(--primary,#4A7C3F)"}`,background:listening?"#FFF0EE":"var(--primary-light,#E3F0DC)",color:listening?"#BE3B31":"var(--primary-dark,#3D5A25)",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
           <span>{listening?"⏹":"🎤"}</span>
           {listening?"Toplu Girişi Durdur":"Toplu Sesli Giriş"}
         </button>
@@ -1180,7 +1192,7 @@ function timeAgo(dt){
 }
 
 function RecentActivities({ activities, onDelete, currentUser }) {
-  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Şef";
+  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Bekir Zengin"||currentUser==="Ali Özen";
   const [expanded, setExpanded] = useState(true);
   if(!activities || activities.length===0) return null;
   return (
@@ -1315,7 +1327,7 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
   const [saving, setSaving] = useState(false);
   const [selBreed, setSelBreed] = useState("all");
   const [deathPhotos, setDeathPhotos] = useState({}); // {deathId: [url,...]}
-  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Şef";
+  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Bekir Zengin"||currentUser==="Ali Özen";
 
   useEffect(()=>setLocal(deaths),[deaths]);
 
@@ -1530,7 +1542,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
   const [saving, setSaving] = useState(false);
   const [selBreed, setSelBreed] = useState("all");
   const [markingDay, setMarkingDay] = useState(null);
-  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Şef";
+  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Bekir Zengin"||currentUser==="Ali Özen";
   const today = todayISO();
 
   useEffect(()=>setLocal(groupTreatments),[groupTreatments]);
@@ -1793,7 +1805,7 @@ function BirthsPage({ births, currentUser, onDelete, onAdd }) {
   const [showModal, setShowModal] = useState(false);
   const [editBirth, setEditBirth] = useState(null);
   const [localBirths, setLocalBirths] = useState(births);
-  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Şef";
+  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Bekir Zengin"||currentUser==="Ali Özen";
 
   useEffect(()=>setLocalBirths(births),[births]);
 
@@ -1895,7 +1907,7 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
   const [expandedReport, setExpandedReport] = useState(null);
   const [vaccineReportsLocal, setVaccineReportsLocal] = useState(vaccineReports);
   useEffect(()=>{ setVaccineReportsLocal(vaccineReports); },[vaccineReports]);
-  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Şef";
+  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Bekir Zengin"||currentUser==="Ali Özen";
 
   const filtered = selBreed==="all" ? reports : reports.filter(r=>r.breed===selBreed);
   const sorted = [...filtered].sort((a,b)=>new Date(b.dateClosed)-new Date(a.dateClosed));
@@ -2500,7 +2512,7 @@ function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCr
   const [editMembersGroup, setEditMembersGroup] = useState(null);
   const [confirmDeleteGroup, setConfirmDeleteGroup] = useState(null);
   const [viewTab, setViewTab] = useState("gruplar");
-  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Şef";
+  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Bekir Zengin"||currentUser==="Ali Özen";
 
   const breedGroups = vaccineGroups.filter(g=>g.breed===breed.id);
   const breedReports = [...vaccineReports].filter(r=>r.breed===breed.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
@@ -2696,7 +2708,7 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
   const [editSchedule, setEditSchedule] = useState(null);
   const [localReports, setLocalReports] = useState(vaccineReports);
   const [applyingId, setApplyingId] = useState(null);
-  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Şef";
+  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Bekir Zengin"||currentUser==="Ali Özen";
 
   useEffect(()=>setLocalReports(vaccineReports),[vaccineReports]);
 
@@ -3249,8 +3261,10 @@ function App(){
   };
 
   const isGuest = currentUser==="Misafir";
-  const [soundPref, setSoundPref] = useState(null); // null=sorulmadı, true=açık, false=kapalı
+  const [soundPref, setSoundPref] = useState(null);
   const [showSoundPrompt, setShowSoundPrompt] = useState(false);
+  const [theme, setTheme] = useState(DEFAULT_THEME);
+  const [showThemePrompt, setShowThemePrompt] = useState(false);
 
   // Ses çal
   const playWelcome = (userName, recs) => {
@@ -3274,21 +3288,24 @@ function App(){
   const handleLoginSuccess = async (userName) => {
     setCurrentUser(userName);
     setShowLogin(false);
-    // Supabase'den tercih oku
     try {
       const {data} = await sb.from("user_preferences").select("*").eq("user_name", userName).single();
+      // Tema yükle
+      if(data && data.theme_id) {
+        const t = COLOR_THEMES.find(x=>x.id===data.theme_id);
+        if(t) setTheme(t);
+      }
+      // Ses
       if(data && data.sound_enabled === true) {
-        // Ses açık, çal
         setTimeout(()=>playWelcome(userName, healthRecs), 800);
       } else if(data && data.sound_enabled === false) {
-        // Ses kapalı, çalma
+        // kapalı
       } else {
-        // Hiç tercih yok, sor
-        setTimeout(()=>setShowSoundPrompt(true), 500);
+        // İlk giriş — önce tema seç, sonra ses sor
+        setTimeout(()=>setShowThemePrompt(true), 500);
       }
     } catch(e) {
-      // Kayıt yok, sor
-      setTimeout(()=>setShowSoundPrompt(true), 500);
+      setTimeout(()=>setShowThemePrompt(true), 500);
     }
   };
 
@@ -3297,20 +3314,32 @@ function App(){
     setSoundPref(enabled);
     setShowSoundPrompt(false);
     try {
-      await sb.from("user_preferences").upsert({id:"sp_"+userName.replace(/\s/g,"_"), user_name:userName, sound_enabled:enabled});
+      await sb.from("user_preferences").upsert({id:"sp_"+userName.replace(/\s/g,"_"), user_name:userName, sound_enabled:enabled, theme_id:theme.id});
     } catch(e){}
     if(enabled) setTimeout(()=>playWelcome(userName, healthRecs), 300);
   };
 
+  const saveTheme = async (t, showSoundNext) => {
+    setTheme(t);
+    setShowThemePrompt(false);
+    try {
+      await sb.from("user_preferences").upsert({id:"sp_"+currentUser.replace(/\s/g,"_"), user_name:currentUser, theme_id:t.id});
+    } catch(e){}
+    if(showSoundNext) setTimeout(()=>setShowSoundPrompt(true), 300);
+  };
+
   useEffect(()=>{
     if(showLogin||!currentUser) return;
-    const loadSoundPref = async()=>{
+    const loadPrefs = async()=>{
       try {
         const {data} = await sb.from("user_preferences").select("*").eq("user_name",currentUser).single();
-        if(data) setSoundPref(data.sound_enabled);
+        if(data) {
+          setSoundPref(data.sound_enabled);
+          if(data.theme_id){ const t=COLOR_THEMES.find(x=>x.id===data.theme_id); if(t) setTheme(t); }
+        }
       } catch(e){}
     };
-    loadSoundPref();
+    loadPrefs();
   },[currentUser,showLogin]);
   // Misafir giriş kontrolü - sadece açık/kapalı
   useEffect(()=>{
@@ -3427,14 +3456,14 @@ function App(){
   };
 
   if(showLogin) return (
-    <div style={S.loginWrap}><style>{css}</style>
+    <div style={{...S.loginWrap, background:theme.loginBg}}><style>{css}</style>
       <div style={{width:"100%",maxWidth:420,padding:"0 16px",paddingBottom:20}}>
 
         {/* Başlık */}
         <div style={{textAlign:"center",marginBottom:20,paddingTop:20}}>
           <div style={{fontSize:48,animation:"pulse 2s infinite"}}>🐐</div>
-          <h1 style={{color:"#fff",fontSize:22,fontWeight:800,margin:"8px 0 2px"}}>Sürü Takip Sistemi</h1>
-          <p style={{color:"rgba(255,255,255,.6)",fontSize:12,margin:0}}>☁️ Bulut Tabanlı · 3 Irk · Çok Kullanıcılı</p>
+          <h1 style={{color:"#fff",fontSize:18,fontWeight:800,margin:"8px 0 2px",lineHeight:1.3}}>BURDUR Açık Cezaevi<br/>İş Yurtları Hayvancılık</h1>
+          <p style={{color:"rgba(255,255,255,.6)",fontSize:12,margin:0}}>🤖 Yapay Zeka Destekli · ☁️ Bulut Tabanlı</p>
         </div>
 
         {/* Duyurular */}
@@ -3476,11 +3505,11 @@ function App(){
                 const {data} = await sb.from("guest_access").select("*").eq("id","singleton").single();
                 if(!data||!data.is_open){setPinError("Misafir girişi kapalı.");return;}
                 setCurrentUser("Misafir");setShowLogin(false);
-              }} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:`1px solid ${guestAccess.isOpen?"#4A7C3F":"#E0DDD4"}`,background:guestAccess.isOpen?"#F3F8F0":"#F9F9F6",cursor:guestAccess.isOpen?"pointer":"not-allowed",width:"100%",marginBottom:6,textAlign:"left",opacity:guestAccess.isOpen?1:.6}}>
+              }} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:`1px solid ${guestAccess.isOpen?"#4A7C3F":"#E0DDD4"}`,background:guestAccess.isOpen?theme.bg:"#F9F9F6",cursor:guestAccess.isOpen?"pointer":"not-allowed",width:"100%",marginBottom:6,textAlign:"left",opacity:guestAccess.isOpen?1:.6}}>
                 <span style={{fontSize:18}}>👁</span>
                 <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:14,color:guestAccess.isOpen?"#3D5A25":"#8c8c7e"}}>Misafir</div>
-                  <div style={{fontSize:10,color:guestAccess.isOpen?"#4A7C3F":"#aaa"}}>{guestAccess.isOpen?"✅ Açık — Giriş yapabilirsiniz":"🔒 Kapalı — Veteriner Hekim açabilir"}</div>
+                  <div style={{fontWeight:700,fontSize:14,color:guestAccess.isOpen?theme.dark:"#8c8c7e"}}>Misafir</div>
+                  <div style={{fontSize:10,color:guestAccess.isOpen?theme.primary:"#aaa"}}>{guestAccess.isOpen?"✅ Açık — Giriş yapabilirsiniz":"🔒 Kapalı — Veteriner Hekim açabilir"}</div>
                 </div>
                 {guestAccess.isOpen&&<span style={{color:"#4A7C3F",fontSize:16}}>›</span>}
               </button>
@@ -3511,7 +3540,7 @@ function App(){
                     <div style={{width:32,height:32,borderRadius:"50%",background:"#E3F0DC",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#3D5A25"}}>{m[0]}</div>
                     <div style={{flex:1}}>
                       <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{m}</div>
-                      <div style={{fontSize:10,color:userPins[m]?"#4A7C3F":"#D4850A"}}>{userPins[m]?"🔐 PIN oluşturulmuş":"⚠️ Henüz PIN oluşturulmamış"}</div>
+                      <div style={{fontSize:10,color:userPins[m]?theme.primary:"#D4850A"}}>{userPins[m]?"🔐 PIN oluşturulmuş":"⚠️ Henüz PIN oluşturulmamış"}</div>
                     </div>
                     <span style={{color:"#ccc",fontSize:16}}>›</span>
                   </button>
@@ -3551,7 +3580,7 @@ function App(){
 
               <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:12}}>
                 {[0,1,2,3].map(i=>(
-                  <div key={i} style={{width:44,height:52,borderRadius:10,border:`2px solid ${pinInput.length>i?"#4A7C3F":"#E8E5DC"}`,background:pinInput.length>i?"#E3F0DC":"#F9F9F6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:900,color:"#4A7C3F"}}>
+                  <div key={i} style={{width:44,height:52,borderRadius:10,border:`2px solid ${pinInput.length>i?theme.primary:"#E8E5DC"}`,background:pinInput.length>i?theme.light:"#F9F9F6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:900,color:theme.primary}}>
                     {pinInput.length>i?"●":""}
                   </div>
                 ))}
@@ -3576,7 +3605,8 @@ function App(){
   if(loading) return <Loading/>;
 
   return (
-    <div style={S.app}><style>{css}</style>
+    <div style={{...S.app,"--primary":theme.primary,"--primary-dark":theme.dark,"--primary-light":theme.light,"--primary-bg":theme.bg}}>
+      <style>{css+`:root{--primary:${theme.primary};--primary-dark:${theme.dark};--primary-light:${theme.light};}`}</style>
       {hModal&&!isGuest&&<HealthModal goats={goats} breedFilter={hModal.breedId||null} preGoatId={hModal.goatId||""} onSave={saveHealth} onClose={()=>setHModal(null)} currentUser={currentUser}/>}
       {vModal&&!isGuest&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
       {addGoatModal&&!isGuest&&<AddGoatModal breed={BREEDS.find(b=>b.id===(addGoatModal.breedId||addGoatModal))} defaultCategory={addGoatModal.defaultCategory||"anac"} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser}/>}
@@ -3592,6 +3622,27 @@ function App(){
         onClose={()=>setSelHealthRec(null)}
       />}
 
+      {/* Tema seçim sorusu — ilk giriş */}
+      {showThemePrompt && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16,overflowY:"auto"}}>
+          <div style={{background:"#fff",borderRadius:20,padding:22,width:"100%",maxWidth:360,textAlign:"center"}}>
+            <div style={{fontSize:36,marginBottom:8}}>🎨</div>
+            <div style={{fontWeight:800,fontSize:17,color:"#1e1e1e",marginBottom:4}}>Arayüz Renginizi Seçin</div>
+            <div style={{fontSize:12,color:"#8c8c7e",marginBottom:16}}>Seçtiğiniz renk sadece size özel kaydedilir.</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}>
+              {COLOR_THEMES.map(t=>(
+                <button key={t.id} onClick={()=>saveTheme(t,true)}
+                  style={{borderRadius:12,border:`2.5px solid ${theme.id===t.id?t.primary:"#E8E5DC"}`,background:t.light,padding:"10px 6px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                  <div style={{width:32,height:32,borderRadius:"50%",background:t.header,flexShrink:0}}/>
+                  <div style={{fontSize:10,fontWeight:700,color:t.primary,lineHeight:1.2}}>{t.emoji} {t.name}</div>
+                </button>
+              ))}
+            </div>
+            <button onClick={()=>saveTheme(DEFAULT_THEME,true)} style={{fontSize:12,color:"#aaa",background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>Varsayılanı kullan</button>
+          </div>
+        </div>
+      )}
+
       {/* Ses tercihi sorusu */}
       {showSoundPrompt && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
@@ -3599,14 +3650,14 @@ function App(){
             <div style={{fontSize:40,marginBottom:12}}>🔊</div>
             <div style={{fontWeight:800,fontSize:17,color:"#1e1e1e",marginBottom:8}}>Sesli Karşılama</div>
             <div style={{fontSize:13,color:"#555",marginBottom:20,lineHeight:1.6}}>
-              Her girişinizde sizi sesli karşılayalım mı? Sürü durumunu ve tedavideki hayvanları sesli olarak bildiririz.
+              Her girişinizde sizi sesli karşılayalım mı?
             </div>
             <div style={{display:"flex",gap:10}}>
-              <button onClick={()=>saveSoundPref(false)} style={{...S.btnOutline,flex:1,padding:12,fontSize:13}}>
-                Hayır, İstemiyorum
+              <button onClick={()=>saveSoundPref(false)} style={{...S.btnOutline,flex:1,padding:12,fontSize:13,borderColor:theme.primary,color:theme.primary}}>
+                Hayır
               </button>
-              <button onClick={()=>saveSoundPref(true)} style={{...S.btnPrimary,flex:1,padding:12,fontSize:13}}>
-                Evet, Açın!
+              <button onClick={()=>saveSoundPref(true)} style={{...S.btnPrimary,flex:1,padding:12,fontSize:13,background:theme.primary}}>
+                Evet!
               </button>
             </div>
           </div>
@@ -3630,13 +3681,13 @@ function App(){
         </div>
       )}
 
-      <div style={S.header}>
+      <div style={{...S.header, background:theme.header}}>
         {page==="home"
           ? <span style={{fontSize:20}}>🐐</span>
           : <button onClick={goBack} style={{...S.ghost,color:"#fff",fontSize:26,padding:"0 8px 0 0",lineHeight:1,fontWeight:300}}>‹</button>
         }
         <div style={{flex:1}}>
-          <div style={{color:"#fff",fontWeight:800,fontSize:15}}>{selGoat&&goat?goat.name:selBreed&&breed?breed.name:page==="home"?"Sürü Takip":page==="health"?"Sağlık Kayıtları":page==="vaccines"?"Aşı Takvimi":page==="births"?"Doğum Kayıtları":page==="deaths"?"Ölüm Kayıtları":page==="group_tx"?"Toplu Tedavi":page==="reports"?"Raporlar":page==="profile"?"Profil":"Sürü Takip"}</div>
+          <div style={{color:"#fff",fontWeight:800,fontSize:15}}>{selGoat&&goat?goat.name:selBreed&&breed?breed.name:page==="home"?"Hayvancılık":page==="health"?"Sağlık Kayıtları":page==="vaccines"?"Aşı Takvimi":page==="births"?"Doğum Kayıtları":page==="deaths"?"Ölüm Kayıtları":page==="group_tx"?"Toplu Tedavi":page==="reports"?"Raporlar":page==="profile"?"Profil":"Hayvancılık"}</div>
           <div style={{color:"rgba(255,255,255,.5)",fontSize:10}}>
             {isGuest?"👁 Misafir · Sadece Görüntüleme":"☁️ "+currentUser+" · "+activeGoats.length+" keçi"}
           </div>
@@ -3971,7 +4022,7 @@ function App(){
               <div style={{fontSize:44}}>{currentUser==="Misafir"?"👁":"👤"}</div>
               <h2 style={{margin:"4px 0 2px",fontSize:20,fontWeight:900,color:"#1e1e1e"}}>{currentUser}</h2>
               <div style={{fontSize:12,color:"#8c8c7e",marginTop:4}}>
-                {currentUser==="Misafir"?"Sadece Görüntüleme":DEMO_USERS.find(u=>u.name===currentUser)?.members?.join(" · ") || (DEMO_USERS.find(u=>u.name===currentUser)?.role==="veteriner"?"Veteriner Hekim":"Şef")}
+                {currentUser==="Misafir"?"Sadece Görüntüleme":DEMO_USERS.find(u=>u.name===currentUser)?.members?.join(" · ") || (DEMO_USERS.find(u=>u.name===currentUser)?.role==="veteriner"?"Veteriner Hekim":"Şef Yönetici")}
               </div>
               <div style={{marginTop:12}}>
                 <button onClick={()=>{setShowLogin(true);}} style={{...S.btnOutline,color:"#BE3B31",borderColor:"#BE3B31",fontSize:13}}>🚪 Çıkış Yap</button>
@@ -3981,29 +4032,48 @@ function App(){
             {/* Ses Ayarı */}
             {!isGuest && (
               <div style={{...S.card,marginBottom:10}}>
-                <div style={{fontWeight:700,fontSize:13,color:"#4A7C3F",marginBottom:8}}>🔊 Sesli Karşılama</div>
+                <div style={{fontWeight:700,fontSize:13,color:theme.primary,marginBottom:8}}>🔊 Sesli Karşılama</div>
                 <div style={{fontSize:12,color:"#8c8c7e",marginBottom:10}}>
                   {soundPref===true?"Her girişinizde sesli karşılama aktif ✅":soundPref===false?"Sesli karşılama kapalı 🔇":"Henüz tercih belirlenmedi"}
                 </div>
                 <div style={{display:"flex",gap:8}}>
                   <button onClick={async()=>{
                     setSoundPref(true);
-                    await sb.from("user_preferences").upsert({id:"sp_"+currentUser.replace(/\s/g,"_"),user_name:currentUser,sound_enabled:true});
+                    await sb.from("user_preferences").upsert({id:"sp_"+currentUser.replace(/\s/g,"_"),user_name:currentUser,sound_enabled:true,theme_id:theme.id});
                     playWelcome(currentUser,healthRecs);
-                  }} style={{...S.btnPrimary,flex:1,padding:10,fontSize:12,opacity:soundPref===true?.4:1}}>
+                  }} style={{...S.btnPrimary,flex:1,padding:10,fontSize:12,background:theme.primary,opacity:soundPref===true?.4:1}}>
                     🔊 Aç
                   </button>
                   <button onClick={async()=>{
                     setSoundPref(false);
                     window._welcomeAudio?.pause();
-                    await sb.from("user_preferences").upsert({id:"sp_"+currentUser.replace(/\s/g,"_"),user_name:currentUser,sound_enabled:false});
-                  }} style={{...S.btnOutline,flex:1,padding:10,fontSize:12,opacity:soundPref===false?.4:1}}>
+                    await sb.from("user_preferences").upsert({id:"sp_"+currentUser.replace(/\s/g,"_"),user_name:currentUser,sound_enabled:false,theme_id:theme.id});
+                  }} style={{...S.btnOutline,flex:1,padding:10,fontSize:12,borderColor:theme.primary,color:theme.primary,opacity:soundPref===false?.4:1}}>
                     🔇 Kapat
                   </button>
                 </div>
               </div>
             )}
-            {currentUser==="Veteriner Hekim"||currentUser==="Şef" && (
+
+            {/* Renk Teması */}
+            {!isGuest && (
+              <div style={{...S.card,marginBottom:10}}>
+                <div style={{fontWeight:700,fontSize:13,color:theme.primary,marginBottom:8}}>🎨 Arayüz Rengi</div>
+                <div style={{fontSize:12,color:"#8c8c7e",marginBottom:10}}>
+                  Şu an: <b style={{color:theme.primary}}>{theme.emoji} {theme.name}</b>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
+                  {COLOR_THEMES.map(t=>(
+                    <button key={t.id} onClick={()=>saveTheme(t,false)}
+                      style={{borderRadius:10,border:`2px solid ${theme.id===t.id?t.primary:"#E8E5DC"}`,background:theme.id===t.id?t.light:"#fff",padding:"8px 4px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                      <div style={{width:24,height:24,borderRadius:"50%",background:t.header}}/>
+                      <div style={{fontSize:9,fontWeight:700,color:t.primary,lineHeight:1.2,textAlign:"center"}}>{t.emoji} {t.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {currentUser==="Veteriner Hekim"||currentUser==="Bekir Zengin"||currentUser==="Ali Özen" && (
               <div style={{...S.card,marginBottom:10,border:`1.5px solid ${guestAccess.isOpen?"#4A7C3F":"#E8E5DC"}`}}>
                 <div style={{fontWeight:800,fontSize:14,color:"#1e1e1e",marginBottom:8}}>👁 Misafir Erişimi</div>
                 {guestAccess.isOpen ? (
@@ -4035,7 +4105,7 @@ function App(){
                 <div key={u.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid #F2F0EA"}}>
                   <span style={{fontSize:18}}>{u.emoji}</span>
                   <div style={{flex:1}}>
-                    <div style={{fontWeight:700,fontSize:13,color:"#1e1e1e"}}>{u.name}{u.name===currentUser?" (siz)":""}</div>
+                    <div style={{fontWeight:700,fontSize:13,color:"#1e1e1e"}}>{u.name=="Bekir Zengin"||u.name=="Ali Özen"?u.name+" (Şef)":u.name}{u.name===currentUser?" (siz)":""}</div>
                     {u.members && <div style={{fontSize:11,color:"#8c8c7e"}}>{u.members}</div>}
                   </div>
                 </div>
@@ -4049,7 +4119,7 @@ function App(){
       {page!=="home" && (
         <div style={S.nav}>
           {[["home","🏠","Ana"],["health","🩺","Sağlık"],["vaccines","💉","Aşı"]].map(([k,ic,l])=>(
-            <button key={k} onClick={()=>navigate(k)} style={{...S.ghost,display:"flex",flexDirection:"column",alignItems:"center",gap:1,padding:"6px 20px",color:page===k?"#4A7C3F":"#8c8c7e"}}>
+            <button key={k} onClick={()=>navigate(k)} style={{...S.ghost,display:"flex",flexDirection:"column",alignItems:"center",gap:1,padding:"6px 20px",color:page===k?"var(--primary,#4A7C3F)":"#8c8c7e"}}>
               <span style={{fontSize:20}}>{ic}</span>
               <span style={{fontSize:10,fontWeight:page===k?700:500}}>{l}</span>
             </button>
@@ -4080,8 +4150,8 @@ const S={
   title:{margin:0,fontSize:18,fontWeight:800,color:"#1e1e1e"},
   input:{padding:"9px 12px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:14,background:"#fff",color:"#1e1e1e",outline:"none",width:"100%",boxSizing:"border-box"},
   select:{padding:"9px 12px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:14,background:"#fff",color:"#1e1e1e",outline:"none",width:"100%",boxSizing:"border-box"},
-  btnPrimary:{background:"#4A7C3F",color:"#fff",border:"none",borderRadius:10,padding:"11px 16px",fontWeight:700,fontSize:14,cursor:"pointer"},
-  btnOutline:{background:"transparent",color:"#4A7C3F",border:"2px solid #4A7C3F",borderRadius:10,padding:"9px 16px",fontWeight:700,fontSize:14,cursor:"pointer"},
+  btnPrimary:{background:"var(--primary,#4A7C3F)",color:"#fff",border:"none",borderRadius:10,padding:"11px 16px",fontWeight:700,fontSize:14,cursor:"pointer"},
+  btnOutline:{background:"transparent",color:"var(--primary,#4A7C3F)",border:"2px solid var(--primary,#4A7C3F)",borderRadius:10,padding:"9px 16px",fontWeight:700,fontSize:14,cursor:"pointer"},
   btnSm:{border:"none",borderRadius:8,padding:"5px 10px",fontWeight:700,fontSize:11,cursor:"pointer"},
   ghost:{background:"none",border:"none",cursor:"pointer"},
   tabBtn:{flex:1,padding:"10px 0",border:"none",fontWeight:700,fontSize:13,cursor:"pointer",transition:"all .15s"},
