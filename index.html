@@ -311,13 +311,36 @@ function EarTagInput({ value, onChange }) {
   const parse = (v) => {
     if(!v) return ["",""];
     const clean = v.replace(/^TR-?/i,"");
-    const parts = clean.split("-");
-    return [parts[0]||"", parts.slice(1).join("")||""];
+    const idx = clean.indexOf("-");
+    if(idx===-1) return [clean,""];
+    return [clean.slice(0,idx), clean.slice(idx+1)];
   };
 
   const [p1, p2] = parse(value);
-
   const build = (a, b) => onChange(`TR-${a}-${b}`);
+
+  // Türkçe kelimeden rakama
+  const txtToNums = (txt) => {
+    const map = {"sıfır":"0","bir":"1","iki":"2","üç":"3","dört":"4","beş":"5","altı":"6","yedi":"7","sekiz":"8","dokuz":"9"};
+    let s = txt.toLowerCase();
+    Object.keys(map).forEach(k=>{ s=s.replace(new RegExp(k,"g"),map[k]); });
+    return s.replace(/[^0-9]/g,"");
+  };
+
+  const handleMic = (txt) => {
+    const nums = txtToNums(txt);
+    if(!nums) return;
+    // p1 ve p2'yi güncel value'dan al (stale closure'u önle)
+    const [cur1, cur2] = parse(value);
+    if(cur1.length < 2){
+      const newP1 = (cur1+nums).slice(0,2);
+      const rest = (cur1+nums).slice(2);
+      build(newP1, rest||cur2);
+      if(newP1.length===2) setTimeout(()=>part2Ref.current?.focus(),50);
+    } else {
+      build(cur1, cur2+nums);
+    }
+  };
 
   return (
     <div style={{display:"flex",alignItems:"center",gap:4}}>
@@ -348,19 +371,7 @@ function EarTagInput({ value, onChange }) {
         }}
         style={{flex:1,padding:"9px 10px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:14,fontWeight:700,outline:"none",letterSpacing:1}}
       />
-      <MicBtn onResult={txt=>{
-        // Sesli girişten sayıları çıkar
-        const nums = txt.replace(/[^0-9]/g,"");
-        if(!nums) return;
-        if(p1.length<2){
-          const newP1=(p1+nums).slice(0,2);
-          const rest=(p1+nums).slice(2);
-          build(newP1,rest||p2);
-          if(newP1.length===2) part2Ref.current?.focus();
-        } else {
-          build(p1,p2+nums);
-        }
-      }} style={{height:38}}/>
+      <MicBtn onResult={handleMic} style={{height:38}}/>
     </div>
   );
 }
@@ -744,28 +755,24 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
   const [category, setCategory] = useState(defaultCategory||"anac");
   const [gender, setGender] = useState("dişi");
   const [earTagsText, setEarTagsText] = useState("");
-  const [preview, setPreview] = useState([]); // [{earTag, valid}]
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const [done, setDone] = useState(0);
-  const [tab, setTab] = useState("elle"); // "elle" | "dosya"
-  const [fileRows, setFileRows] = useState([]); // Excel/CSV'den gelen satırlar
+  const [tab, setTab] = useState("elle");
+  const [fileRows, setFileRows] = useState([]);
   const fileRef = useRef(null);
 
-  // Elle girilen küpe nolarını parse et
-  const parseEarTags = (text) => {
-    return text
+  // Anlık liste: textarea'dan satırları parse et
+  const liveRows = useMemo(()=>{
+    return earTagsText
       .split(/[\n,;]+/)
-      .map(t => t.trim())
-      .filter(t => t.length > 0)
-      .map(t => ({ earTag: t.toUpperCase(), gender, valid: t.length >= 2 }));
-  };
+      .map(t=>t.trim().toUpperCase())
+      .filter(t=>t.length>0)
+      .map(t=>({earTag:t, valid:/^TR-\d{1,2}-.+$/.test(t), gender}));
+  },[earTagsText, gender]);
 
-  useEffect(() => {
-    if(tab==="elle") setPreview(parseEarTags(earTagsText));
-  }, [earTagsText, gender, tab]);
-
-  // Excel/CSV dosyası oku
+  const currentRows = tab==="elle" ? liveRows : fileRows.map(r=>({...r,valid:/^TR-\d{1,2}-.+$/.test(r.earTag)}));
+  const validCount = currentRows.filter(r=>r.valid).length;
   const handleFile = (e) => {
     const file = e.target.files[0];
     if(!file) return;
@@ -826,21 +833,18 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
     XLSX.writeFile(wb, "toplu_hayvan_sablonu.xlsx");
   };
 
-  const currentRows = tab==="elle" ? preview : fileRows.map(r=>({...r, valid:r.earTag.length>=2}));
-
   const save = async () => {
     const validRows = currentRows.filter(r=>r.valid && r.earTag);
     if(validRows.length===0) { setErr("Eklenecek geçerli küpe no yok"); return; }
     setSaving(true);
     setDone(0);
     setErr("");
-    let successCount = 0;
     const savedGoats = [];
     for(let i=0; i<validRows.length; i++){
       const row = validRows[i];
       const g = {
         id: "g"+Date.now()+i,
-        name: row.earTag, // isim olarak küpe no kullan
+        name: row.earTag,
         earTag: row.earTag,
         gender: row.gender||gender,
         breed: breed.id,
@@ -852,9 +856,8 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
         archived:false, archiveReason:""
       };
       const {error} = await sb.from("goats").insert(fromGoat(g));
-      if(!error){ savedGoats.push(g); successCount++; }
+      if(!error){ savedGoats.push(g); }
       setDone(i+1);
-      // Her kayıt arasında kısa bekleme (rate limit)
       if(i%5===4) await new Promise(r=>setTimeout(r,200));
     }
     setSaving(false);
@@ -909,16 +912,23 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
         </div>}
       </>}
 
-      {/* Önizleme */}
+      {/* Anlık liste - her TR girince anlık görünür */}
       {currentRows.length>0 && (
-        <div style={{background:"#F5F3ED",borderRadius:10,padding:10,maxHeight:180,overflowY:"auto"}}>
-          <div style={{fontSize:11,fontWeight:700,color:"#555",marginBottom:6}}>
-            Önizleme — {currentRows.filter(r=>r.valid).length} geçerli kayıt:
+        <div style={{background:"#F5F3ED",borderRadius:10,padding:10,maxHeight:200,overflowY:"auto"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#555",marginBottom:6,display:"flex",justifyContent:"space-between"}}>
+            <span>📋 Küpe Listesi</span>
+            <span style={{color:validCount>0?"#4A7C3F":"#BE3B31"}}>{validCount} geçerli</span>
           </div>
           {currentRows.map((r,i)=>(
-            <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12,padding:"3px 6px",borderRadius:6,background:r.valid?"#fff":"#FFF0EE",marginBottom:3,border:`1px solid ${r.valid?"#E8E5DC":"#F5C0BA"}`}}>
-              <span style={{fontWeight:700,color:r.valid?"#1e1e1e":"#BE3B31"}}>{r.earTag||"(boş)"}</span>
-              <span style={{color:"#8c8c7e",fontSize:11}}>{r.gender==="erkek"?"♂ Erkek":"♀ Dişi"} · {category==="anac"?"Anaç":"Oğlak"}</span>
+            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,padding:"4px 8px",borderRadius:6,background:r.valid?"#fff":"#FFF0EE",marginBottom:3,border:`1px solid ${r.valid?"#D4E8C2":"#F5C0BA"}`}}>
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontSize:10,color:"#aaa",minWidth:18}}>{i+1}.</span>
+                <span style={{fontWeight:700,color:r.valid?"#1e1e1e":"#BE3B31",fontFamily:"monospace"}}>{r.earTag||"(boş)"}</span>
+              </div>
+              <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                <span style={{color:"#8c8c7e",fontSize:10}}>{r.gender==="erkek"?"♂":"♀"} · {category==="anac"?"Anaç":"Oğlak"}</span>
+                {!r.valid&&<span style={{fontSize:9,color:"#BE3B31",fontWeight:700}}>Format hatalı</span>}
+              </div>
             </div>
           ))}
         </div>
@@ -927,15 +937,15 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
       {/* İlerleme */}
       {saving && (
         <div style={{background:"#E6F1FB",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#0C447C",fontWeight:600}}>
-          ⏳ Kaydediliyor: {done} / {currentRows.filter(r=>r.valid).length}
+          ⏳ Kaydediliyor: {done} / {validCount}
         </div>
       )}
 
       <div style={{display:"flex",gap:8,marginTop:4}}>
         <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
-        <button onClick={save} disabled={saving||currentRows.filter(r=>r.valid).length===0}
-          style={{...S.btnPrimary,flex:2,padding:12,opacity:(saving||currentRows.filter(r=>r.valid).length===0)?.6:1}}>
-          {saving?`Kaydediliyor... (${done})`:` 💾 ${currentRows.filter(r=>r.valid).length} Hayvan Ekle`}
+        <button onClick={save} disabled={saving||validCount===0}
+          style={{...S.btnPrimary,flex:2,padding:12,opacity:(saving||validCount===0)?.6:1}}>
+          {saving?`Kaydediliyor... (${done})`:validCount>0?`💾 ${validCount} Hayvan Ekle`:"Küpe no girin"}
         </button>
       </div>
     </ModalWrap>
