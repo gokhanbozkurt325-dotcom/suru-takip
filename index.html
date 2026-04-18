@@ -3438,6 +3438,20 @@ function App(){
     check();
   },[isGuest]);
 
+  // Tema değişince body arka planını güncelle
+  useEffect(()=>{
+    if(theme.photo){
+      document.body.style.backgroundImage = `url(${theme.photo})`;
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundPosition = 'center top';
+      document.body.style.backgroundRepeat = 'no-repeat';
+      document.body.style.backgroundAttachment = 'scroll';
+    } else {
+      document.body.style.backgroundImage = 'none';
+    }
+    document.body.style.backgroundColor = '#0A0A0F';
+  },[theme]);
+
   const activeGoats=goats.filter(g=>!g.archived);
 
   const [announcements, setAnnouncements] = useState([]);
@@ -3540,23 +3554,10 @@ function App(){
   };
 
   if(showLogin) return (
-    <div style={{.S.loginWrap, background:"transparent", position:"relative"}}>
-      <style>{css+`
-        body{
-          background:#0A0A0F;
-          background-image:${theme.photo ? "url("+theme.photo+")" : "none"};
-          background-size:cover;
-          background-position:center top;
-          background-repeat:no-repeat;
-          background-attachment:scroll;
-          min-height:100vh;
-          font-family:'Poppins',system-ui,sans-serif;
-        }
-        select option{background:#1A1A2E;color:#F0ECD8;}
-        button:active{opacity:.85;}
-      `}</style>
+    <div style={{...S.loginWrap, background:theme.photo?`url(${theme.photo}) center top/cover no-repeat`:"#0A0A0F", position:"relative"}}>
+      <style>{`select option{background:#1A1A2E;color:#F0ECD8;}button:active{opacity:.85;}`}</style>
       {/* Fotoğraf üstü karartma overlay */}
-      <div style={{position:"fixed",inset:0,background:theme.overlay||"rgba(0,0,0,.5)",zIndex:0,pointerEvents:"none",WebkitTransform:"translateZ(0)"}}/>
+      <div style={{position:"fixed",inset:0,background:theme.overlay||"rgba(0,0,0,.55)",zIndex:0,pointerEvents:"none"}}/>
       <div style={{width:"100%",maxWidth:420,padding:"0 16px",paddingBottom:20,position:"relative",zIndex:1}}>
 
         {/* Başlık */}
@@ -3713,31 +3714,10 @@ function App(){
   if(loading) return <Loading/>;
 
   return (
-    <div style={{...S.app,"--primary":theme.primary,"--primary-dark":theme.dark,"--primary-light":theme.light,"--primary-bg":theme.bg,background:"transparent"}}>
+    <div style={{...S.app,"--primary":theme.primary,"--primary-dark":theme.dark,"--primary-light":theme.light,"--primary-bg":theme.bg}}>
       {/* Fotoğraf üstü hafif overlay — içerik okunabilsin */}
-      {theme.photo&&<div style={{position:"fixed",inset:0,background:`${theme.overlay||"rgba(0,0,0,.45)"}`,zIndex:0,pointerEvents:"none",WebkitTransform:"translateZ(0)"}}/>}
-      <style>{css+`
-        :root{--primary:${theme.primary};--primary-dark:${theme.dark};--primary-light:${theme.light};}
-        body{
-          background:#0A0A0F;
-          background-image:${theme.photo ? "url("+theme.photo+")" : "none"};
-          background-size:cover;
-          background-position:center top;
-          background-repeat:no-repeat;
-          background-attachment:scroll;
-          min-height:100vh;
-          font-family:'Poppins',system-ui,sans-serif;
-          color:#F0ECD8;
-        }
-        #root{background:transparent!important;}
-        input:focus,select:focus,textarea:focus{
-          border-color:rgba(212,175,55,.5)!important;
-          box-shadow:0 0 0 3px rgba(212,175,55,.1)!important;
-          outline:none!important;
-        }
-        button:active{opacity:.85;}
-        select option{background:#1A1A2E;color:#F0ECD8;}
-      `}</style>
+      {theme.photo&&<div style={{position:"fixed",inset:0,background:theme.overlay||"rgba(0,0,0,.5)",zIndex:0,pointerEvents:"none"}}/>}
+      <style>{`:root{--primary:${theme.primary};--primary-dark:${theme.dark};--primary-light:${theme.light};}select option{background:#1A1A2E;color:#F0ECD8;}input:focus,select:focus,textarea:focus{border-color:rgba(212,175,55,.5)!important;outline:none!important;}button:active{opacity:.85;}`}</style>
       {hModal&&!isGuest&&<HealthModal goats={goats} breedFilter={hModal.breedId||null} preGoatId={hModal.goatId||""} onSave={saveHealth} onClose={()=>setHModal(null)} currentUser={currentUser}/>}
       {vModal&&!isGuest&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
       {addGoatModal&&!isGuest&&<AddGoatModal breed={BREEDS.find(b=>b.id===(addGoatModal.breedId||addGoatModal))} defaultCategory={addGoatModal.defaultCategory||"anac"} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser}/>}
@@ -3818,7 +3798,7 @@ function App(){
         </div>
       )}
 
-      <div style={{...S.header,position:"relative",zIndex:200}}>
+      <div style={{...S.header,position:"relative",zIndex:10}}>
         {page==="home"
           ? <span style={{fontSize:20}}>🐐</span>
           : <button onClick={goBack} style={{...S.ghost,color:"rgba(212,175,55,.7)",fontSize:26,padding:"0 8px 0 0",lineHeight:1,fontWeight:300}}>‹</button>
@@ -3837,7 +3817,7 @@ function App(){
         }
       </div>
 
-      <div style={{padding:"10px 14px "+(page==="home"?"20px":"84px")}}>
+      <div style={{padding:"10px 14px "+(page==="home"?"20px":"84px"),position:"relative",zIndex:1}}>
 
         {/* HOME */}
         {page==="home" && (
@@ -4326,14 +4306,15 @@ const css=`
 const S={
   app:{
     fontFamily:"'Poppins',system-ui,sans-serif",
-    background:"#0A0A0F",
+    background:"rgba(10,10,15,.97)",
     minHeight:"100vh",maxWidth:480,margin:"0 auto",position:"relative"
   },
   loginWrap:{
     fontFamily:"'Poppins',system-ui,sans-serif",
     minHeight:"100vh",
     background:"#0A0A0F",
-    display:"flex",alignItems:"center",justifyContent:"center",padding:20
+    display:"flex",alignItems:"center",justifyContent:"center",padding:20,
+    position:"relative"
   },
   header:{
     background:"rgba(10,10,15,.85)",
