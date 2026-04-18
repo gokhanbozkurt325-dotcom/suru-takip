@@ -667,68 +667,49 @@ function VaccineModal({ breed, goats, onSave, onClose, currentUser }) {
 // ── Toplu Küpe Girişi (sesli + elle) ──
 function BulkEarTagInput({ value, onChange }) {
   const [listening, setListening] = useState(false);
-  const [interim, setInterim] = useState(""); // anlık dinlenen metin
+  const [interim, setInterim] = useState("");
   const recRef = useRef(null);
-  const bufferRef = useRef(""); // birikmiş rakamlar
+  const bufferRef = useRef("");
+  const valueRef = useRef(value); // her zaman güncel value
 
-  // Ham metni TR-xx-xxxxxxx formatına çevir
+  // valueRef'i güncel tut
+  useEffect(()=>{ valueRef.current = value; }, [value]);
+
   const parseRaw = (raw) => {
     const nums = raw.replace(/[^0-9]/g,"");
-    if(nums.length < 3) return null; // en az 3 rakam gerekli
+    if(nums.length < 3) return null;
     const p1 = nums.slice(0,2).padStart(2,"0");
     const p2 = nums.slice(2);
     if(!p2) return null;
     return `TR-${p1}-${p2}`;
   };
 
-  // Türkçe kelimeden rakam çıkar — ÖNEMLİ: uzun eşleşmeler önce!
   const toNums = (txt) => {
-    // Önce rakam varsa direkt al
     const direct = txt.replace(/[^0-9]/g,"");
     if(direct) return direct;
-    // Kelimeden rakama — uzundan kısaya sıralı
     let s = txt.toLowerCase()
-      .replace(/on\s*dokuz/g,"19")
-      .replace(/on\s*sekiz/g,"18")
-      .replace(/on\s*yedi/g,"17")
-      .replace(/on\s*altı/g,"16")
-      .replace(/on\s*beş/g,"15")
-      .replace(/on\s*dört/g,"14")
-      .replace(/on\s*üç/g,"13")
-      .replace(/on\s*iki/g,"12")
-      .replace(/on\s*bir/g,"11")
-      .replace(/\bon\b/g,"10")
-      .replace(/yirmi\s*dokuz/g,"29")
-      .replace(/yirmi\s*sekiz/g,"28")
-      .replace(/yirmi\s*yedi/g,"27")
-      .replace(/yirmi\s*altı/g,"26")
-      .replace(/yirmi\s*beş/g,"25")
-      .replace(/yirmi\s*dört/g,"24")
-      .replace(/yirmi\s*üç/g,"23")
-      .replace(/yirmi\s*iki/g,"22")
-      .replace(/yirmi\s*bir/g,"21")
-      .replace(/\byirmi\b/g,"20")
-      .replace(/otuz/g,"30")
-      .replace(/kırk/g,"40")
-      .replace(/elli/g,"50")
-      .replace(/altmış/g,"60")
-      .replace(/yetmiş/g,"70")
-      .replace(/seksen/g,"80")
-      .replace(/doksan/g,"90")
-      .replace(/sıfır/g,"0")
-      .replace(/bir/g,"1")
-      .replace(/iki/g,"2")
-      .replace(/üç/g,"3")
-      .replace(/dört/g,"4")
-      .replace(/beş/g,"5")
-      .replace(/altı/g,"6")
-      .replace(/yedi/g,"7")
-      .replace(/sekiz/g,"8")
-      .replace(/dokuz/g,"9");
+      .replace(/on\s*dokuz/g,"19").replace(/on\s*sekiz/g,"18").replace(/on\s*yedi/g,"17")
+      .replace(/on\s*altı/g,"16").replace(/on\s*beş/g,"15").replace(/on\s*dört/g,"14")
+      .replace(/on\s*üç/g,"13").replace(/on\s*iki/g,"12").replace(/on\s*bir/g,"11")
+      .replace(/\bon\b/g,"10").replace(/yirmi\s*dokuz/g,"29").replace(/yirmi\s*sekiz/g,"28")
+      .replace(/yirmi\s*yedi/g,"27").replace(/yirmi\s*altı/g,"26").replace(/yirmi\s*beş/g,"25")
+      .replace(/yirmi\s*dört/g,"24").replace(/yirmi\s*üç/g,"23").replace(/yirmi\s*iki/g,"22")
+      .replace(/yirmi\s*bir/g,"21").replace(/\byirmi\b/g,"20")
+      .replace(/sıfır/g,"0").replace(/bir/g,"1").replace(/iki/g,"2").replace(/üç/g,"3")
+      .replace(/dört/g,"4").replace(/beş/g,"5").replace(/altı/g,"6")
+      .replace(/yedi/g,"7").replace(/sekiz/g,"8").replace(/dokuz/g,"9");
     return s.replace(/[^0-9]/g,"");
   };
 
   const isTR = (txt) => /^(tr|ti\s?ar|te\s?er|tı\s?er|tire|tiar)$/i.test(txt.trim());
+
+  // Güncel value üzerinde işlem yap
+  const updateValue = (fn) => {
+    const current = valueRef.current || "";
+    const next = fn(current);
+    valueRef.current = next;
+    onChange(next);
+  };
 
   const startVoice = () => {
     const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -748,44 +729,38 @@ function BulkEarTagInput({ value, onChange }) {
         else inter += e.results[i][0].transcript;
       }
       setInterim(inter);
-
       if(!final) return;
       const txt = final.trim();
 
       if(isTR(txt)){
-        // Önce buffer'da birikmişse mevcut satırı tamamla
-        if(bufferRef.current){
-          const tag = parseRaw(bufferRef.current);
-          bufferRef.current = "";
-          onChange(prev=>{
-            const lines = (prev||"").split("\n").filter(l=>l.trim());
-            // Son satırı güncelle
-            if(lines.length>0 && lines[lines.length-1].startsWith("TR-")){
-              lines[lines.length-1] = tag||lines[lines.length-1];
-            }
-            lines.push("TR--");
-            return lines.join("\n");
-          });
-        } else {
-          // Yeni satır ekle
-          onChange(prev=>{
-            const lines = (prev||"").split("\n").filter(l=>l.trim());
-            lines.push("TR--");
-            return lines.join("\n");
-          });
-        }
+        // TR dendi — önceki buffer'ı tamamla, yeni satır aç
+        const prevBuf = bufferRef.current;
         bufferRef.current = "";
+        updateValue(cur => {
+          const lines = cur.split("\n").filter(l=>l.trim());
+          if(prevBuf){
+            const tag = parseRaw(prevBuf);
+            if(lines.length>0 && lines[lines.length-1].startsWith("TR-")){
+              lines[lines.length-1] = tag || lines[lines.length-1];
+            }
+          }
+          lines.push("TR--");
+          return lines.join("\n");
+        });
       } else {
-        // Rakam geldi - buffer'a ekle
+        // Rakam geldi
         const nums = toNums(txt);
-        if(nums){
-          bufferRef.current += nums;
-          const tag = parseRaw(bufferRef.current);
-          onChange(prev=>{
-            const lines = (prev||"").split("\n");
+        if(!nums) return;
+        bufferRef.current += nums;
+        const tag = parseRaw(bufferRef.current);
+        if(tag){
+          updateValue(cur => {
+            const lines = cur.split("\n");
             const lastIdx = lines.length-1;
-            if(lastIdx>=0 && lines[lastIdx].startsWith("TR")){
-              lines[lastIdx] = tag||lines[lastIdx];
+            if(lastIdx>=0 && lines[lastIdx].startsWith("TR-")){
+              lines[lastIdx] = tag;
+            } else {
+              lines.push(tag);
             }
             return lines.join("\n");
           });
