@@ -17,16 +17,24 @@
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
     body{
-      background:#0A0A0F;
+      background:#F5F0FF;
       font-family:'Poppins',system-ui,-apple-system,sans-serif;
       overflow-x:hidden;
-      color:#F0ECD8;
+      color:#111827;
     }
     #root{max-width:480px;margin:0 auto;min-height:100vh;}
-    input,select,textarea,button{font-family:'Poppins',system-ui,-apple-system,sans-serif;}
-    input::placeholder,textarea::placeholder{color:rgba(240,236,216,.35);}
-    ::-webkit-scrollbar{width:0;}
-    ::-webkit-input-placeholder{color:rgba(240,236,216,.35);}
+    input,select,textarea,button{
+      font-family:'Poppins',system-ui,-apple-system,sans-serif;
+    }
+    input,select,textarea{
+      color:#111827!important;
+    }
+    input::placeholder,textarea::placeholder{color:#A0AEC0;}
+    ::-webkit-input-placeholder{color:#A0AEC0;}
+    ::-webkit-scrollbar{width:0;height:0;}
+    .voice-wrap{display:flex;gap:6px;align-items:center;width:100%;overflow:hidden;}
+    .voice-wrap input,.voice-wrap textarea{flex:1;min-width:0;}
+    .voice-wrap button{flex-shrink:0;}
   </style>
 </head>
 <body>
@@ -225,7 +233,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
   </ModalWrap>;
 
   return <ModalWrap title={`🩺 ${record.condition}`} onClose={onClose}>
-    <div style={{background:"#F5F5F5",borderRadius:10,padding:10,fontSize:12}}>
+    <div style={{background:"#F8F8FC",borderRadius:10,padding:10,fontSize:12}}>
       {goat ? <><b>{goat.name}</b> · 🏷 {goat.earTag}</> : <><b>🏷 {record.goatEarTag||"—"}</b></>} · Başlangıç: {fmt(record.date)}
     </div>
     <div style={{display:"flex",background:"rgba(20,20,36,.6)",borderRadius:8,overflow:"hidden",marginTop:4}}>
@@ -265,7 +273,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
           </div>
         )}
         {record.notes && (
-          <div style={{background:"#F5F5F5",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
+          <div style={{background:"#F8F8FC",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
             <div style={{fontSize:11,fontWeight:700,color:"#6B7280",marginBottom:2}}>📝 Not</div>
             <div style={{fontSize:12,color:"#6B7280"}}>{record.notes}</div>
           </div>
@@ -319,7 +327,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
           );
         })}
         {recDays.length>0 && (
-          <div style={{background:"#F5F5F5",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#6B7280",marginTop:4}}>
+          <div style={{background:"#F8F8FC",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#6B7280",marginTop:4}}>
             {recDays.filter(d=>d.done).length}/{recDays.length} gün tamamlandı
           </div>
         )}
@@ -337,7 +345,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
               <div style={{fontSize:12,fontWeight:700,color:"#1A1A2E"}}>{l.userName}</div>
               <div style={{fontSize:10,color:"#D1D5DB",textAlign:"right"}}>{fmtDT(l.createdAt)}</div>
             </div>
-            <div style={{fontSize:11,color:"#6B7280",marginTop:2,background:"#F5F5F5",padding:"4px 8px",borderRadius:6}}>{l.actionDetail}</div>
+            <div style={{fontSize:11,color:"#6B7280",marginTop:2,background:"#F8F8FC",padding:"4px 8px",borderRadius:6}}>{l.actionDetail}</div>
           </div>
         </div>
       ))}
@@ -396,7 +404,7 @@ function EarTagInput({ value, onChange }) {
   };
 
   return (
-    <div style={{display:"flex",alignItems:"center",gap:4}}>
+    <div style={{display:"flex",alignItems:"center",gap:4,width:"100%",overflow:"hidden"}}>
       <div style={{background:"rgba(var(--primary-rgb),.08)",borderRadius:10,padding:"9px 10px",fontWeight:700,fontSize:14,color:"var(--primary,#8B5CF6)",border:"1px solid rgba(212,175,55,.25)",flexShrink:0,letterSpacing:1}}>TR</div>
       <div style={{color:"#D1D5DB",fontWeight:700,fontSize:16}}>-</div>
       <input
@@ -510,27 +518,27 @@ function MicBtn({ onResult, style }) {
 function VoiceInput({ value, onChange, placeholder, style, multiline, rows }) {
   if (multiline) {
     return (
-      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+      <div className="voice-wrap" style={{ alignItems: "flex-start" }}>
         <textarea
           value={value}
           onChange={e => onChange(e.target.value)}
           rows={rows || 3}
           placeholder={placeholder}
-          style={{ ...S.input, resize: "vertical", lineHeight: 1.5, flex: 1, ...style }}
+          style={{ ...S.input, resize: "none", lineHeight: 1.5, flex: 1, minWidth:0, ...style }}
         />
-        <MicBtn onResult={t => onChange(value ? value + " " + t : t)} style={{ height: 38, marginTop: 2 }} />
+        <MicBtn onResult={t => onChange(value ? value + " " + t : t)} style={{ height: 38, marginTop: 2, flexShrink:0 }} />
       </div>
     );
   }
   return (
-    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+    <div style={{ display: "flex", gap: 6, alignItems: "center", width:"100%", overflow:"hidden" }}>
       <input
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        style={{ ...S.input, flex: 1, ...style }}
+        style={{ ...S.input, flex: 1, minWidth:0, ...style }}
       />
-      <MicBtn onResult={t => onChange(t)} style={{ height: 38 }} />
+      <MicBtn onResult={t => onChange(t)} style={{ height: 38, flexShrink:0 }} />
     </div>
   );
 }
@@ -901,7 +909,7 @@ function BulkEarTagInput({ tags, onTagsChange }) {
             <span style={{color:"var(--primary,#8B5CF6)"}}>{tags.filter(t=>t.p1&&t.p2).length} geçerli</span>
           </div>
           {tags.map((t,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"center",gap:4,marginBottom:6,background:"#FFFFFF",borderRadius:8,padding:"6px 8px",border:`1px solid ${t.p1&&t.p2?"#D4E8C2":"#F5C0BA"}`}}>
+            <div key={i} style={{display:"flex",alignItems:"center",gap:3,marginBottom:6,background:"#FFFFFF",borderRadius:8,padding:"6px 6px",border:`1px solid ${t.p1&&t.p2?"#D4E8C2":"#F5C0BA"}`,overflow:"hidden"}}>
               {/* Sıra no */}
               <span style={{fontSize:11,color:"#D1D5DB",fontWeight:700,minWidth:18,flexShrink:0}}>{i+1}.</span>
               {/* TR sabit — EarTagInput ile birebir aynı */}
@@ -920,7 +928,7 @@ function BulkEarTagInput({ tags, onTagsChange }) {
                   onTagsChange(newTags);
                   if(v.length===2) rowRefs.current[`p2_${i}`]?.focus();
                 }}
-                style={{width:38,padding:"5px 4px",borderRadius:8,border:"1px solid rgba(212,175,55,.18)",fontSize:13,fontWeight:700,textAlign:"center",outline:"none",background:"#F5F5F5",color:"#1A1A2E"}}
+                style={{width:38,padding:"5px 4px",borderRadius:8,border:"1px solid rgba(212,175,55,.18)",fontSize:13,fontWeight:700,textAlign:"center",outline:"none",background:"#F8F8FC",color:"#1A1A2E"}}
               />
               <span style={{color:"#D1D5DB",fontWeight:700,fontSize:15}}>-</span>
               {/* Son haneler */}
@@ -935,7 +943,7 @@ function BulkEarTagInput({ tags, onTagsChange }) {
                   newTags[i]={p1:t.p1,p2:v,full:`TR-${t.p1}-${v}`};
                   onTagsChange(newTags);
                 }}
-                style={{flex:1,padding:"5px 6px",borderRadius:8,border:"1px solid rgba(212,175,55,.18)",fontSize:13,fontWeight:700,outline:"none",letterSpacing:1,minWidth:0,background:"#F5F5F5",color:"#1A1A2E"}}
+                style={{flex:1,padding:"5px 6px",borderRadius:8,border:"1px solid rgba(212,175,55,.18)",fontSize:13,fontWeight:700,outline:"none",letterSpacing:1,minWidth:0,background:"#F8F8FC",color:"#1A1A2E"}}
               />
               {/* Satır mikrofon butonu — EarTagInput'taki MicBtn ile aynı mantık */}
               <MicBtn onResult={txt=>handleRowMic(txt,i)} style={{height:32,minWidth:32,padding:"0 6px",flexShrink:0}}/>
@@ -1185,17 +1193,17 @@ function ModalWrap({title,onClose,children}){
             <div style={{fontWeight:700,fontSize:15,color:"#111827",flex:1,paddingRight:10,letterSpacing:"-.2px"}}>{title}</div>
             <button onClick={onClose} style={{background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.1)",borderRadius:"50%",width:32,height:32,fontSize:14,cursor:"pointer",color:"#4B5563",flexShrink:0}}>✕</button>
           </div>
-          <div style={{padding:"16px 20px 24px",display:"flex",flexDirection:"column",gap:10}}>{children}</div>
+          <div style={{padding:"14px 16px 20px",display:"flex",flexDirection:"column",gap:10,overflow:"hidden"}}>{children}</div>
         </div>
       </div>
     </div>,
     el
   );
 }
-function FL({children}){return <div style={{fontSize:11,fontWeight:600,color:"#6B7280",marginBottom:5,marginTop:8,letterSpacing:".3px",textTransform:"uppercase"}}>{children}</div>;}
+function FL({children}){return <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:5,marginTop:8,letterSpacing:".5px",textTransform:"uppercase"}}>{children}</div>;}
 function ErrBox({msg}){return <div style={{background:"rgba(239,68,68,.1)",border:"1px solid rgba(190,59,49,.4)",borderRadius:12,padding:"10px 14px",fontSize:13,color:"#EF4444",fontWeight:600}}>⚠️ {msg}</div>;}
 function StatusPicker({value,onChange}){return <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{[["tedavi_altında","Tedavide","#FEF3C7","#D97706"],["iyileşti","İyileşti","#D1FAE5","#059669"],["kronik","Kronik","#EDE9FE","#7C3AED"],["öldü","Öldü","#FEE2E2","#DC2626"]].map(([v,l,bg,col])=><button key={v} onClick={()=>onChange(v)} style={{padding:"7px 16px",borderRadius:20,border:`1.5px solid ${value===v?col+"44":"#E5E7EB"}`,background:value===v?bg:"#F9FAFB",color:value===v?col:"#9CA3AF",fontWeight:600,fontSize:12,cursor:"pointer",transition:"all .2s"}}>{l}</button>)}</div>;}
-function Stat({v,l,bg,c}){return <div style={{background:"#F5F5F5",border:"1px solid rgba(212,175,55,.12)",borderRadius:14,padding:"12px 8px",textAlign:"center",flex:1,backdropFilter:"blur(8px)"}}><div style={{fontSize:22,fontWeight:800,color:"var(--primary,#8B5CF6)",letterSpacing:"-1px"}}>{v}</div><div style={{fontSize:10,color:"#6B7280",fontWeight:600,marginTop:2,letterSpacing:".3px"}}>{l}</div></div>;}
+function Stat({v,l,bg,c}){return <div style={{background:"#F8F8FC",border:"1px solid rgba(212,175,55,.12)",borderRadius:14,padding:"12px 8px",textAlign:"center",flex:1,backdropFilter:"blur(8px)"}}><div style={{fontSize:22,fontWeight:800,color:"var(--primary,#8B5CF6)",letterSpacing:"-1px"}}>{v}</div><div style={{fontSize:10,color:"#6B7280",fontWeight:600,marginTop:2,letterSpacing:".3px"}}>{l}</div></div>;}
 function Badge({bg,color,text}){return <span style={{background:"rgba(var(--primary-rgb),.12)",color:"var(--primary,#8B5CF6)",fontSize:9,fontWeight:700,padding:"3px 8px",borderRadius:10,whiteSpace:"nowrap",border:"1px solid rgba(212,175,55,.2)"}}>{text}</span>;}
 function StatusBadge({status}){const m={"tedavi_altında":["#FEF3C7","#D97706","Tedavide"],"iyileşti":["rgba(74,124,63,.2)","#10B981","İyileşti"],"kronik":["rgba(123,75,148,.2)","#B97FD4","Kronik"],"öldü":["rgba(239,68,68,.15)","#EF4444","Öldü"]};const [bg,col,t]=m[status]||["rgba(255,255,255,.08)","#6B7280",status];return <span style={{background:bg,color:col,fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:10,border:`1px solid ${col}44`}}>{t}</span>;}
 // ── Son İşlemler ──
@@ -2521,7 +2529,7 @@ function CreateGroupModal({ breed, goats, onSave, onClose, currentUser }) {
     <VoiceInput value={desc} onChange={setDesc} placeholder="İsteğe bağlı..."/>
     <FL>Hayvan Seç (opsiyonel — sonradan da eklenebilir)</FL>
     <div style={{fontSize:11,color:"#9CA3AF",marginBottom:8}}>{selected.size} hayvan seçildi</div>
-    {breedGoats.length===0 && <div style={{fontSize:12,color:"#D1D5DB",textAlign:"center",padding:8,background:"#F5F5F5",borderRadius:8}}>Bu ırkta henüz hayvan yok</div>}
+    {breedGoats.length===0 && <div style={{fontSize:12,color:"#D1D5DB",textAlign:"center",padding:8,background:"#F8F8FC",borderRadius:8}}>Bu ırkta henüz hayvan yok</div>}
     {anacList.length>0&&<>
       <div style={{fontSize:11,fontWeight:700,color:"#10B981",marginBottom:4,marginTop:4}}>🐐 Anaçlar</div>
       {anacList.map(g=><GoatRow key={g.id} g={g}/>)}
@@ -2974,7 +2982,7 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
             </div>
           ))}
           {goat.archived && <div style={{marginTop:8,padding:"8px 10px",background:"rgba(239,68,68,.1)",borderRadius:8,fontSize:12,color:"#EF4444"}}><b>Arşiv Nedeni:</b> {goat.archiveReason}</div>}
-          {goat.notes && <div style={{marginTop:4,padding:"8px 10px",background:"#F5F5F5",borderRadius:8,fontSize:12,color:"#6B7280"}}><b>Not:</b> {goat.notes}</div>}
+          {goat.notes && <div style={{marginTop:4,padding:"8px 10px",background:"#F8F8FC",borderRadius:8,fontSize:12,color:"#6B7280"}}><b>Not:</b> {goat.notes}</div>}
         </div>
       )}
       {detailTab==="health" && (
@@ -3550,7 +3558,7 @@ function App(){
               <h2 style={{margin:"0 0 14px",fontSize:15,fontWeight:700,color:"#374151",letterSpacing:"1px",textTransform:"uppercase"}}>Giriş Yapın</h2>
               {DEMO_USERS.filter(u=>u.id!=="u7").map(u=>(
                 <button key={u.id} onClick={()=>{setSelUser(u.id);setPinInput("");setPinError("");setPinStep("enter");setSelPerson(null);}}
-                  style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderRadius:14,border:"1px solid rgba(212,175,55,.15)",background:"#F9F9F9",cursor:"pointer",width:"100%",marginBottom:8,textAlign:"left",transition:"all .2s"}}>
+                  style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderRadius:14,border:"1px solid rgba(212,175,55,.15)",background:"#FFFFFF",cursor:"pointer",width:"100%",marginBottom:8,textAlign:"left",transition:"all .2s"}}>
                   <span style={{fontSize:18}}>{u.emoji}</span>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:600,fontSize:14,color:"#111827"}}>{u.name}</div>
@@ -3596,7 +3604,7 @@ function App(){
                 <div style={{fontSize:12,color:"#9CA3AF",marginBottom:10,fontWeight:500,letterSpacing:".5px",textTransform:"uppercase"}}>Adınızı seçin</div>
                 {user.members.map(m=>(
                   <button key={m} onClick={()=>{setSelPerson(m);setPinInput("");setPinError("");setPinStep(userPins[m]?"enter":"create");}}
-                    style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderRadius:14,border:"1px solid rgba(212,175,55,.15)",background:"#F9F9F9",cursor:"pointer",width:"100%",marginBottom:8,textAlign:"left",transition:"all .2s"}}>
+                    style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderRadius:14,border:"1px solid rgba(212,175,55,.15)",background:"#FFFFFF",cursor:"pointer",width:"100%",marginBottom:8,textAlign:"left",transition:"all .2s"}}>
                     <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(74,124,63,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#10B981"}}>{m[0]}</div>
                     <div style={{flex:1}}>
                       <div style={{fontWeight:600,fontSize:14,color:"#111827"}}>{m}</div>
@@ -4182,7 +4190,7 @@ function App(){
                       ) : (
                         <div style={{height:40,background:t.header||t.primary||"#8B5CF6"||t.primary||"#8B5CF6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>{t.emoji}</div>
                       )}
-                      <div style={{fontSize:8,fontWeight:700,color:theme.id===t.id?"var(--primary,#8B5CF6)":t.primary,textAlign:"center",padding:"3px 2px",background:"#F5F5F5"}}>{t.name}</div>
+                      <div style={{fontSize:8,fontWeight:700,color:theme.id===t.id?"var(--primary,#8B5CF6)":t.primary,textAlign:"center",padding:"3px 2px",background:"#F8F8FC"}}>{t.name}</div>
                     </button>
                   ))}
                 </div>
@@ -4262,7 +4270,7 @@ const css=`
   }
   button:active{opacity:.75;transform:scale(.97)}
   select option{background:#fff;color:#1A1A2E}
-  input::placeholder,textarea::placeholder{color:#9CA3AF}
+  input::placeholder,textarea::placeholder{color:#A0AEC0}
 `;
 
 const S={
@@ -4312,22 +4320,23 @@ const S={
   title:{margin:0,fontSize:19,fontWeight:800,color:"#1A1A2E",letterSpacing:"-.3px"},
   input:{
     padding:"11px 14px",borderRadius:12,
-    border:"1.5px solid #E8E4F0",
+    border:"1.5px solid #DDD8EE",
     fontSize:14,fontWeight:500,
-    background:"#FAFAFA",
-    color:"#1A1A2E",outline:"none",width:"100%",
+    background:"#FFFFFF",
+    color:"#111827",outline:"none",width:"100%",
     boxSizing:"border-box",
     WebkitAppearance:"none",
     transition:"border-color .2s,box-shadow .2s"
   },
   select:{
     padding:"11px 14px",borderRadius:12,
-    border:"1.5px solid #E8E4F0",
+    border:"1.5px solid #DDD8EE",
     fontSize:14,fontWeight:500,
-    background:"#FAFAFA",
-    color:"#1A1A2E",outline:"none",width:"100%",
+    background:"#FFFFFF",
+    color:"#111827",outline:"none",width:"100%",
     boxSizing:"border-box",
-    WebkitAppearance:"none"
+    WebkitAppearance:"none",
+    appearance:"none"
   },
   btnPrimary:{
     background:"var(--primary,#8B5CF6)",
