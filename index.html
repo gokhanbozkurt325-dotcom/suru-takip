@@ -369,20 +369,40 @@ function EarTagInput({ value, onChange }) {
 
   // Türkçe kelimeden rakama
   const txtToNums = (txt) => {
-    const direct = txt.replace(/[^0-9]/g,"");
-    if(direct) return direct;
+    // Önce Türkçe kelimeleri rakama çevir, boşlukları koru
     let s = txt.toLowerCase()
       .replace(/on\s*dokuz/g,"19").replace(/on\s*sekiz/g,"18").replace(/on\s*yedi/g,"17")
       .replace(/on\s*altı/g,"16").replace(/on\s*beş/g,"15").replace(/on\s*dört/g,"14")
       .replace(/on\s*üç/g,"13").replace(/on\s*iki/g,"12").replace(/on\s*bir/g,"11")
-      .replace(/\bon\b/g,"10").replace(/yirmi\s*dokuz/g,"29").replace(/yirmi\s*sekiz/g,"28")
+      .replace(/\bon\s*(\d)\b/g,(m,d)=>"1"+d).replace(/\bon\b/g,"10").replace(/yirmi\s*dokuz/g,"29").replace(/yirmi\s*sekiz/g,"28")
       .replace(/yirmi\s*yedi/g,"27").replace(/yirmi\s*altı/g,"26").replace(/yirmi\s*beş/g,"25")
       .replace(/yirmi\s*dört/g,"24").replace(/yirmi\s*üç/g,"23").replace(/yirmi\s*iki/g,"22")
-      .replace(/yirmi\s*bir/g,"21").replace(/\byirmi\b/g,"20")
-      .replace(/sıfır/g,"0").replace(/bir/g,"1").replace(/iki/g,"2").replace(/üç/g,"3")
-      .replace(/dört/g,"4").replace(/beş/g,"5").replace(/altı/g,"6")
-      .replace(/yedi/g,"7").replace(/sekiz/g,"8").replace(/dokuz/g,"9");
-    return s.replace(/[^0-9]/g,"");
+      .replace(/yirmi\s*bir/g,"21").replace(/\byirmi\s*(\d)\b/g,(m,d)=>"2"+d).replace(/\byirmi\b/g,"20")
+      .replace(/otuz\s*dokuz/g,"39").replace(/otuz\s*sekiz/g,"38").replace(/otuz\s*yedi/g,"37")
+      .replace(/otuz\s*altı/g,"36").replace(/otuz\s*beş/g,"35").replace(/otuz\s*dört/g,"34")
+      .replace(/otuz\s*üç/g,"33").replace(/otuz\s*iki/g,"32").replace(/otuz\s*bir/g,"31")
+      .replace(/\botuz\s*(\d)\b/g,(m,d)=>"3"+d).replace(/\botuz\b/g,"30").replace(/kırk\s*dokuz/g,"49").replace(/kırk\s*sekiz/g,"48")
+      .replace(/kırk\s*yedi/g,"47").replace(/kırk\s*altı/g,"46").replace(/kırk\s*beş/g,"45")
+      .replace(/kırk\s*dört/g,"44").replace(/kırk\s*üç/g,"43").replace(/kırk\s*iki/g,"42")
+      .replace(/kırk\s*bir/g,"41").replace(/\bkırk\s*(\d)\b/g,(m,d)=>"4"+d).replace(/\bkırk\b/g,"40")
+      .replace(/elli\s*dokuz/g,"59").replace(/elli\s*sekiz/g,"58").replace(/elli\s*yedi/g,"57")
+      .replace(/elli\s*altı/g,"56").replace(/elli\s*beş/g,"55").replace(/elli\s*dört/g,"54")
+      .replace(/elli\s*üç/g,"53").replace(/elli\s*iki/g,"52").replace(/elli\s*bir/g,"51")
+      .replace(/\belli\s*(\d)\b/g,(m,d)=>"5"+d).replace(/\belli\b/g,"50")
+      .replace(/sıfır/g,"0").replace(/\bbir\b/g,"1").replace(/\biki\b/g,"2").replace(/\büç\b/g,"3")
+      .replace(/\bdört\b/g,"4").replace(/\bbeş\b/g,"5").replace(/\baltı\b/g,"6")
+      .replace(/\byedi\b/g,"7").replace(/\bsekiz\b/g,"8").replace(/\bdokuz\b/g,"9");
+    // Boşlukla ayrılmış rakam gruplarını (10 5 → 15 değil, 10 + 5 = ayrı)
+    // Ama "10" + "5" yan yana gelince "105" olmamalı
+    // Sadece rakamları al — boşlukları koru, sonra birleştir
+    const parts = s.match(/\d+/g);
+    if(!parts) return "";
+    // Eğer tek parça → direkt
+    if(parts.length === 1) return parts[0];
+    // Birden fazla parça: her biri kendi başına anlamlı rakam
+    // "10" + "5" → "105" DEĞİL, kullanıcı "on beş" demişse zaten "15" gelir
+    // "10" + "5" ayrı geliyorsa bunlar ayrı rakamlar → birleştir
+    return parts.join("");
   };
 
   const handleMic = (txt) => {
@@ -401,9 +421,9 @@ function EarTagInput({ value, onChange }) {
   };
 
   return (
-    <div style={{position:"relative",display:"flex",flexDirection:"row",alignItems:"center",gap:4,boxSizing:"border-box",width:"100%",paddingRight:46}}>
-      <div style={{background:"rgba(var(--primary-rgb),.1)",borderRadius:10,padding:"9px 8px",fontWeight:700,fontSize:13,color:"var(--primary,#8B5CF6)",flexShrink:0,letterSpacing:1,boxSizing:"border-box"}}>TR</div>
-      <span style={{color:"#D1D5DB",fontWeight:700,flexShrink:0}}>-</span>
+    <div style={{display:"flex",flexDirection:"row",alignItems:"center",gap:3,boxSizing:"border-box",width:"100%"}}>
+      <div style={{background:"rgba(var(--primary-rgb),.1)",borderRadius:8,padding:"9px 7px",fontWeight:700,fontSize:13,color:"var(--primary,#8B5CF6)",flexShrink:0,boxSizing:"border-box"}}>TR</div>
+      <span style={{color:"#D1D5DB",fontWeight:700,flexShrink:0,fontSize:14}}>-</span>
       <input
         ref={part1Ref}
         value={p1}
@@ -415,9 +435,9 @@ function EarTagInput({ value, onChange }) {
           build(v,p2);
           if(v.length===2) part2Ref.current?.focus();
         }}
-        style={{width:40,minWidth:0,padding:"9px 4px",borderRadius:10,border:"1.5px solid #DDD8EE",fontSize:14,textAlign:"center",fontWeight:700,outline:"none",background:"#FFFFFF",color:"#111827",boxSizing:"border-box",flexShrink:0}}
+        style={{width:38,flexShrink:0,padding:"9px 2px",borderRadius:8,border:"1.5px solid #DDD8EE",fontSize:14,textAlign:"center",fontWeight:700,outline:"none",background:"#FFFFFF",color:"#111827",boxSizing:"border-box"}}
       />
-      <span style={{color:"#D1D5DB",fontWeight:700,flexShrink:0}}>-</span>
+      <span style={{color:"#D1D5DB",fontWeight:700,flexShrink:0,fontSize:14}}>-</span>
       <input
         ref={part2Ref}
         value={p2}
@@ -427,9 +447,9 @@ function EarTagInput({ value, onChange }) {
           const v=e.target.value.replace(/\D/g,"");
           build(p1,v);
         }}
-        style={{flex:1,minWidth:0,padding:"9px 46px 9px 8px",borderRadius:10,border:"1.5px solid #DDD8EE",fontSize:14,fontWeight:700,outline:"none",letterSpacing:1,background:"#FFFFFF",color:"#111827",boxSizing:"border-box"}}
+        style={{flex:1,minWidth:0,padding:"9px 6px",borderRadius:8,border:"1.5px solid #DDD8EE",fontSize:14,fontWeight:700,outline:"none",letterSpacing:1,background:"#FFFFFF",color:"#111827",boxSizing:"border-box"}}
       />
-      <div style={{position:"absolute",right:0,top:"50%",transform:"translateY(-50%)"}}><MicBtn onResult={handleMic}/></div>
+      <MicBtn onResult={handleMic} style={{flexShrink:0,width:40,height:40}}/>
     </div>
   );
 }
@@ -516,29 +536,29 @@ function MicBtn({ onResult, style }) {
 function VoiceInput({ value, onChange, placeholder, style, multiline, rows }) {
   if (multiline) {
     return (
-      <div style={{position:"relative",width:"100%"}}>
+      <div style={{display:"flex",flexDirection:"row",alignItems:"flex-start",gap:6,width:"100%",boxSizing:"border-box"}}>
         <textarea
           value={value}
           onChange={e => onChange(e.target.value)}
           rows={rows || 3}
           placeholder={placeholder}
-          style={{...S.input, resize:"none", lineHeight:1.5, width:"100%", paddingRight:52, boxSizing:"border-box", ...style}}
+          style={{...S.input, resize:"none", lineHeight:1.5, flex:1, minWidth:0, boxSizing:"border-box", ...style}}
         />
         <MicBtn onResult={t => onChange(value ? value + " " + t : t)}
-          style={{position:"absolute",top:6,right:6,width:38,height:38}} />
+          style={{flexShrink:0,width:40,height:40,marginTop:2}} />
       </div>
     );
   }
   return (
-    <div style={{position:"relative",width:"100%"}}>
+    <div style={{display:"flex",flexDirection:"row",alignItems:"center",gap:6,width:"100%",boxSizing:"border-box"}}>
       <input
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        style={{...S.input, width:"100%", paddingRight:52, boxSizing:"border-box", ...style}}
+        style={{...S.input, flex:1, minWidth:0, boxSizing:"border-box", ...style}}
       />
       <MicBtn onResult={t => onChange(t)}
-        style={{position:"absolute",top:"50%",right:6,transform:"translateY(-50%)",width:38,height:38}} />
+        style={{flexShrink:0,width:40,height:40}} />
     </div>
   );
 }
@@ -748,23 +768,29 @@ function BulkEarTagInput({ tags, onTagsChange }) {
       .replace(/on\s*dokuz/g,"19").replace(/on\s*sekiz/g,"18").replace(/on\s*yedi/g,"17")
       .replace(/on\s*altı/g,"16").replace(/on\s*beş/g,"15").replace(/on\s*dört/g,"14")
       .replace(/on\s*üç/g,"13").replace(/on\s*iki/g,"12").replace(/on\s*bir/g,"11")
-      .replace(/\bon\b/g,"10").replace(/yirmi\s*dokuz/g,"29").replace(/yirmi\s*sekiz/g,"28")
+      .replace(/\bon\s*(\d)\b/g,(m,d)=>"1"+d).replace(/\bon\s*(\d)\b/g,(m,d)=>"1"+d).replace(/\bon\b/g,"10").replace(/yirmi\s*dokuz/g,"29").replace(/yirmi\s*sekiz/g,"28")
       .replace(/yirmi\s*yedi/g,"27").replace(/yirmi\s*altı/g,"26").replace(/yirmi\s*beş/g,"25")
       .replace(/yirmi\s*dört/g,"24").replace(/yirmi\s*üç/g,"23").replace(/yirmi\s*iki/g,"22")
-      .replace(/yirmi\s*bir/g,"21").replace(/\byirmi\b/g,"20")
+      .replace(/yirmi\s*bir/g,"21").replace(/\byirmi\s*(\d)\b/g,(m,d)=>"2"+d).replace(/\byirmi\b/g,"20")
       .replace(/otuz\s*dokuz/g,"39").replace(/otuz\s*sekiz/g,"38").replace(/otuz\s*yedi/g,"37")
       .replace(/otuz\s*altı/g,"36").replace(/otuz\s*beş/g,"35").replace(/otuz\s*dört/g,"34")
       .replace(/otuz\s*üç/g,"33").replace(/otuz\s*iki/g,"32").replace(/otuz\s*bir/g,"31")
-      .replace(/\botuz\b/g,"30").replace(/kırk\s*dokuz/g,"49").replace(/kırk\s*sekiz/g,"48")
+      .replace(/\botuz\s*(\d)\b/g,(m,d)=>"3"+d).replace(/\botuz\b/g,"30").replace(/kırk\s*dokuz/g,"49").replace(/kırk\s*sekiz/g,"48")
       .replace(/kırk\s*yedi/g,"47").replace(/kırk\s*altı/g,"46").replace(/kırk\s*beş/g,"45")
       .replace(/kırk\s*dört/g,"44").replace(/kırk\s*üç/g,"43").replace(/kırk\s*iki/g,"42")
-      .replace(/kırk\s*bir/g,"41").replace(/\bkırk\b/g,"40")
-      .replace(/elli/g,"50").replace(/altmış/g,"60").replace(/yetmiş/g,"70")
+      .replace(/kırk\s*bir/g,"41").replace(/\bkırk\s*(\d)\b/g,(m,d)=>"4"+d).replace(/\bkırk\b/g,"40")
+      .replace(/elli\s*dokuz/g,"59").replace(/elli\s*sekiz/g,"58").replace(/elli\s*yedi/g,"57")
+      .replace(/elli\s*altı/g,"56").replace(/elli\s*beş/g,"55").replace(/elli\s*dört/g,"54")
+      .replace(/elli\s*üç/g,"53").replace(/elli\s*iki/g,"52").replace(/elli\s*bir/g,"51")
+      .replace(/\belli\s*(\d)\b/g,(m,d)=>"5"+d).replace(/\belli\b/g,"50")
+      .replace(/altmış/g,"60").replace(/yetmiş/g,"70")
       .replace(/seksen/g,"80").replace(/doksan/g,"90")
-      .replace(/sıfır/g,"0").replace(/bir/g,"1").replace(/iki/g,"2").replace(/üç/g,"3")
-      .replace(/dört/g,"4").replace(/beş/g,"5").replace(/altı/g,"6")
-      .replace(/yedi/g,"7").replace(/sekiz/g,"8").replace(/dokuz/g,"9");
-    return s.replace(/[^0-9]/g,"");
+      .replace(/sıfır/g,"0").replace(/\bbir\b/g,"1").replace(/\biki\b/g,"2").replace(/\büç\b/g,"3")
+      .replace(/\bdört\b/g,"4").replace(/\bbeş\b/g,"5").replace(/\baltı\b/g,"6")
+      .replace(/\byedi\b/g,"7").replace(/\bsekiz\b/g,"8").replace(/\bdokuz\b/g,"9");
+    const parts = s.match(/\d+/g);
+    if(!parts) return "";
+    return parts.join("");
   };
 
   // Gelen metni TR işaretine göre küpe bloklarına ayır
