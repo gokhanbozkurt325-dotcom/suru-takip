@@ -710,8 +710,8 @@ function BulkEarTagInput({ value, onChange }) {
     if (!SR) { alert("Sesli yazma desteklenmiyor. Chrome kullanın."); return; }
     if (listening) { recRef.current?.stop(); setListening(false); setInterim(""); return; }
 
-    // Başlarken mevcut satırları al
-    linesRef.current = (value || "").split("\n");
+    // Başlarken mevcut satırları al — boş satırları filtrele
+    linesRef.current = (value || "").split("\n").filter(l => l.trim());
     numBufRef.current = "";
     curIdxRef.current = -1;
 
@@ -734,11 +734,12 @@ function BulkEarTagInput({ value, onChange }) {
       const txt = final.trim();
 
       if (isTR(txt)) {
-        // Yeni küpe satırı — mevcut satıra dokunma, sona yeni ekle
+        // Yeni küpe satırı — sona ekle
         numBufRef.current = "";
-        linesRef.current = [...linesRef.current, "TR--"];
-        curIdxRef.current = linesRef.current.length - 1;
-        onChange(linesRef.current.join("\n"));
+        const newLines = [...linesRef.current, "TR--"];
+        linesRef.current = newLines;
+        curIdxRef.current = newLines.length - 1;
+        onChange(newLines.filter(l=>l.trim()).join("\n"));
       } else {
         const nums = toNums(txt);
         if (!nums) return;
@@ -746,11 +747,11 @@ function BulkEarTagInput({ value, onChange }) {
         const tag = buildTag(numBufRef.current);
 
         if (curIdxRef.current >= 0 && curIdxRef.current < linesRef.current.length) {
-          // Mevcut satırı güncelle, diğerlerine dokunma
-          const updated = [...linesRef.current];
-          updated[curIdxRef.current] = tag;
+          const updated = linesRef.current.map((l, i) =>
+            i === curIdxRef.current ? tag : l
+          );
           linesRef.current = updated;
-          onChange(linesRef.current.join("\n"));
+          onChange(updated.filter(l=>l.trim()).join("\n"));
         }
       }
     };
