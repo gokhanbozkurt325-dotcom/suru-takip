@@ -831,6 +831,65 @@ function StatusPicker({value,onChange}){return <div style={{display:"flex",gap:6
 function Stat({v,l,bg,c}){return <div style={{background:bg,borderRadius:10,padding:"10px 8px",textAlign:"center",flex:1}}><div style={{fontSize:20,fontWeight:900,color:c}}>{v}</div><div style={{fontSize:10,color:c,fontWeight:600,opacity:.75}}>{l}</div></div>;}
 function Badge({bg,color,text}){return <span style={{background:bg,color,fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:10,whiteSpace:"nowrap"}}>{text}</span>;}
 function StatusBadge({status}){const m={"tedavi_altında":["#FFF8EC","#B8750A","Tedavide"],"iyileşti":["#E3F0DC","#3D5A25","İyileşti"],"kronik":["#F0E6F6","#7B2D8E","Kronik"],"öldü":["#FFF0EE","#BE3B31","Öldü"]};const [bg,c,t]=m[status]||["#F2F0EA","#8c8c7e",status];return <span style={{background:bg,color:c,fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10}}>{t}</span>;}
+// ── Son İşlemler ──
+const ACTIVITY_ICONS = {
+  saglik_eklendi:   {ic:"🩺", bg:"#FFF0EE", label:"Sağlık kaydı eklendi"},
+  saglik_guncellendi: {ic:"✏️", bg:"#FFF8EC", label:"Sağlık kaydı güncellendi"},
+  saglik_sonlandi:  {ic:"✅", bg:"#E3F0DC", label:"Sağlık kaydı sonlandırıldı"},
+  hayvan_eklendi:   {ic:"🐐", bg:"#E3F0DC", label:"Yeni hayvan eklendi"},
+  toplu_hayvan:     {ic:"🐐", bg:"#E3F0DC", label:"Toplu hayvan eklendi"},
+  arsivlendi:       {ic:"📦", bg:"#F2F0EA", label:"Hayvan arşivlendi"},
+  asi_uygulandı:    {ic:"💉", bg:"#E6F1FB", label:"Aşı uygulandı"},
+  asi_takvim:       {ic:"📅", bg:"#E6F1FB", label:"Aşı takvime eklendi"},
+  dogum_eklendi:    {ic:"🐣", bg:"#FFF8EC", label:"Doğum kaydedildi"},
+  olum_eklendi:     {ic:"💔", bg:"#FFF0EE", label:"Ölüm kaydedildi"},
+  toplu_tedavi:     {ic:"🏥", bg:"#F5FAF0", label:"Toplu tedavi eklendi"},
+};
+
+function timeAgo(dt){
+  if(!dt) return "";
+  const diff = (Date.now()-new Date(dt).getTime())/1000;
+  if(diff<60) return "Az önce";
+  if(diff<3600) return `${Math.floor(diff/60)} dk önce`;
+  if(diff<86400) return `${Math.floor(diff/3600)} sa önce`;
+  if(diff<172800) return "Dün";
+  return new Date(dt).toLocaleDateString("tr-TR");
+}
+
+function RecentActivities({ activities, onDelete, currentUser }) {
+  const isVet = currentUser==="Veteriner Hekim"||currentUser==="Şef";
+  const [expanded, setExpanded] = useState(true);
+  if(!activities || activities.length===0) return null;
+  return (
+    <div style={{background:"#fff",borderRadius:14,marginBottom:12,padding:0,overflow:"hidden",border:"1px solid #D4A574",boxShadow:"0 1px 3px rgba(0,0,0,.03)"}}>
+      <div style={{background:"#4A2C0A",padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{color:"#FAD7A0",fontWeight:700,fontSize:13}}>🕐 Son İşlemler</div>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <span style={{color:"#D4A574",fontSize:10}}>Son {activities.length} kayıt</span>
+          <button onClick={()=>setExpanded(!expanded)} style={{background:"none",border:"none",color:"#D4A574",fontSize:12,cursor:"pointer"}}>{expanded?"▲":"▼"}</button>
+        </div>
+      </div>
+      {expanded && activities.map((a,i)=>{
+        const info = ACTIVITY_ICONS[a.action_type]||{ic:"📌",bg:"#F2F0EA",label:a.action_type};
+        return (
+          <div key={a.id} style={{padding:"10px 14px",borderBottom:i<activities.length-1?"1px solid #FEF5E7":"none",display:"flex",gap:10,alignItems:"flex-start"}}>
+            <div style={{width:32,height:32,borderRadius:8,background:info.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{info.ic}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#1e1e1e"}}>{a.description||info.label}</div>
+              {a.detail&&<div style={{fontSize:11,color:"#555",marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.detail}</div>}
+              <div style={{display:"flex",gap:6,alignItems:"center",marginTop:3}}>
+                <span style={{fontSize:10,color:"#7B4A1E",fontWeight:600}}>👤 {a.user_name||"—"}</span>
+                <span style={{fontSize:10,color:"#aaa"}}>· {timeAgo(a.created_at)}</span>
+              </div>
+            </div>
+            {isVet&&<button onClick={()=>onDelete(a.id)} style={{background:"none",border:"none",color:"#ccc",fontSize:14,cursor:"pointer",padding:"0 2px",flexShrink:0}}>✕</button>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function AnnouncementBox({ announcements, setAnnouncements, currentUser, vaccineReports }) {
   const [newMsg, setNewMsg] = useState("");
   const [saving, setSaving] = useState(false);
@@ -1406,7 +1465,7 @@ function BirthModal({ onSave, onClose, currentUser, editData }) {
 }
 
 // ── Doğum Kayıtları Sayfası ──
-function BirthsPage({ births, currentUser, onDelete }) {
+function BirthsPage({ births, currentUser, onDelete, onAdd }) {
   const [selBreed, setSelBreed] = useState("all");
   const [showModal, setShowModal] = useState(false);
   const [editBirth, setEditBirth] = useState(null);
@@ -1437,7 +1496,7 @@ function BirthsPage({ births, currentUser, onDelete }) {
   return (
     <div className="anim-fade">
       {showModal && <BirthModal currentUser={currentUser}
-        onSave={b=>{setLocalBirths(p=>[b,...p]);setShowModal(false);}}
+        onSave={b=>{setLocalBirths(p=>[b,...p]);setShowModal(false);onAdd&&onAdd(b);}}
         onClose={()=>setShowModal(false)}/>}
       {editBirth && <BirthModal currentUser={currentUser} editData={editBirth}
         onSave={b=>{
@@ -2646,6 +2705,7 @@ function App(){
   const [births,setBirths]=useState([]);
   const [deaths,setDeaths]=useState([]);
   const [groupTreatments,setGroupTreatments]=useState([]);
+  const [activityLogs,setActivityLogs]=useState([]);
 
   const [hModal,setHModal]=useState(null);
   const [vModal,setVModal]=useState(null);
@@ -2716,10 +2776,37 @@ function App(){
         status:r.status||"tedavi_altında",
         notes:r.notes||"", createdBy:r.created_by||"", createdAt:r.created_at
       })));
+      // Activity logs yükle
+      const {data:alData} = await sb.from("activity_logs").select("*").order("created_at",{ascending:false}).limit(7);
+      setActivityLogs(alData||[]);
       setLoading(false);
     };
     load();
   },[showLogin]);
+
+  // Activity log kaydet (max 7 tutar)
+  const addActivity = async (actionType, description, detail, breed) => {
+    const rec = {
+      id: "al"+Date.now()+Math.random().toString(36).slice(2),
+      action_type: actionType,
+      description,
+      detail: detail||null,
+      user_name: currentUser,
+      breed: breed||null,
+      created_at: new Date().toISOString()
+    };
+    await sb.from("activity_logs").insert(rec);
+    setActivityLogs(prev => {
+      const updated = [rec, ...prev].slice(0, 7);
+      return updated;
+    });
+    // 7'den fazlaysa eskiyi sil
+    const {data:all} = await sb.from("activity_logs").select("id").order("created_at",{ascending:false});
+    if(all && all.length > 7){
+      const toDelete = all.slice(7).map(r=>r.id);
+      await sb.from("activity_logs").delete().in("id", toDelete);
+    }
+  };
 
   const upcomingAll=useMemo(()=>{
     const list=[];
@@ -2754,17 +2841,32 @@ function App(){
       setTreatmentDaysData(p=>[...rec.treatmentDays,...p]);
     }
     setHModal(null);
+    addActivity("saglik_eklendi","Sağlık kaydı eklendi",`${rec.goatEarTag} · ${rec.condition}`,rec.breed);
   };
-  const saveVaccines=recs=>{setVaccines(p=>[...recs,...p]);setVModal(null);};
-  const saveGoat=g=>{setGoats(p=>[...p,g]);setAddGoatModal(null);};
-  const saveBulkGoats=gs=>{setGoats(p=>[...p,...gs]);setBulkAddModal(null);};
-  const updateHealth=updated=>{setHealthRecs(p=>p.map(h=>h.id===updated.id?updated:h));};
+  const saveVaccines=recs=>{
+    setVaccines(p=>[...recs,...p]);
+    setVModal(null);
+    if(recs.length>0) addActivity("asi_uygulandı","Aşı uygulandı",`${recs.length} hayvan · ${recs[0].vaccineType||""}`,recs[0]?.breed);
+  };
+  const saveGoat=g=>{
+    setGoats(p=>[...p,g]);
+    setAddGoatModal(null);
+    addActivity("hayvan_eklendi","Yeni hayvan eklendi",`${g.earTag} · ${g.category==="anac"?"Anaç":"Oğlak"}`,g.breed);
+  };
+  const saveBulkGoats=gs=>{
+    setGoats(p=>[...p,...gs]);
+    setBulkAddModal(null);
+    if(gs.length>0) addActivity("toplu_hayvan","Toplu hayvan eklendi",`${gs.length} hayvan · ${gs[0].category==="anac"?"Anaç":"Oğlak"}`,gs[0]?.breed);
+  };
+  const updateHealth=updated=>{
+    setHealthRecs(p=>p.map(h=>h.id===updated.id?updated:h));
+  };
   const addLogToState=newLog=>{setLogs(p=>[newLog,...p]);};
 
   const finalizeHealth=async(id,report)=>{
     setHealthRecs(p=>p.filter(h=>h.id!==id));
     setReports(p=>[report,...p]);
-    // Hayvanı arşivle eğer "Hayvan Öldü" ise
+    addActivity("saglik_sonlandi","Sağlık kaydı sonlandırıldı",`${report.goatEarTag} · ${report.closeReason}`,report.breed);
     if(report.closeReason==="Hayvan Öldü"){
       await sb.from("goats").update({archived:true,archive_reason:"Hayvan öldü — "+report.dateClosed}).eq("id",report.goatId);
       setGoats(p=>p.map(g=>g.id===report.goatId?{...g,archived:true,archiveReason:"Hayvan öldü — "+report.dateClosed}:g));
@@ -2775,7 +2877,10 @@ function App(){
   const saveVaccineGroup=g=>{setVaccineGroups(p=>[...p,g]);};
   const updateVaccineGroup=g=>{setVaccineGroups(p=>p.map(x=>x.id===g.id?g:x));};
   const deleteVaccineGroup=id=>{setVaccineGroups(p=>p.filter(x=>x.id!==id));};
-  const saveVaccineReport=r=>{setVaccineReports(p=>[r,...p]);};
+  const saveVaccineReport=r=>{
+    setVaccineReports(p=>[r,...p]);
+    addActivity("asi_takvim","Aşı takvime eklendi",`${r.groupName} · ${r.vaccineType||""}`,r.breed);
+  };
 
   const archiveGoat=async(goatId, reason)=>{
     const g=goats.find(x=>x.id===goatId);
@@ -2783,6 +2888,7 @@ function App(){
     await sb.from("goats").update({archived:true,archive_reason:archiveReason}).eq("id",goatId);
     setGoats(p=>p.map(x=>x.id===goatId?{...x,archived:true,archiveReason}:x));
     setArchiveConfirm(null);
+    addActivity("arsivlendi","Hayvan arşivlendi",`${g?.earTag||""} · ${g?.name||""}`,g?.breed);
   };
 
   // Swipe ile geri
@@ -3233,6 +3339,16 @@ function App(){
               vaccineReports={vaccineReports}
             />
 
+            {/* Son İşlemler */}
+            <RecentActivities
+              activities={activityLogs}
+              onDelete={async(id)=>{
+                await sb.from("activity_logs").delete().eq("id",id);
+                setActivityLogs(p=>p.filter(a=>a.id!==id));
+              }}
+              currentUser={currentUser}
+            />
+
             {/* Ana Navigasyon Grid */}
             <div style={{padding:"12px 14px"}}>
               <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
@@ -3492,19 +3608,21 @@ function App(){
           </div>
         )}
 
-        {page==="births" && <BirthsPage births={births} currentUser={currentUser} onDelete={id=>setBirths(p=>p.filter(b=>b.id!==id))}/>}
+        {page==="births" && <BirthsPage births={births} currentUser={currentUser}
+          onAdd={b=>{ setBirths(p=>[b,...p]); addActivity("dogum_eklendi","Doğum kaydedildi",`Ana: ${b.motherEarTag} · ${b.birthType==="normal"?"Normal":b.birthType==="gunsuz"?"Günsüz":"Atık"}`,b.breed); }}
+          onDelete={id=>setBirths(p=>p.filter(b=>b.id!==id))}/>}
 
         {page==="deaths" && <DeathsPage deaths={deaths} currentUser={currentUser}
           onDelete={(id,obj)=>{
             if(id) setDeaths(p=>p.filter(d=>d.id!==id));
-            else if(obj) setDeaths(p=>[obj,...p]);
+            else if(obj){ setDeaths(p=>[obj,...p]); addActivity("olum_eklendi","Ölüm kaydedildi",`${obj.earTag} · ${obj.cause}`,obj.breed); }
           }}/>}
 
         {page==="group_tx" && <GroupTreatmentsPage
           groupTreatments={groupTreatments}
           treatmentDaysData={treatmentDaysData}
           currentUser={currentUser}
-          onAdd={g=>setGroupTreatments(p=>[g,...p])}
+          onAdd={g=>{ setGroupTreatments(p=>[g,...p]); addActivity("toplu_tedavi","Toplu tedavi eklendi",`${g.groupName} · ${g.condition}`,g.breed); }}
           onUpdate={g=>setGroupTreatments(p=>p.map(x=>x.id===g.id?g:x))}
           onDelete={id=>setGroupTreatments(p=>p.filter(x=>x.id!==id))}
           onTreatmentDayUpdate={day=>setTreatmentDaysData(p=>p.map(d=>d.id===day.id?day:{...d,...(d.id===day.id?day:{})}))}
@@ -3517,6 +3635,7 @@ function App(){
           onScheduleDeleted={id=>setVaccineReports(p=>p.filter(x=>x.id!==id))}
           onVaccineApplied={r=>{
             setVaccineReports(p=>[r,...p.filter(x=>x.id!==r.id)]);
+            addActivity("asi_uygulandı","Aşı uygulandı",`${r.groupName} · ${r.vaccineType||""}`,r.breed);
           }}
           currentUser={currentUser}/>}
 
