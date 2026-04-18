@@ -672,7 +672,8 @@ function BulkEarTagInput({ value, onChange }) {
   const numBufRef = useRef("");
   const curIdxRef = useRef(-1);
   const linesRef = useRef([]);
-  // NOT: linesRef sadece startVoice'da başlatılır, useEffect yok
+  const onChangeRef = useRef(onChange);
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
 
   const isTR = (txt) => /^(tr|te\s?er|tı\s?er|ti\s?ar|tire)$/i.test(txt.trim());
 
@@ -713,40 +714,31 @@ function BulkEarTagInput({ value, onChange }) {
     const r = new SR();
     r.lang = "tr-TR";
     r.continuous = true;
-    r.interimResults = true;
+    r.interimResults = false;
 
     r.onresult = (e) => {
-      let final = "";
-      let inter = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) final += e.results[i][0].transcript;
-        else inter += e.results[i][0].transcript;
-      }
-      if (inter) setInterim(inter);
-      if (!final) return;
-      setInterim("");
-
-      const txt = final.trim();
+      const txt = e.results[e.results.length - 1][0].transcript.trim();
+      if (!txt) return;
 
       if (isTR(txt)) {
-        // Yeni küpe satırı — sona ekle
         numBufRef.current = "";
         const newLines = [...linesRef.current, "TR--"];
         linesRef.current = newLines;
         curIdxRef.current = newLines.length - 1;
-        onChange(newLines.filter(l=>l.trim()).join("\n"));
+        const out = newLines.filter(l => l.trim()).join("\n");
+        onChangeRef.current(out);
       } else {
         const nums = toNums(txt);
         if (!nums) return;
         numBufRef.current += nums;
         const tag = buildTag(numBufRef.current);
-
         if (curIdxRef.current >= 0 && curIdxRef.current < linesRef.current.length) {
           const updated = linesRef.current.map((l, i) =>
             i === curIdxRef.current ? tag : l
           );
           linesRef.current = updated;
-          onChange(updated.filter(l=>l.trim()).join("\n"));
+          const out = updated.filter(l => l.trim()).join("\n");
+          onChangeRef.current(out);
         }
       }
     };
