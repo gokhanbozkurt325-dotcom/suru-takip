@@ -669,15 +669,10 @@ function BulkEarTagInput({ value, onChange }) {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
   const recRef = useRef(null);
-  const numBufRef = useRef(""); // mevcut küpe için biriken rakamlar
-  const curIdxRef = useRef(-1);  // hangi satır düzenleniyor
-  const linesRef = useRef([]);   // satır dizisi
-
-  // linesRef'i value'dan her zaman güncel tut
-  useEffect(() => {
-    const newLines = (value || "").split("\n");
-    linesRef.current = newLines;
-  }, [value]);
+  const numBufRef = useRef("");
+  const curIdxRef = useRef(-1);
+  const linesRef = useRef([]);
+  // NOT: linesRef sadece startVoice'da başlatılır, useEffect yok
 
   const isTR = (txt) => /^(tr|te\s?er|tı\s?er|ti\s?ar|tire)$/i.test(txt.trim());
 
