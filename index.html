@@ -303,7 +303,69 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
 }
 
 // ── Küpe No Tarayıcı ──
-// ── Sesli Yazma Butonu ──
+// ── Küpe No Formatı: TR-xx-xxxxxx ──
+function EarTagInput({ value, onChange }) {
+  const part1Ref = useRef(null);
+  const part2Ref = useRef(null);
+
+  const parse = (v) => {
+    if(!v) return ["",""];
+    const clean = v.replace(/^TR-?/i,"");
+    const parts = clean.split("-");
+    return [parts[0]||"", parts.slice(1).join("")||""];
+  };
+
+  const [p1, p2] = parse(value);
+
+  const build = (a, b) => onChange(`TR-${a}-${b}`);
+
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:4}}>
+      <div style={{background:"#F2F0EA",borderRadius:8,padding:"9px 10px",fontWeight:700,fontSize:14,color:"#555",border:"1px solid #E8E5DC",flexShrink:0,letterSpacing:1}}>TR</div>
+      <div style={{color:"#aaa",fontWeight:700,fontSize:16}}>-</div>
+      <input
+        ref={part1Ref}
+        value={p1}
+        maxLength={2}
+        placeholder="xx"
+        inputMode="numeric"
+        onChange={e=>{
+          const v=e.target.value.replace(/\D/g,"");
+          build(v,p2);
+          if(v.length===2) part2Ref.current?.focus();
+        }}
+        style={{width:46,padding:"9px 8px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:14,textAlign:"center",fontWeight:700,outline:"none"}}
+      />
+      <div style={{color:"#aaa",fontWeight:700,fontSize:16}}>-</div>
+      <input
+        ref={part2Ref}
+        value={p2}
+        placeholder="xxxxxx"
+        inputMode="numeric"
+        onChange={e=>{
+          const v=e.target.value.replace(/\D/g,"");
+          build(p1,v);
+        }}
+        style={{flex:1,padding:"9px 10px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:14,fontWeight:700,outline:"none",letterSpacing:1}}
+      />
+      <MicBtn onResult={txt=>{
+        // Sesli girişten sayıları çıkar
+        const nums = txt.replace(/[^0-9]/g,"");
+        if(!nums) return;
+        if(p1.length<2){
+          const newP1=(p1+nums).slice(0,2);
+          const rest=(p1+nums).slice(2);
+          build(newP1,rest||p2);
+          if(newP1.length===2) part2Ref.current?.focus();
+        } else {
+          build(p1,p2+nums);
+        }
+      }} style={{height:38}}/>
+    </div>
+  );
+}
+
+
 function MicBtn({ onResult, style }) {
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
@@ -393,7 +455,7 @@ function VoiceInput({ value, onChange, placeholder, style, multiline, rows }) {
 function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUser }) {
   const [breed, setBreed] = useState(breedFilter||"");
   const [category, setCategory] = useState("anac");
-  const [earTag, setEarTag] = useState("");
+  const [earTag, setEarTag] = useState("TR--");
   const [date,setDate]=useState(todayISO());
   const [condition,setCondition]=useState("");
   const [condCustom,setCondCustom]=useState("");
@@ -401,22 +463,37 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
   const [status,setStatus]=useState("tedavi_altında");
   const [notes,setNotes]=useState("");
   const [treatmentDays,setTreatmentDays]=useState(0);
+  const [photos,setPhotos]=useState([]);
+  const [uploading,setUploading]=useState(false);
   const [err,setErr]=useState("");
   const [saving,setSaving]=useState(false);
+  const photoRef = useRef(null);
+  const cameraRef2 = useRef(null);
+
+  const uploadHealthPhotos = async (recId, files) => {
+    setUploading(true);
+    for(const file of files){
+      const ext = file.name.split(".").pop();
+      const path = `${recId}_${Date.now()}.${ext}`;
+      await sb.storage.from("health-photos").upload(path, file, {contentType:file.type});
+    }
+    setUploading(false);
+  };
 
   const save = async () => {
     if(!breed){setErr("Irk seçiniz");return;}
-    if(!earTag.trim()){setErr("Küpe no giriniz");return;}
+    const cleanTag = earTag.replace(/^TR--?$/,"").trim();
+    if(!cleanTag || cleanTag==="TR-" || cleanTag==="TR--"){setErr("Küpe no giriniz");return;}
     const cond = condition==="Diğer"?condCustom.trim():condition;
     if(!cond){setErr("Hastalık/durum giriniz");return;}
     setSaving(true);
-    // Sürüde bu küpe no'lu hayvan var mı kontrol et
     const existingGoat = goats.find(g=>g.earTag===earTag.trim()&&!g.archived);
     const goatId = existingGoat ? existingGoat.id : "ext_"+earTag.trim().replace(/\s/g,"_");
     const rec = { id:"h"+Date.now(), goatId, goatEarTag:earTag.trim(), breed, date, condition:cond, treatment, status, veterinarian:currentUser, cost:"", createdByName:currentUser, notes, category };
     const { error } = await sb.from("health_records").insert({...fromHealth(rec), goat_ear_tag:earTag.trim()});
     if(error){setErr("Kayıt hatası: "+error.message);setSaving(false);return;}
     await addLog(rec.id, goatId, breed, "açılış", `${cond} — ${currentUser} tarafından açıldı`, currentUser);
+    if(photos.length>0) await uploadHealthPhotos(rec.id, photos);
     if(treatmentDays>0){
       const days=[];
       for(let i=0;i<treatmentDays;i++){
@@ -454,8 +531,7 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
       <button onClick={()=>setCategory("oglak")} style={{flex:1,padding:"9px 0",borderRadius:8,border:`1.5px solid ${category==="oglak"?"#B8602A":"#E8E5DC"}`,background:category==="oglak"?"#FFF4E6":"#fff",color:category==="oglak"?"#8B5A1B":"#8c8c7e",fontWeight:category==="oglak"?700:400,fontSize:13,cursor:"pointer"}}>🍼 Oğlak</button>
     </div>
     <FL>Küpe No *</FL>
-    <FL>Küpe No *</FL>
-    <VoiceInput value={earTag} onChange={setEarTag} placeholder="TR-15-0042"/>
+    <EarTagInput value={earTag} onChange={setEarTag}/>
     <FL>Tarih *</FL>
     <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={S.input}/>
     <FL>Hastalık / Durum *</FL>
@@ -482,6 +558,28 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     <StatusPicker value={status} onChange={setStatus}/>
     <FL>Notlar</FL>
     <VoiceInput value={notes} onChange={setNotes} placeholder="Notlar..." multiline rows={2}/>
+    <FL>Fotoğraf Ekle</FL>
+    <div style={{display:"flex",gap:6,marginBottom:4}}>
+      <button type="button" onClick={()=>cameraRef2.current?.click()}
+        style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #4A7C3F",background:"#E3F0DC",color:"#3D5A25",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+        📷 Kamera
+      </button>
+      <button type="button" onClick={()=>photoRef.current?.click()}
+        style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #2873A8",background:"#E6F1FB",color:"#0C447C",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+        🖼️ Galeri
+      </button>
+    </div>
+    <input ref={cameraRef2} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>setPhotos(p=>[...p,...Array.from(e.target.files)])}/>
+    <input ref={photoRef} type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>setPhotos(p=>[...p,...Array.from(e.target.files)])}/>
+    {photos.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:4}}>
+      {photos.map((f,i)=>(
+        <div key={i} style={{position:"relative"}}>
+          <img src={URL.createObjectURL(f)} style={{width:60,height:60,objectFit:"cover",borderRadius:8,border:"1px solid #E8E5DC"}}/>
+          <button onClick={()=>setPhotos(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#BE3B31",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:11,cursor:"pointer",lineHeight:"18px",textAlign:"center",padding:0}}>×</button>
+        </div>
+      ))}
+    </div>}
+    {uploading&&<div style={{fontSize:11,color:"#4A7C3F"}}>⏳ Fotoğraflar yükleniyor...</div>}
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
       <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
@@ -545,7 +643,103 @@ function VaccineModal({ breed, goats, onSave, onClose, currentUser }) {
 }
 
 // ── Hayvan Ekle ──
-// ── Toplu Hayvan Ekleme Modalı ──
+// ── Toplu Küpe Girişi (sesli + elle) ──
+function BulkEarTagInput({ value, onChange }) {
+  const [listening, setListening] = useState(false);
+  const recRef = useRef(null);
+  const taRef = useRef(null);
+
+  // Sesten küpe oluştur: "on beş sıfır dört iki" → "0042"
+  const wordsToNums = (txt) => {
+    const map = {"sıfır":"0","bir":"1","iki":"2","üç":"3","dört":"4","beş":"5","altı":"6","yedi":"7","sekiz":"8","dokuz":"9","on":"10","onbir":"11","oniki":"12","onüç":"13","ondört":"14","onbeş":"15","onaltı":"16","onyedi":"17","onsekiz":"18","ondokuz":"19","yirmi":"20"};
+    // Önce rakamları al
+    const nums = txt.replace(/[^0-9]/g,"");
+    if(nums) return nums;
+    // Kelimeden rakama
+    let result = txt.toLowerCase();
+    Object.keys(map).forEach(k=>{ result = result.replace(new RegExp(k,"g"), map[k]); });
+    return result.replace(/[^0-9]/g,"");
+  };
+
+  const startVoice = () => {
+    const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){ alert("Sesli yazma desteklenmiyor. Chrome kullanın."); return; }
+    if(listening){ recRef.current?.stop(); setListening(false); return; }
+    const r = new SR();
+    r.lang="tr-TR"; r.continuous=true; r.interimResults=false;
+    r.onresult = (e) => {
+      const txt = e.results[e.results.length-1][0].transcript.trim().toLowerCase();
+      // "TR", "te er", "tı er", "tire" → yeni küpe başlat
+      if(/^(tr|te\s?er|t[iı]\s?er|tire|ti\s?ar)$/i.test(txt)){
+        onChange(prev => {
+          const lines = (prev||"").split("\n").filter(l=>l.trim());
+          lines.push("TR--");
+          return lines.join("\n");
+        });
+      } else {
+        // Mevcut son satıra sayı ekle
+        const nums = wordsToNums(txt);
+        if(!nums) return;
+        onChange(prev => {
+          const lines = (prev||"").split("\n");
+          const lastIdx = lines.length-1;
+          const last = lines[lastIdx]||"";
+          if(last.startsWith("TR")){
+            const parts = last.split("-");
+            // TR-[p1]-[p2] formatı
+            const p1 = parts[1]||"";
+            const p2 = parts[2]||"";
+            if(p1.length<2){
+              // İlk iki hane dolmamış
+              const newP1 = (p1+nums).slice(0,2);
+              const rest = (p1+nums).slice(2);
+              lines[lastIdx] = `TR-${newP1}-${rest}`;
+            } else {
+              // İlk iki hane dolmuş, sonuna ekle
+              lines[lastIdx] = `TR-${p1}-${p2+nums}`;
+            }
+          } else {
+            // TR ile başlayan satır yok, yenisine ekle
+            lines.push(`TR--${nums}`);
+          }
+          return lines.join("\n");
+        });
+      }
+    };
+    r.onerror=()=>setListening(false);
+    r.onend=()=>{ setListening(false); };
+    recRef.current=r; r.start(); setListening(true);
+  };
+
+  const count = (value||"").split("\n").filter(l=>l.trim().match(/^TR-\d{1,2}-\d+$/)).length;
+
+  return (
+    <div>
+      <div style={{display:"flex",gap:6,marginBottom:6,alignItems:"center"}}>
+        <button type="button" onClick={startVoice}
+          style={{padding:"9px 14px",borderRadius:10,border:`1.5px solid ${listening?"#BE3B31":"#4A7C3F"}`,background:listening?"#FFF0EE":"#E3F0DC",color:listening?"#BE3B31":"#3D5A25",fontWeight:700,fontSize:12,cursor:"pointer",animation:listening?"pulse 1s infinite":"none",display:"flex",alignItems:"center",gap:6}}>
+          {listening?"⏹ Durdur":"🎤 Sesli Gir"}
+        </button>
+        {listening&&<div style={{fontSize:11,color:"#BE3B31",fontWeight:600,display:"flex",alignItems:"center",gap:4}}>
+          <span style={{animation:"pulse 1s infinite"}}>●</span> "TR" = yeni küpe başlar
+        </div>}
+      </div>
+      <textarea
+        ref={taRef}
+        value={value}
+        onChange={e=>onChange(e.target.value)}
+        rows={6}
+        placeholder={"TR-15-0001\nTR-15-0002\nTR-24-0042\n\n(Her satıra bir küpe, format: TR-xx-xxxxxx)"}
+        style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:13,fontFamily:"monospace",lineHeight:1.8,resize:"vertical",boxSizing:"border-box",outline:"none"}}
+      />
+      {count>0&&<div style={{fontSize:10,color:"#4A7C3F",marginTop:2,fontWeight:600}}>
+        ✅ {count} geçerli küpe formatı
+      </div>}
+    </div>
+  );
+}
+
+
 function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser }) {
   const [category, setCategory] = useState(defaultCategory||"anac");
   const [gender, setGender] = useState("dişi");
@@ -693,14 +887,9 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
 
       {/* Elle giriş */}
       {tab==="elle" && <>
-        <FL>Küpe Numaraları * (her satıra bir tane veya virgülle ayır)</FL>
-        <textarea
-          value={earTagsText}
-          onChange={e=>setEarTagsText(e.target.value)}
-          rows={6}
-          placeholder={"TR-15-0001\nTR-15-0002\nTR-15-0003"}
-          style={{...S.input,resize:"vertical",fontFamily:"monospace",fontSize:13,lineHeight:1.8}}
-        />
+        <FL>Küpe Numaraları * — Her satıra bir küpe (TR-xx-no formatında)</FL>
+        <div style={{fontSize:11,color:"#8c8c7e",marginBottom:4}}>💡 Sesli "TR" dediğinizde yeni küpe satırı başlar</div>
+        <BulkEarTagInput value={earTagsText} onChange={setEarTagsText}/>
       </>}
 
       {/* Dosya yükleme */}
@@ -755,7 +944,7 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
 
 function AddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser }) {
   const [name,setName]=useState("");
-  const [earTag,setEarTag]=useState("");
+  const [earTag,setEarTag]=useState("TR--");
   const [gender,setGender]=useState("dişi");
   const [category,setCategory]=useState(defaultCategory||"anac");
   const [birthDate,setBirthDate]=useState("");
@@ -780,7 +969,7 @@ function AddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser }) 
     <FL>İsim *</FL>
     <VoiceInput value={name} onChange={setName} placeholder="Keçi adı"/>
     <FL>Küpe No *</FL>
-    <VoiceInput value={earTag} onChange={setEarTag} placeholder="TR-15-0001"/>
+    <EarTagInput value={earTag} onChange={setEarTag}/>
     <FL>Cinsiyet</FL>
     <select value={gender} onChange={e=>setGender(e.target.value)} style={S.select}><option value="dişi">Dişi</option><option value="erkek">Erkek</option></select>
     <FL>Kategori</FL>
@@ -1041,7 +1230,7 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
     setShowForm(true);
   };
 
-  const reset = () => { setBreed("");setCategory("anac");setEarTag("");setDeathDate(todayISO());setDeathTime("");setCause("");setCauseCustom("");setNotes("");setErr("");setEditDeath(null);setPhotos([]); };
+  const reset = () => { setBreed("");setCategory("anac");setEarTag("TR--");setDeathDate(todayISO());setDeathTime("");setCause("");setCauseCustom("");setNotes("");setErr("");setEditDeath(null);setPhotos([]); };
 
   const save = async () => {
     if(!breed){setErr("Irk seçiniz");return;}
@@ -1112,7 +1301,7 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
             <button onClick={()=>setCategory("oglak")} style={{flex:1,padding:"8px 0",borderRadius:8,border:`1.5px solid ${category==="oglak"?"#B8602A":"#E8E5DC"}`,background:category==="oglak"?"#FFF4E6":"#fff",color:category==="oglak"?"#8B5A1B":"#8c8c7e",fontWeight:category==="oglak"?700:400,fontSize:13,cursor:"pointer"}}>🍼 Oğlak</button>
           </div>
           <FL>Küpe No *</FL>
-          <VoiceInput value={earTag} onChange={setEarTag} placeholder="TR-15-0042"/>
+          <EarTagInput value={earTag} onChange={setEarTag}/>
           <div style={{display:"flex",gap:8}}>
             <div style={{flex:1}}>
               <FL>Tarih *</FL>
