@@ -669,24 +669,21 @@ function BulkEarTagInput({ value, onChange }) {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
   const recRef = useRef(null);
-  // Satırları doğrudan array olarak tut
-  const linesRef = useRef([]);
+  const numBufRef = useRef(""); // mevcut küpe için biriken rakamlar
+  const curIdxRef = useRef(-1);  // hangi satır düzenleniyor
+  const linesRef = useRef([]);   // satır dizisi
 
-  // value değişince linesRef güncelle
-  useEffect(()=>{
-    const lines = (value||"").split("\n").filter(l=>l.trim());
-    linesRef.current = lines;
-  },[value]);
-
-  const flush = () => {
-    onChange(linesRef.current.join("\n"));
-  };
+  // linesRef'i value'dan her zaman güncel tut
+  useEffect(() => {
+    const newLines = (value || "").split("\n");
+    linesRef.current = newLines;
+  }, [value]);
 
   const isTR = (txt) => /^(tr|te\s?er|tı\s?er|ti\s?ar|tire)$/i.test(txt.trim());
 
   const toNums = (txt) => {
-    const direct = txt.replace(/[^0-9]/g,"");
-    if(direct) return direct;
+    const direct = txt.replace(/[^0-9]/g, "");
+    if (direct) return direct;
     let s = txt.toLowerCase()
       .replace(/on\s*dokuz/g,"19").replace(/on\s*sekiz/g,"18").replace(/on\s*yedi/g,"17")
       .replace(/on\s*altı/g,"16").replace(/on\s*beş/g,"15").replace(/on\s*dört/g,"14")
@@ -698,25 +695,25 @@ function BulkEarTagInput({ value, onChange }) {
       .replace(/sıfır/g,"0").replace(/bir/g,"1").replace(/iki/g,"2").replace(/üç/g,"3")
       .replace(/dört/g,"4").replace(/beş/g,"5").replace(/altı/g,"6")
       .replace(/yedi/g,"7").replace(/sekiz/g,"8").replace(/dokuz/g,"9");
-    return s.replace(/[^0-9]/g,"");
+    return s.replace(/[^0-9]/g, "");
   };
 
-  // Birikmekte olan rakamlar
-  const numBufRef = useRef("");
-  // Hangi satırda çalışıyoruz (index)
-  const curLineRef = useRef(-1);
-
   const buildTag = (nums) => {
-    if(nums.length < 3) return `TR-${nums}-`;
-    const p1 = nums.slice(0,2).padStart(2,"0");
+    if (!nums) return "TR--";
+    const p1 = nums.slice(0, 2).padStart(2, "0");
     const p2 = nums.slice(2);
-    return `TR-${p1}-${p2}`;
+    return p2 ? `TR-${p1}-${p2}` : `TR-${p1}-`;
   };
 
   const startVoice = () => {
-    const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(!SR){ alert("Sesli yazma desteklenmiyor. Chrome kullanın."); return; }
-    if(listening){ recRef.current?.stop(); setListening(false); setInterim(""); return; }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("Sesli yazma desteklenmiyor. Chrome kullanın."); return; }
+    if (listening) { recRef.current?.stop(); setListening(false); setInterim(""); return; }
+
+    // Başlarken mevcut satırları al
+    linesRef.current = (value || "").split("\n");
+    numBufRef.current = "";
+    curIdxRef.current = -1;
 
     const r = new SR();
     r.lang = "tr-TR";
@@ -726,41 +723,35 @@ function BulkEarTagInput({ value, onChange }) {
     r.onresult = (e) => {
       let final = "";
       let inter = "";
-      for(let i=e.resultIndex; i<e.results.length; i++){
-        if(e.results[i].isFinal) final += e.results[i][0].transcript;
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript;
         else inter += e.results[i][0].transcript;
       }
-      if(inter) setInterim(inter);
-      if(!final) return;
+      if (inter) setInterim(inter);
+      if (!final) return;
       setInterim("");
 
       const txt = final.trim();
-      if(isTR(txt)){
-        // Yeni küpe satırı ekle
-        linesRef.current = [...linesRef.current, "TR--"];
-        curLineRef.current = linesRef.current.length - 1;
+
+      if (isTR(txt)) {
+        // Yeni küpe satırı — mevcut satıra dokunma, sona yeni ekle
         numBufRef.current = "";
-        flush();
+        linesRef.current = [...linesRef.current, "TR--"];
+        curIdxRef.current = linesRef.current.length - 1;
+        onChange(linesRef.current.join("\n"));
       } else {
         const nums = toNums(txt);
-        if(!nums) return;
+        if (!nums) return;
         numBufRef.current += nums;
         const tag = buildTag(numBufRef.current);
-        // Mevcut satırı güncelle
-        if(curLineRef.current >= 0 && curLineRef.current < linesRef.current.length){
-          linesRef.current = linesRef.current.map((l,i)=>
-            i===curLineRef.current ? tag : l
-          );
-        } else if(linesRef.current.length > 0){
-          // Son satırı güncelle
-          const last = linesRef.current.length - 1;
-          curLineRef.current = last;
-          linesRef.current = linesRef.current.map((l,i)=> i===last ? tag : l);
-        } else {
-          linesRef.current = [tag];
-          curLineRef.current = 0;
+
+        if (curIdxRef.current >= 0 && curIdxRef.current < linesRef.current.length) {
+          // Mevcut satırı güncelle, diğerlerine dokunma
+          const updated = [...linesRef.current];
+          updated[curIdxRef.current] = tag;
+          linesRef.current = updated;
+          onChange(linesRef.current.join("\n"));
         }
-        flush();
       }
     };
 
@@ -769,41 +760,39 @@ function BulkEarTagInput({ value, onChange }) {
     recRef.current = r;
     r.start();
     setListening(true);
-    numBufRef.current = "";
-    curLineRef.current = linesRef.current.length > 0 ? linesRef.current.length - 1 : -1;
   };
 
-  const validCount = (value||"").split("\n").filter(l=>/^TR-\d{2}-.{1,}$/.test(l.trim())).length;
-  const totalCount = (value||"").split("\n").filter(l=>l.trim().startsWith("TR")).length;
+  const validCount = (value || "").split("\n").filter(l => /^TR-\d{2}-.{1,}$/.test(l.trim())).length;
+  const totalCount = (value || "").split("\n").filter(l => l.trim().startsWith("TR")).length;
 
   return (
     <div>
-      <div style={{display:"flex",gap:6,marginBottom:8,alignItems:"center",flexWrap:"wrap"}}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center", flexWrap: "wrap" }}>
         <button type="button" onClick={startVoice}
-          style={{padding:"10px 16px",borderRadius:10,border:`1.5px solid ${listening?"#BE3B31":"#4A7C3F"}`,background:listening?"#FFF0EE":"#E3F0DC",color:listening?"#BE3B31":"#3D5A25",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
-          <span style={{fontSize:18}}>{listening?"⏹":"🎤"}</span>
-          {listening?"Durdur":"Sesli Gir"}
+          style={{ padding: "10px 16px", borderRadius: 10, border: `1.5px solid ${listening ? "#BE3B31" : "#4A7C3F"}`, background: listening ? "#FFF0EE" : "#E3F0DC", color: listening ? "#BE3B31" : "#3D5A25", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 18 }}>{listening ? "⏹" : "🎤"}</span>
+          {listening ? "Durdur" : "Sesli Gir"}
         </button>
-        {listening&&(
-          <div style={{fontSize:11,color:"#BE3B31",fontWeight:600,background:"#FFF0EE",padding:"6px 10px",borderRadius:8,flex:1}}>
-            ● Dinleniyor... <b>"TR"</b> = yeni küpe başlar
-            {interim&&<span style={{color:"#888",marginLeft:6}}>{interim}</span>}
+        {listening && (
+          <div style={{ fontSize: 11, color: "#BE3B31", fontWeight: 600, background: "#FFF0EE", padding: "6px 10px", borderRadius: 8, flex: 1 }}>
+            ● Dinleniyor... <b>"TR"</b> = yeni küpe
+            {interim && <span style={{ color: "#888", marginLeft: 6 }}>{interim}</span>}
           </div>
         )}
       </div>
 
       <textarea
         value={value}
-        onChange={e=>onChange(e.target.value)}
+        onChange={e => onChange(e.target.value)}
         rows={5}
         placeholder={"TR-15-0001234\nTR-23-3232322\nTR-15-0005678"}
-        style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:13,fontFamily:"monospace",lineHeight:2,resize:"vertical",boxSizing:"border-box",outline:"none"}}
+        style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1px solid #E8E5DC", fontSize: 13, fontFamily: "monospace", lineHeight: 2, resize: "vertical", boxSizing: "border-box", outline: "none" }}
       />
 
-      {totalCount>0&&(
-        <div style={{display:"flex",gap:8,marginTop:4,flexWrap:"wrap"}}>
-          <span style={{fontSize:11,color:"#4A7C3F",fontWeight:600}}>✅ {validCount} geçerli küpe</span>
-          {totalCount>validCount&&<span style={{fontSize:11,color:"#BE3B31",fontWeight:600}}>⚠️ {totalCount-validCount} eksik/hatalı</span>}
+      {totalCount > 0 && (
+        <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 11, color: "#4A7C3F", fontWeight: 600 }}>✅ {validCount} geçerli küpe</span>
+          {totalCount > validCount && <span style={{ fontSize: 11, color: "#BE3B31", fontWeight: 600 }}>⚠️ {totalCount - validCount} eksik</span>}
         </div>
       )}
     </div>
