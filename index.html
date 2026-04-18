@@ -118,6 +118,43 @@ const COLOR_THEMES = [
     photoCredit:"Unsplash",
     overlay:"rgba(40,20,10,.52)"
   },
+  // ── Sade Renkli Temalar (fotoğrafsız) ──
+  {
+    id:"sade_koyu", name:"Koyu Lacivert", emoji:"🌑",
+    primary:"#5C6BC0", dark:"#1A237E", light:"rgba(92,107,192,.2)", bg:"rgba(26,35,126,.1)",
+    header:"linear-gradient(135deg,#0D1B4B,#1A237E)",
+    photo:null, overlay:null
+  },
+  {
+    id:"sade_yesil", name:"Koyu Yeşil", emoji:"🟢",
+    primary:"#2E7D32", dark:"#1B5E20", light:"rgba(46,125,50,.2)", bg:"rgba(27,94,32,.1)",
+    header:"linear-gradient(135deg,#0A2E0C,#1B5E20)",
+    photo:null, overlay:null
+  },
+  {
+    id:"sade_kirmizi", name:"Bordo", emoji:"🔴",
+    primary:"#C62828", dark:"#7F0000", light:"rgba(198,40,40,.2)", bg:"rgba(127,0,0,.1)",
+    header:"linear-gradient(135deg,#3B0000,#7F0000)",
+    photo:null, overlay:null
+  },
+  {
+    id:"sade_mor", name:"Mor", emoji:"🟣",
+    primary:"#7B1FA2", dark:"#4A148C", light:"rgba(123,31,162,.2)", bg:"rgba(74,20,140,.1)",
+    header:"linear-gradient(135deg,#1A0033,#4A148C)",
+    photo:null, overlay:null
+  },
+  {
+    id:"sade_altin", name:"Sade Altın", emoji:"⭐",
+    primary:"#D4AF37", dark:"#8B6914", light:"rgba(212,175,55,.2)", bg:"rgba(139,105,20,.1)",
+    header:"linear-gradient(135deg,#2A1E00,#5C4000)",
+    photo:null, overlay:null
+  },
+  {
+    id:"sade_gri", name:"Antrasit", emoji:"⬛",
+    primary:"#90A4AE", dark:"#263238", light:"rgba(144,164,174,.2)", bg:"rgba(38,50,56,.1)",
+    header:"linear-gradient(135deg,#0A0F12,#1C282E)",
+    photo:null, overlay:null
+  },
 ];
 const DEFAULT_THEME = COLOR_THEMES[0];
 
@@ -142,7 +179,7 @@ const CLOSE_REASONS = ["İyileşti","Tedavi Tamamlandı","Kronik Hastalık","Hay
 
 const DEMO_USERS = [
   { id:"u1", name:"Veteriner Hekim", role:"veteriner", emoji:"👨‍⚕️", members:[], pin:"" },
-  { id:"u2", name:"Bekir Zengin",     role:"sef",       emoji:"👤",    members:["Bekir Zengin","Ali Özen"], pin:"" },
+  { id:"u2", name:"Şef",              role:"sef",       emoji:"👤",    members:["Bekir Zengin","Ali Özen"], pin:"" },
   { id:"u3", name:"Vardiya 1",       role:"vardiya",   emoji:"👷",    members:["Uğur","Erdem","Hakan"] },
   { id:"u4", name:"Vardiya 2",       role:"vardiya",   emoji:"👷",    members:["Mehmet","Zafer","Turan"] },
   { id:"u5", name:"Vardiya 3",       role:"vardiya",   emoji:"👷",    members:["İsmail","Süleyman","Ramazan"] },
@@ -3440,16 +3477,18 @@ function App(){
 
   // Tema değişince body arka planını güncelle
   useEffect(()=>{
+    const body = document.body;
+    body.style.backgroundColor = '#0A0A0F';
     if(theme.photo){
-      document.body.style.backgroundImage = `url(${theme.photo})`;
-      document.body.style.backgroundSize = 'cover';
-      document.body.style.backgroundPosition = 'center top';
-      document.body.style.backgroundRepeat = 'no-repeat';
-      document.body.style.backgroundAttachment = 'scroll';
+      body.style.backgroundImage = "url("+theme.photo+")";
+      body.style.backgroundSize = 'cover';
+      body.style.backgroundPosition = 'center top';
+      body.style.backgroundRepeat = 'no-repeat';
+      body.style.backgroundAttachment = 'scroll';
+      body.style.WebkitBackgroundSize = 'cover'; // iOS Safari
     } else {
-      document.body.style.backgroundImage = 'none';
+      body.style.backgroundImage = 'none';
     }
-    document.body.style.backgroundColor = '#0A0A0F';
   },[theme]);
 
   const activeGoats=goats.filter(g=>!g.archived);
@@ -3554,7 +3593,7 @@ function App(){
   };
 
   if(showLogin) return (
-    <div style={{...S.loginWrap, background:theme.photo?`url(${theme.photo}) center top/cover no-repeat`:"#0A0A0F", position:"relative"}}>
+    <div style={{...S.loginWrap, background:"#0A0A0F", position:"relative"}}>
       <style>{`select option{background:#1A1A2E;color:#F0ECD8;}button:active{opacity:.85;}`}</style>
       {/* Fotoğraf üstü karartma overlay */}
       <div style={{position:"fixed",inset:0,background:theme.overlay||"rgba(0,0,0,.55)",zIndex:0,pointerEvents:"none"}}/>
@@ -3591,7 +3630,7 @@ function App(){
         </div>
 
         {/* Giriş kutusu */}
-        <div style={{background:"rgba(16,16,28,.92)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderRadius:24,padding:22,boxShadow:"0 24px 80px rgba(0,0,0,.6)",border:"1px solid rgba(212,175,55,.18)"}}>
+        <div style={{background:"#10101C",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:24,padding:22,boxShadow:"0 24px 80px rgba(0,0,0,.8)",border:"1px solid rgba(212,175,55,.18)"}}>
 
           {/* Adım 1: Grup seç */}
           {!selUser && !selPerson && (
@@ -3743,14 +3782,20 @@ function App(){
             <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,marginBottom:16,maxHeight:340,overflowY:"auto"}}>
               {COLOR_THEMES.map(t=>(
                 <button key={t.id} onClick={()=>saveTheme(t,true)}
-                  style={{borderRadius:12,border:`2.5px solid ${theme.id===t.id?t.primary:"#E8E5DC"}`,padding:0,cursor:"pointer",overflow:"hidden",boxShadow:theme.id===t.id?`0 0 0 3px ${t.primary}55`:"0 1px 4px rgba(0,0,0,.1)"}}>
-                  <div style={{height:70,backgroundImage:`url(${t.photo})`,backgroundSize:"cover",backgroundPosition:"center",position:"relative"}}>
-                    <div style={{position:"absolute",inset:0,background:t.overlay,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  style={{borderRadius:12,border:`2.5px solid ${theme.id===t.id?t.primary:"rgba(255,255,255,.1)"}`,padding:0,cursor:"pointer",overflow:"hidden",boxShadow:theme.id===t.id?`0 0 0 3px ${t.primary}44`:"none"}}>
+                  {t.photo ? (
+                    <div style={{height:70,backgroundImage:"url("+t.photo+")",backgroundSize:"cover",backgroundPosition:"center",position:"relative"}}>
+                      <div style={{position:"absolute",inset:0,background:t.overlay||"rgba(0,0,0,.4)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        <span style={{fontSize:28}}>{t.emoji}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{height:70,background:t.header,display:"flex",alignItems:"center",justifyContent:"center"}}>
                       <span style={{fontSize:28}}>{t.emoji}</span>
                     </div>
-                  </div>
-                  <div style={{padding:"6px 4px",background:theme.id===t.id?t.light:"#fff",textAlign:"center"}}>
-                    <div style={{fontSize:11,fontWeight:700,color:t.primary}}>{t.name}</div>
+                  )}
+                  <div style={{padding:"6px 4px",background:theme.id===t.id?"rgba(212,175,55,.15)":"rgba(12,12,20,.95)",textAlign:"center"}}>
+                    <div style={{fontSize:10,fontWeight:700,color:theme.id===t.id?"#D4AF37":t.primary}}>{t.name}</div>
                   </div>
                 </button>
               ))}
@@ -4175,7 +4220,7 @@ function App(){
               <div style={{fontSize:44}}>{currentUser==="Misafir"?"👁":"👤"}</div>
               <h2 style={{margin:"4px 0 2px",fontSize:20,fontWeight:900,color:"#F0ECD8"}}>{currentUser}</h2>
               <div style={{fontSize:12,color:"rgba(240,236,216,.35)",marginTop:4}}>
-                {currentUser==="Misafir"?"Sadece Görüntüleme":DEMO_USERS.find(u=>u.name===currentUser)?.members?.join(" · ") || (DEMO_USERS.find(u=>u.name===currentUser)?.role==="veteriner"?"Veteriner Hekim":"Şef Yönetici")}
+                {currentUser==="Misafir"?"Sadece Görüntüleme":DEMO_USERS.find(u=>u.name===currentUser)?.members?.join(" · ") || (DEMO_USERS.find(u=>u.name===currentUser)?.role==="veteriner"?"Veteriner Hekim":DEMO_USERS.find(u=>u.members&&u.members.includes(currentUser))?"Şef Yönetici":currentUser)}
               </div>
               <div style={{marginTop:12}}>
                 <button onClick={()=>{setShowLogin(true);}} style={{...S.btnOutline,color:"#FF6B6B",borderColor:"#BE3B31",fontSize:13}}>🚪 Çıkış Yap</button>
@@ -4218,11 +4263,15 @@ function App(){
                 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
                   {COLOR_THEMES.map(t=>(
                     <button key={t.id} onClick={()=>saveTheme(t,false)}
-                      style={{borderRadius:10,border:`2.5px solid ${theme.id===t.id?t.primary:"#E8E5DC"}`,background:"rgba(26,26,46,.75)",padding:0,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"stretch",overflow:"hidden",boxShadow:theme.id===t.id?`0 0 0 3px ${t.primary}44`:"none"}}>
-                      <div style={{height:44,backgroundImage:`url(${t.photo})`,backgroundSize:"cover",backgroundPosition:"center",position:"relative"}}>
-                        <div style={{position:"absolute",inset:0,background:t.overlay,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{t.emoji}</div>
-                      </div>
-                      <div style={{fontSize:9,fontWeight:700,color:t.primary,lineHeight:1.2,textAlign:"center",padding:"4px 2px",background:theme.id===t.id?t.light:"#fff"}}>{t.name}</div>
+                      style={{borderRadius:10,border:`2.5px solid ${theme.id===t.id?t.primary:"rgba(255,255,255,.1)"}`,background:"transparent",padding:0,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"stretch",overflow:"hidden",boxShadow:theme.id===t.id?`0 0 0 2px ${t.primary}44`:"none"}}>
+                      {t.photo ? (
+                        <div style={{height:40,backgroundImage:"url("+t.photo+")",backgroundSize:"cover",backgroundPosition:"center",position:"relative"}}>
+                          <div style={{position:"absolute",inset:0,background:t.overlay||"rgba(0,0,0,.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>{t.emoji}</div>
+                        </div>
+                      ) : (
+                        <div style={{height:40,background:t.header,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>{t.emoji}</div>
+                      )}
+                      <div style={{fontSize:8,fontWeight:700,color:theme.id===t.id?"#D4AF37":t.primary,textAlign:"center",padding:"3px 2px",background:"rgba(10,10,15,.9)"}}>{t.name}</div>
                     </button>
                   ))}
                 </div>
@@ -4317,8 +4366,8 @@ const S={
     position:"relative"
   },
   header:{
-    background:"rgba(10,10,15,.85)",
-    backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
+    background:"rgba(8,8,14,.95)",
+    backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
     padding:"14px 16px 12px",
     display:"flex",alignItems:"center",gap:12,
     position:"sticky",top:0,zIndex:200,
@@ -4328,16 +4377,16 @@ const S={
   nav:{
     position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",
     width:"100%",maxWidth:480,
-    background:"rgba(10,10,15,.92)",
-    backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
+    background:"rgba(8,8,14,.97)",
+    backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
     borderTop:"1px solid rgba(212,175,55,.12)",
     display:"flex",justifyContent:"space-around",
     padding:"8px 0 12px",zIndex:200,
     boxShadow:"0 -8px 32px rgba(0,0,0,.5)"
   },
   card:{
-    background:"rgba(26,26,46,.75)",
-    backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
+    background:"rgba(18,18,32,.92)",
+    backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
     borderRadius:18,padding:16,
     border:"1px solid rgba(212,175,55,.12)",
     boxShadow:"0 8px 32px rgba(0,0,0,.3)"
