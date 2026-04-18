@@ -669,20 +669,20 @@ function BulkEarTagInput({ value, onChange }) {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
   const recRef = useRef(null);
-  const bufferRef = useRef("");
-  const valueRef = useRef(value); // her zaman güncel value
+  // Satırları doğrudan array olarak tut
+  const linesRef = useRef([]);
 
-  // valueRef'i güncel tut
-  useEffect(()=>{ valueRef.current = value; }, [value]);
+  // value değişince linesRef güncelle
+  useEffect(()=>{
+    const lines = (value||"").split("\n").filter(l=>l.trim());
+    linesRef.current = lines;
+  },[value]);
 
-  const parseRaw = (raw) => {
-    const nums = raw.replace(/[^0-9]/g,"");
-    if(nums.length < 3) return null;
-    const p1 = nums.slice(0,2).padStart(2,"0");
-    const p2 = nums.slice(2);
-    if(!p2) return null;
-    return `TR-${p1}-${p2}`;
+  const flush = () => {
+    onChange(linesRef.current.join("\n"));
   };
+
+  const isTR = (txt) => /^(tr|te\s?er|tı\s?er|ti\s?ar|tire)$/i.test(txt.trim());
 
   const toNums = (txt) => {
     const direct = txt.replace(/[^0-9]/g,"");
@@ -701,14 +701,16 @@ function BulkEarTagInput({ value, onChange }) {
     return s.replace(/[^0-9]/g,"");
   };
 
-  const isTR = (txt) => /^(tr|ti\s?ar|te\s?er|tı\s?er|tire|tiar)$/i.test(txt.trim());
+  // Birikmekte olan rakamlar
+  const numBufRef = useRef("");
+  // Hangi satırda çalışıyoruz (index)
+  const curLineRef = useRef(-1);
 
-  // Güncel value üzerinde işlem yap
-  const updateValue = (fn) => {
-    const current = valueRef.current || "";
-    const next = fn(current);
-    valueRef.current = next;
-    onChange(next);
+  const buildTag = (nums) => {
+    if(nums.length < 3) return `TR-${nums}-`;
+    const p1 = nums.slice(0,2).padStart(2,"0");
+    const p2 = nums.slice(2);
+    return `TR-${p1}-${p2}`;
   };
 
   const startVoice = () => {
@@ -728,55 +730,50 @@ function BulkEarTagInput({ value, onChange }) {
         if(e.results[i].isFinal) final += e.results[i][0].transcript;
         else inter += e.results[i][0].transcript;
       }
-      setInterim(inter);
+      if(inter) setInterim(inter);
       if(!final) return;
-      const txt = final.trim();
+      setInterim("");
 
+      const txt = final.trim();
       if(isTR(txt)){
-        // TR dendi — önceki buffer'ı tamamla, yeni satır aç
-        const prevBuf = bufferRef.current;
-        bufferRef.current = "";
-        updateValue(cur => {
-          const lines = cur.split("\n").filter(l=>l.trim());
-          if(prevBuf){
-            const tag = parseRaw(prevBuf);
-            if(lines.length>0 && lines[lines.length-1].startsWith("TR-")){
-              lines[lines.length-1] = tag || lines[lines.length-1];
-            }
-          }
-          lines.push("TR--");
-          return lines.join("\n");
-        });
+        // Yeni küpe satırı ekle
+        linesRef.current = [...linesRef.current, "TR--"];
+        curLineRef.current = linesRef.current.length - 1;
+        numBufRef.current = "";
+        flush();
       } else {
-        // Rakam geldi
         const nums = toNums(txt);
         if(!nums) return;
-        bufferRef.current += nums;
-        const tag = parseRaw(bufferRef.current);
-        if(tag){
-          updateValue(cur => {
-            const lines = cur.split("\n");
-            const lastIdx = lines.length-1;
-            if(lastIdx>=0 && lines[lastIdx].startsWith("TR-")){
-              lines[lastIdx] = tag;
-            } else {
-              lines.push(tag);
-            }
-            return lines.join("\n");
-          });
+        numBufRef.current += nums;
+        const tag = buildTag(numBufRef.current);
+        // Mevcut satırı güncelle
+        if(curLineRef.current >= 0 && curLineRef.current < linesRef.current.length){
+          linesRef.current = linesRef.current.map((l,i)=>
+            i===curLineRef.current ? tag : l
+          );
+        } else if(linesRef.current.length > 0){
+          // Son satırı güncelle
+          const last = linesRef.current.length - 1;
+          curLineRef.current = last;
+          linesRef.current = linesRef.current.map((l,i)=> i===last ? tag : l);
+        } else {
+          linesRef.current = [tag];
+          curLineRef.current = 0;
         }
+        flush();
       }
     };
 
     r.onerror = () => { setListening(false); setInterim(""); };
-    r.onend = () => { setListening(false); setInterim(""); bufferRef.current=""; };
+    r.onend = () => { setListening(false); setInterim(""); };
     recRef.current = r;
     r.start();
     setListening(true);
-    bufferRef.current = "";
+    numBufRef.current = "";
+    curLineRef.current = linesRef.current.length > 0 ? linesRef.current.length - 1 : -1;
   };
 
-  const validCount = (value||"").split("\n").filter(l=>/^TR-\d{2}-.+$/.test(l.trim())).length;
+  const validCount = (value||"").split("\n").filter(l=>/^TR-\d{2}-.{1,}$/.test(l.trim())).length;
   const totalCount = (value||"").split("\n").filter(l=>l.trim().startsWith("TR")).length;
 
   return (
@@ -784,13 +781,13 @@ function BulkEarTagInput({ value, onChange }) {
       <div style={{display:"flex",gap:6,marginBottom:8,alignItems:"center",flexWrap:"wrap"}}>
         <button type="button" onClick={startVoice}
           style={{padding:"10px 16px",borderRadius:10,border:`1.5px solid ${listening?"#BE3B31":"#4A7C3F"}`,background:listening?"#FFF0EE":"#E3F0DC",color:listening?"#BE3B31":"#3D5A25",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
-          <span style={{fontSize:18,animation:listening?"pulse 1s infinite":"none"}}>{listening?"⏹":"🎤"}</span>
+          <span style={{fontSize:18}}>{listening?"⏹":"🎤"}</span>
           {listening?"Durdur":"Sesli Gir"}
         </button>
         {listening&&(
           <div style={{fontSize:11,color:"#BE3B31",fontWeight:600,background:"#FFF0EE",padding:"6px 10px",borderRadius:8,flex:1}}>
-            ● Dinleniyor... "TR" = yeni küpe
-            {interim&&<span style={{color:"#555",marginLeft:6,fontStyle:"italic"}}>{interim}</span>}
+            ● Dinleniyor... <b>"TR"</b> = yeni küpe başlar
+            {interim&&<span style={{color:"#888",marginLeft:6}}>{interim}</span>}
           </div>
         )}
       </div>
@@ -799,15 +796,14 @@ function BulkEarTagInput({ value, onChange }) {
         value={value}
         onChange={e=>onChange(e.target.value)}
         rows={5}
-        placeholder={"TR-15-0001234\nTR-23-3232322\nTR-15-0005678\n\n(Her satıra bir küpe — TR-xx-xxxxxxx)"}
+        placeholder={"TR-15-0001234\nTR-23-3232322\nTR-15-0005678"}
         style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:13,fontFamily:"monospace",lineHeight:2,resize:"vertical",boxSizing:"border-box",outline:"none"}}
       />
 
       {totalCount>0&&(
-        <div style={{display:"flex",gap:8,marginTop:4}}>
-          <span style={{fontSize:11,color:"#4A7C3F",fontWeight:600}}>✅ {validCount} geçerli</span>
-          {totalCount>validCount&&<span style={{fontSize:11,color:"#BE3B31",fontWeight:600}}>⚠️ {totalCount-validCount} eksik</span>}
-          <span style={{fontSize:11,color:"#8c8c7e",marginLeft:"auto"}}>Format: TR-xx-xxxxxxx</span>
+        <div style={{display:"flex",gap:8,marginTop:4,flexWrap:"wrap"}}>
+          <span style={{fontSize:11,color:"#4A7C3F",fontWeight:600}}>✅ {validCount} geçerli küpe</span>
+          {totalCount>validCount&&<span style={{fontSize:11,color:"#BE3B31",fontWeight:600}}>⚠️ {totalCount-validCount} eksik/hatalı</span>}
         </div>
       )}
     </div>
