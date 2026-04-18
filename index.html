@@ -6,15 +6,27 @@
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="Sürü Takip"/>
-  <meta name="theme-color" content="#4A7C3F"/>
+  <meta name="apple-mobile-web-app-title" content="Hayvancılık"/>
+  <meta name="theme-color" content="#0A0A0F"/>
   <link rel="manifest" href="manifest.json"/>
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234A7C3F'/><text y='.9em' font-size='80' x='10'>🐐</text></svg>"/>
-  <title>Sürü Takip Sistemi 🐐</title>
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230A0A0F'/><text y='.9em' font-size='80' x='10'>🐐</text></svg>"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <title>BURDUR Açık Cezaevi Hayvancılık 🐐</title>
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { background:#FAFAF5; font-family:system-ui,-apple-system,sans-serif; overflow-x:hidden; }
-    #root { max-width:480px; margin:0 auto; min-height:100vh; }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      background:#0A0A0F;
+      font-family:'Poppins',system-ui,-apple-system,sans-serif;
+      overflow-x:hidden;
+      color:#F0ECD8;
+    }
+    #root{max-width:480px;margin:0 auto;min-height:100vh;}
+    input,select,textarea,button{font-family:'Poppins',system-ui,-apple-system,sans-serif;}
+    input::placeholder,textarea::placeholder{color:rgba(240,236,216,.35);}
+    ::-webkit-scrollbar{width:0;}
+    ::-webkit-input-placeholder{color:rgba(240,236,216,.35);}
   </style>
 </head>
 <body>
@@ -110,19 +122,19 @@ const COLOR_THEMES = [
 const DEFAULT_THEME = COLOR_THEMES[0];
 
 const BREEDS = [
-  { id:"saanen",  name:"Saanen",  emoji:"🤍", color:"#4A7C3F", bg:"#E3F0DC", bgCard:"#F5FAF0", desc:"Süt verimi yüksek, beyaz tüylü" },
+  { id:"saanen",  name:"Saanen",  emoji:"🤍", color:"#D4AF37", bg:"#E3F0DC", bgCard:"#F5FAF0", desc:"Süt verimi yüksek, beyaz tüylü" },
   { id:"honamli", name:"Honamlı", emoji:"🖤", color:"#7B4B94", bg:"#F0E6F6", bgCard:"#F9F3FC", desc:"Yerli ırk, dayanıklı, uzun tüylü" },
   { id:"halep",   name:"Halep",   emoji:"🤎", color:"#B8602A", bg:"#FFF0E6", bgCard:"#FFF8F2", desc:"Kırmızımsı kahve, uzun kulaklı" },
 ];
 
 const VACCINE_DEFS = [
-  { id:"enterotoksemi", name:"Enterotoksemi",  intervalDays:180, color:"#4A7C3F" },
+  { id:"enterotoksemi", name:"Enterotoksemi",  intervalDays:180, color:"#D4AF37" },
   { id:"brusella",      name:"Brusella",       intervalDays:365, color:"#7B4B94" },
   { id:"ppr",           name:"PPR (Veba)",     intervalDays:365, color:"#B8602A" },
-  { id:"agiz_tirnak",   name:"Ağız ve Tırnak", intervalDays:180, color:"#2873A8" },
+  { id:"agiz_tirnak",   name:"Ağız ve Tırnak", intervalDays:180, color:"#64B5F6" },
   { id:"cice",          name:"Çiçek",          intervalDays:365, color:"#D4850A" },
-  { id:"parazit",       name:"İç/Dış Parazit", intervalDays:120, color:"#8B5A1B" },
-  { id:"mastitis",      name:"Mastitis",       intervalDays:365, color:"#BE3B31" },
+  { id:"parazit",       name:"İç/Dış Parazit", intervalDays:120, color:"#E8975A" },
+  { id:"mastitis",      name:"Mastitis",       intervalDays:365, color:"#FF6B6B" },
 ];
 
 const CONDITION_OPTIONS = ["Mastitis","Topallık","İshal","Parazit","Abort","Pnömoni","Eklem İltihabı","Göz Enfeksiyonu","Yaralanma","Diğer"];
@@ -175,9 +187,14 @@ const addLog = async (healthRecordId, goatId, breed, action, actionDetail, userN
 };
 
 function Loading(){
-  return <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"linear-gradient(155deg,#2D4A20 0%,#4A7C3F 40%,#6B9F5B 100%)"}}>
-    <div style={{fontSize:56,marginBottom:16}}>🐐</div>
-    <div style={{color:"#fff",fontSize:16,fontWeight:700}}>Yükleniyor...</div>
+  return <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"#0A0A0F",fontFamily:"'Poppins',sans-serif"}}>
+    <div style={{position:"relative",marginBottom:24}}>
+      <div style={{fontSize:64,animation:"pulse 2s infinite",filter:"drop-shadow(0 0 20px rgba(212,175,55,.5))"}}>🐐</div>
+      <div style={{position:"absolute",inset:-8,borderRadius:"50%",border:"2px solid transparent",borderTopColor:"#D4AF37",animation:"spin 1s linear infinite"}}/>
+    </div>
+    <div style={{color:"#D4AF37",fontSize:13,fontWeight:600,letterSpacing:"2px",textTransform:"uppercase"}}>Yükleniyor</div>
+    <div style={{color:"rgba(240,236,216,.3)",fontSize:11,marginTop:4}}>BURDUR Açık Cezaevi Hayvancılık</div>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
   </div>;
 }
 
@@ -243,7 +260,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
   };
 
   if (showClose) return <ModalWrap title="📋 Kaydı Sonlandır" onClose={()=>setShowClose(false)}>
-    <div style={{background:"#FFF8EC",border:"1px solid #F0D49A",borderRadius:10,padding:10,fontSize:12,color:"#8B5A1B"}}>
+    <div style={{background:"rgba(212,175,55,.1)",border:"1px solid #F0D49A",borderRadius:10,padding:10,fontSize:12,color:"#E8975A"}}>
       ⚠️ Bu kayıt sonlandırılacak ve rapor bölümüne taşınacak.
     </div>
     <FL>Sonlandırma Nedeni *</FL>
@@ -255,15 +272,15 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
     <textarea value={closeNote} onChange={e=>setCloseNote(e.target.value)} rows={3} placeholder="Sonuç hakkında not..."/>
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={()=>setShowClose(false)} style={{...S.btnOutline,flex:1,padding:12}}>Geri</button>
-      <button onClick={finalize} disabled={!closeReason||saving} style={{...S.btnPrimary,flex:2,padding:12,background:"#BE3B31",opacity:(!closeReason||saving)?.5:1}}>{saving?"Kaydediliyor...":"✅ Sonlandır"}</button>
+      <button onClick={finalize} disabled={!closeReason||saving} style={{...S.btnPrimary,flex:2,padding:12,background:"#C0392B",opacity:(!closeReason||saving)?.5:1}}>{saving?"Kaydediliyor...":"✅ Sonlandır"}</button>
     </div>
   </ModalWrap>;
 
   return <ModalWrap title={`🩺 ${record.condition}`} onClose={onClose}>
-    <div style={{background:"#F5F3ED",borderRadius:10,padding:10,fontSize:12}}>
+    <div style={{background:"rgba(20,20,36,.8)",borderRadius:10,padding:10,fontSize:12}}>
       {goat ? <><b>{goat.name}</b> · 🏷 {goat.earTag}</> : <><b>🏷 {record.goatEarTag||"—"}</b></>} · Başlangıç: {fmt(record.date)}
     </div>
-    <div style={{display:"flex",background:"#F2F0EA",borderRadius:8,overflow:"hidden",marginTop:4}}>
+    <div style={{display:"flex",background:"rgba(20,20,36,.6)",borderRadius:8,overflow:"hidden",marginTop:4}}>
       {[["detay","✏️ Güncelle"],["takvim","📅 Takvim"],["gecmis","📋 Geçmiş"]].map(([k,l])=>(
         <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"8px 0",border:"none",fontWeight:700,fontSize:12,cursor:"pointer",background:tab===k?"#4A7C3F":"transparent",color:tab===k?"#fff":"#8c8c7e"}}>{l}</button>
       ))}
@@ -273,11 +290,11 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
       <FL>Durum</FL>
       <StatusPicker value={status} onChange={setStatus}/>
       <FL>Tedavi / Yapılan İşlem</FL>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,padding:"6px 10px",background:"#F5FAF0",borderRadius:8,border:"1px solid #D4E8C2"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,padding:"6px 10px",background:"rgba(26,46,26,.5)",borderRadius:8,border:"1px solid #D4E8C2"}}>
         <input type="checkbox" id="sameTreatment" checked={!treatmentChanged}
           onChange={e=>setTreatmentChanged(!e.target.checked)}
           style={{width:16,height:16,cursor:"pointer"}}/>
-        <label htmlFor="sameTreatment" style={{fontSize:12,color:"#3D5A25",fontWeight:600,cursor:"pointer"}}>
+        <label htmlFor="sameTreatment" style={{fontSize:12,color:"#5BAD52",fontWeight:600,cursor:"pointer"}}>
           Aynı tedavi devam ediyor (değişiklik yok)
         </label>
       </div>
@@ -285,7 +302,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
       <FL>Notlar</FL>
       <VoiceInput value={notes} onChange={setNotes} placeholder="Not ekle..." multiline rows={2}/>
       <div style={{display:"flex",gap:8,marginTop:4}}>
-        <button onClick={()=>setShowClose(true)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",padding:"10px 14px",fontSize:12}}>📋 Sonlandır</button>
+        <button onClick={()=>setShowClose(true)} style={{...S.btnSm,background:"rgba(190,59,49,.15)",color:"#FF6B6B",padding:"10px 14px",fontSize:12}}>📋 Sonlandır</button>
         <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:1,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Güncelle"}</button>
       </div>
     </>}
@@ -294,19 +311,19 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
       <div>
         {/* Tedavi notu özeti */}
         {record.treatment && (
-          <div style={{background:"#F5FAF0",border:"1px solid #D4E8C2",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#3D5A25",marginBottom:2}}>💊 Tedavi</div>
-            <div style={{fontSize:12,color:"#333"}}>{record.treatment}</div>
+          <div style={{background:"rgba(26,46,26,.5)",border:"1px solid #D4E8C2",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#5BAD52",marginBottom:2}}>💊 Tedavi</div>
+            <div style={{fontSize:12,color:"rgba(240,236,216,.85)"}}>{record.treatment}</div>
           </div>
         )}
         {record.notes && (
-          <div style={{background:"#F5F3ED",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#555",marginBottom:2}}>📝 Not</div>
-            <div style={{fontSize:12,color:"#555"}}>{record.notes}</div>
+          <div style={{background:"rgba(20,20,36,.8)",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
+            <div style={{fontSize:11,fontWeight:700,color:"rgba(240,236,216,.55)",marginBottom:2}}>📝 Not</div>
+            <div style={{fontSize:12,color:"rgba(240,236,216,.55)"}}>{record.notes}</div>
           </div>
         )}
         {recDays.length===0 && (
-          <div style={{textAlign:"center",padding:20,color:"#8c8c7e",fontSize:13}}>
+          <div style={{textAlign:"center",padding:20,color:"rgba(240,236,216,.35)",fontSize:13}}>
             <div style={{fontSize:32,marginBottom:8}}>📅</div>
             Bu kayıt için tedavi takvimi oluşturulmamış.
           </div>
@@ -327,20 +344,20 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
                   <div style={{fontWeight:800,fontSize:15,color:day.done?"#3D5A25":isToday?"#2873A8":isPast?"#BE3B31":"#8c8c7e"}}>
                     {day.done?"✅":isToday?"🔵":isPast?"⚠️":"⏳"} {day.dayNumber}. Gün
                   </div>
-                  <div style={{fontSize:11,color:"#8c8c7e",marginTop:2}}>
+                  <div style={{fontSize:11,color:"rgba(240,236,216,.35)",marginTop:2}}>
                     📅 {fmt(day.plannedDate)}
-                    {isToday && <span style={{color:"#2873A8",fontWeight:700}}> — Bugün</span>}
+                    {isToday && <span style={{color:"#64B5F6",fontWeight:700}}> — Bugün</span>}
                   </div>
                   {day.done && day.doneBy && (
-                    <div style={{fontSize:11,color:"#3D5A25",fontWeight:700,marginTop:4,background:"rgba(255,255,255,.7)",padding:"4px 8px",borderRadius:6,display:"inline-block"}}>
+                    <div style={{fontSize:11,color:"#5BAD52",fontWeight:700,marginTop:4,background:"rgba(255,255,255,.7)",padding:"4px 8px",borderRadius:6,display:"inline-block"}}>
                       👤 {day.doneBy} · {fmtDT(day.doneAt)}
                     </div>
                   )}
                   {isPast && !day.done && (
-                    <div style={{fontSize:11,color:"#BE3B31",fontWeight:600,marginTop:2}}>❌ Henüz yapılmadı</div>
+                    <div style={{fontSize:11,color:"#FF6B6B",fontWeight:600,marginTop:2}}>❌ Henüz yapılmadı</div>
                   )}
                   {isFuture && (
-                    <div style={{fontSize:11,color:"#aaa",marginTop:2}}>⏳ {daysUntil(day.plannedDate)} gün sonra</div>
+                    <div style={{fontSize:11,color:"rgba(240,236,216,.25)",marginTop:2}}>⏳ {daysUntil(day.plannedDate)} gün sonra</div>
                   )}
                 </div>
                 {canMark && (
@@ -354,7 +371,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
           );
         })}
         {recDays.length>0 && (
-          <div style={{background:"#F5F3ED",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#555",marginTop:4}}>
+          <div style={{background:"rgba(20,20,36,.8)",borderRadius:8,padding:"8px 12px",fontSize:12,color:"rgba(240,236,216,.55)",marginTop:4}}>
             {recDays.filter(d=>d.done).length}/{recDays.length} gün tamamlandı
           </div>
         )}
@@ -369,10 +386,10 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
           </div>
           <div style={{flex:1}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
-              <div style={{fontSize:12,fontWeight:700,color:"#1e1e1e"}}>{l.userName}</div>
-              <div style={{fontSize:10,color:"#aaa",textAlign:"right"}}>{fmtDT(l.createdAt)}</div>
+              <div style={{fontSize:12,fontWeight:700,color:"#F0ECD8"}}>{l.userName}</div>
+              <div style={{fontSize:10,color:"rgba(240,236,216,.25)",textAlign:"right"}}>{fmtDT(l.createdAt)}</div>
             </div>
-            <div style={{fontSize:11,color:"#555",marginTop:2,background:"#F9F9F6",padding:"4px 8px",borderRadius:6}}>{l.actionDetail}</div>
+            <div style={{fontSize:11,color:"rgba(240,236,216,.55)",marginTop:2,background:"rgba(20,20,36,.8)",padding:"4px 8px",borderRadius:6}}>{l.actionDetail}</div>
           </div>
         </div>
       ))}
@@ -432,8 +449,8 @@ function EarTagInput({ value, onChange }) {
 
   return (
     <div style={{display:"flex",alignItems:"center",gap:4}}>
-      <div style={{background:"#F2F0EA",borderRadius:8,padding:"9px 10px",fontWeight:700,fontSize:14,color:"#555",border:"1px solid #E8E5DC",flexShrink:0,letterSpacing:1}}>TR</div>
-      <div style={{color:"#aaa",fontWeight:700,fontSize:16}}>-</div>
+      <div style={{background:"rgba(212,175,55,.1)",borderRadius:10,padding:"9px 10px",fontWeight:700,fontSize:14,color:"#D4AF37",border:"1px solid rgba(212,175,55,.25)",flexShrink:0,letterSpacing:1}}>TR</div>
+      <div style={{color:"rgba(240,236,216,.25)",fontWeight:700,fontSize:16}}>-</div>
       <input
         ref={part1Ref}
         value={p1}
@@ -445,9 +462,9 @@ function EarTagInput({ value, onChange }) {
           build(v,p2);
           if(v.length===2) part2Ref.current?.focus();
         }}
-        style={{width:46,padding:"9px 8px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:14,textAlign:"center",fontWeight:700,outline:"none"}}
+        style={{width:46,padding:"9px 8px",borderRadius:10,border:"1px solid rgba(212,175,55,.2)",fontSize:14,textAlign:"center",fontWeight:700,outline:"none",background:"rgba(26,26,46,.75)",color:"#F0ECD8"}}
       />
-      <div style={{color:"#aaa",fontWeight:700,fontSize:16}}>-</div>
+      <div style={{color:"rgba(240,236,216,.25)",fontWeight:700,fontSize:16}}>-</div>
       <input
         ref={part2Ref}
         value={p2}
@@ -457,7 +474,7 @@ function EarTagInput({ value, onChange }) {
           const v=e.target.value.replace(/\D/g,"");
           build(p1,v);
         }}
-        style={{flex:1,padding:"9px 10px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:14,fontWeight:700,outline:"none",letterSpacing:1}}
+        style={{flex:1,padding:"9px 10px",borderRadius:10,border:"1px solid rgba(212,175,55,.2)",fontSize:14,fontWeight:700,outline:"none",letterSpacing:1,background:"rgba(26,26,46,.75)",color:"#F0ECD8"}}
       />
       <MicBtn onResult={handleMic} style={{height:38}}/>
     </div>
@@ -521,9 +538,9 @@ function MicBtn({ onResult, style }) {
       onClick={toggle}
       title={listening ? "Dinleniyor... tıkla durdur" : "Sesli yaz"}
       style={{
-        background: listening ? "#BE3B31" : "var(--primary-light,#E3F0DC)",
-        border: `1.5px solid ${listening ? "#BE3B31" : "var(--primary,#4A7C3F)"}`,
-        borderRadius: 8,
+        background: listening ? "rgba(190,59,49,.2)" : "rgba(212,175,55,.1)",
+        border: `1.5px solid ${listening ? "rgba(190,59,49,.6)" : "rgba(212,175,55,.25)"}`,
+        borderRadius: 10,
         padding: "0 10px",
         cursor: "pointer",
         fontSize: 16,
@@ -533,6 +550,7 @@ function MicBtn({ onResult, style }) {
         minWidth: 38,
         height: "100%",
         animation: listening ? "pulse 1s infinite" : "none",
+        transition: "all .2s",
         ...style
       }}>
       {listening ? "⏹" : "🎤"}
@@ -544,7 +562,7 @@ function MicBtn({ onResult, style }) {
 function VoiceInput({ value, onChange, placeholder, style, multiline, rows }) {
   if (multiline) {
     return (
-      <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
         <textarea
           value={value}
           onChange={e => onChange(e.target.value)}
@@ -638,7 +656,7 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     <div style={{display:"flex",gap:6}}>
       {BREEDS.map(b=>(
         <button key={b.id} onClick={()=>setBreed(b.id)}
-          style={{flex:1,padding:"9px 0",borderRadius:8,border:`1.5px solid ${breed===b.id?b.color:"#E8E5DC"}`,background:breed===b.id?b.bg:"#fff",color:breed===b.id?b.color:"#8c8c7e",fontWeight:breed===b.id?700:400,fontSize:12,cursor:"pointer"}}>
+          style={{flex:1,padding:"9px 0",borderRadius:8,border:`1.5px solid ${breed===b.id?b.color:"#E8E5DC"}`,background:breed===b.id?b.bg:"#fff",color:breed===b.id?b.color:"rgba(240,236,216,.35)",fontWeight:breed===b.id?700:400,fontSize:12,cursor:"pointer"}}>
           {b.emoji} {b.name}
         </button>
       ))}
@@ -669,7 +687,7 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
         </button>
       ))}
     </div>
-    {treatmentDays>0&&<div style={{fontSize:11,color:"#4A7C3F",background:"#F5FAF0",padding:"6px 10px",borderRadius:8}}>
+    {treatmentDays>0&&<div style={{fontSize:11,color:"#D4AF37",background:"rgba(26,46,26,.5)",padding:"6px 10px",borderRadius:8}}>
       📅 {treatmentDays} günlük tedavi takvimi oluşturulacak ({date} tarihinden itibaren)
     </div>}
     <FL>Durum *</FL>
@@ -679,11 +697,11 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     <FL>Fotoğraf Ekle</FL>
     <div style={{display:"flex",gap:6,marginBottom:4}}>
       <button type="button" onClick={()=>cameraRef2.current?.click()}
-        style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #4A7C3F",background:"#E3F0DC",color:"#3D5A25",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+        style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #4A7C3F",background:"rgba(74,124,63,.2)",color:"#5BAD52",fontWeight:700,fontSize:12,cursor:"pointer"}}>
         📷 Kamera
       </button>
       <button type="button" onClick={()=>photoRef.current?.click()}
-        style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #2873A8",background:"#E6F1FB",color:"#0C447C",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+        style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #2873A8",background:"rgba(40,115,168,.2)",color:"#42A5F5",fontWeight:700,fontSize:12,cursor:"pointer"}}>
         🖼️ Galeri
       </button>
     </div>
@@ -692,12 +710,12 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     {photos.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:4}}>
       {photos.map((f,i)=>(
         <div key={i} style={{position:"relative"}}>
-          <img src={URL.createObjectURL(f)} style={{width:60,height:60,objectFit:"cover",borderRadius:8,border:"1px solid #E8E5DC"}}/>
-          <button onClick={()=>setPhotos(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#BE3B31",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:11,cursor:"pointer",lineHeight:"18px",textAlign:"center",padding:0}}>×</button>
+          <img src={URL.createObjectURL(f)} style={{width:60,height:60,objectFit:"cover",borderRadius:8,border:"1px solid rgba(212,175,55,.12)"}}/>
+          <button onClick={()=>setPhotos(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#C0392B",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:11,cursor:"pointer",lineHeight:"18px",textAlign:"center",padding:0}}>×</button>
         </div>
       ))}
     </div>}
-    {uploading&&<div style={{fontSize:11,color:"#4A7C3F"}}>⏳ Fotoğraflar yükleniyor...</div>}
+    {uploading&&<div style={{fontSize:11,color:"#D4AF37"}}>⏳ Fotoğraflar yükleniyor...</div>}
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
       <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
@@ -728,9 +746,9 @@ function VaccineModal({ breed, goats, onSave, onClose, currentUser }) {
     onSave(records);
   };
   const GoatRow=({g})=>{const sel=selected.has(g.id);return <div onClick={()=>toggle(g.id)} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,background:sel?breed.bg:"#F9F9F6",border:`1.5px solid ${sel?breed.color+"44":"#E8E5DC"}`,cursor:"pointer",marginBottom:4}}>
-    <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${sel?breed.color:"#ccc"}`,background:sel?breed.color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<span style={{color:"#fff",fontSize:11,fontWeight:900}}>✓</span>}</div>
-    <span style={{fontSize:13,fontWeight:sel?700:400,color:sel?breed.color:"#444"}}>{g.name}</span>
-    <span style={{fontSize:10,color:"#8c8c7e",marginLeft:"auto"}}>{g.earTag}</span>
+    <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${sel?breed.color:"rgba(240,236,216,.2)"}`,background:sel?breed.color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{sel&&<span style={{color:"#fff",fontSize:11,fontWeight:900}}>✓</span>}</div>
+    <span style={{fontSize:13,fontWeight:sel?700:400,color:sel?breed.color:"rgba(240,236,216,.75)"}}>{g.name}</span>
+    <span style={{fontSize:10,color:"rgba(240,236,216,.35)",marginLeft:"auto"}}>{g.earTag}</span>
   </div>;};
   return <ModalWrap title={`💉 Toplu Aşı — ${breed.emoji} ${breed.name}`} onClose={onClose}>
     {err&&<ErrBox msg={err}/>}
@@ -741,15 +759,15 @@ function VaccineModal({ breed, goats, onSave, onClose, currentUser }) {
     <FL>Hayvan Seçimi ({selected.size}/{breedGoats.length} seçili)</FL>
     {anacList.length>0&&<>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-        <span style={{fontSize:11,fontWeight:700,color:"#3D5A25"}}>🐐 Anaçlar</span>
-        <button onClick={()=>toggleGroup(anacList)} style={{...S.btnSm,background:"#E3F0DC",color:"#3D5A25",fontSize:10}}>{anacList.every(g=>selected.has(g.id))?"Tümünü Kaldır":"Tümünü Seç"}</button>
+        <span style={{fontSize:11,fontWeight:700,color:"#5BAD52"}}>🐐 Anaçlar</span>
+        <button onClick={()=>toggleGroup(anacList)} style={{...S.btnSm,background:"rgba(74,124,63,.2)",color:"#5BAD52",fontSize:10}}>{anacList.every(g=>selected.has(g.id))?"Tümünü Kaldır":"Tümünü Seç"}</button>
       </div>
       {anacList.map(g=><GoatRow key={g.id} g={g}/>)}
     </>}
     {oglakList.length>0&&<div style={{marginTop:8}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-        <span style={{fontSize:11,fontWeight:700,color:"#8B5A1B"}}>🍼 Oğlaklar</span>
-        <button onClick={()=>toggleGroup(oglakList)} style={{...S.btnSm,background:"#FFF4E6",color:"#8B5A1B",fontSize:10}}>{oglakList.every(g=>selected.has(g.id))?"Tümünü Kaldır":"Tümünü Seç"}</button>
+        <span style={{fontSize:11,fontWeight:700,color:"#E8975A"}}>🍼 Oğlaklar</span>
+        <button onClick={()=>toggleGroup(oglakList)} style={{...S.btnSm,background:"rgba(184,96,42,.2)",color:"#E8975A",fontSize:10}}>{oglakList.every(g=>selected.has(g.id))?"Tümünü Kaldır":"Tümünü Seç"}</button>
       </div>
       {oglakList.map(g=><GoatRow key={g.id} g={g}/>)}
     </div>}
@@ -916,31 +934,31 @@ function BulkEarTagInput({ tags, onTagsChange }) {
           <span>{listening?"⏹":"🎤"}</span>
           {listening?"Toplu Girişi Durdur":"Toplu Sesli Giriş"}
         </button>
-        {listening&&<div style={{fontSize:11,color:"#BE3B31",fontWeight:600,background:"#FFF0EE",padding:"6px 10px",borderRadius:8,flex:1}}>
+        {listening&&<div style={{fontSize:11,color:"#FF6B6B",fontWeight:600,background:"rgba(190,59,49,.15)",padding:"6px 10px",borderRadius:8,flex:1}}>
           ● Dinleniyor... <b>"TR"</b> = yeni küpe
         </div>}
       </div>
 
       {/* Elle ekleme butonu */}
       <button type="button" onClick={()=>onTagsChange([...tags,{p1:"",p2:"",full:"TR--"}])}
-        style={{width:"100%",padding:"8px",borderRadius:8,border:"1.5px dashed #4A7C3F",background:"#F5FAF0",color:"#4A7C3F",fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10}}>
+        style={{width:"100%",padding:"8px",borderRadius:8,border:"1.5px dashed #4A7C3F",background:"rgba(26,46,26,.5)",color:"#D4AF37",fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10}}>
         + Elle Küpe Ekle
       </button>
 
       {/* Liste — her satır EarTagInput ile aynı yapıda */}
       {tags.length>0&&(
-        <div style={{background:"#F5F3ED",borderRadius:10,padding:10,maxHeight:320,overflowY:"auto"}}>
-          <div style={{fontSize:11,fontWeight:700,color:"#555",marginBottom:8,display:"flex",justifyContent:"space-between"}}>
+        <div style={{background:"rgba(10,10,20,.6)",borderRadius:14,padding:10,maxHeight:320,overflowY:"auto",border:"1px solid rgba(212,175,55,.08)"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"rgba(240,236,216,.55)",marginBottom:8,display:"flex",justifyContent:"space-between"}}>
             <span>📋 Küpe Listesi</span>
-            <span style={{color:"#4A7C3F"}}>{tags.filter(t=>t.p1&&t.p2).length} geçerli</span>
+            <span style={{color:"#D4AF37"}}>{tags.filter(t=>t.p1&&t.p2).length} geçerli</span>
           </div>
           {tags.map((t,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"center",gap:4,marginBottom:6,background:"#fff",borderRadius:8,padding:"6px 8px",border:`1px solid ${t.p1&&t.p2?"#D4E8C2":"#F5C0BA"}`}}>
+            <div key={i} style={{display:"flex",alignItems:"center",gap:4,marginBottom:6,background:"rgba(26,26,46,.75)",borderRadius:8,padding:"6px 8px",border:`1px solid ${t.p1&&t.p2?"#D4E8C2":"#F5C0BA"}`}}>
               {/* Sıra no */}
-              <span style={{fontSize:11,color:"#aaa",fontWeight:700,minWidth:18,flexShrink:0}}>{i+1}.</span>
+              <span style={{fontSize:11,color:"rgba(240,236,216,.25)",fontWeight:700,minWidth:18,flexShrink:0}}>{i+1}.</span>
               {/* TR sabit — EarTagInput ile birebir aynı */}
-              <div style={{background:"#F2F0EA",borderRadius:6,padding:"5px 7px",fontWeight:700,fontSize:13,color:"#555",flexShrink:0,letterSpacing:1}}>TR</div>
-              <span style={{color:"#aaa",fontWeight:700,fontSize:15}}>-</span>
+              <div style={{background:"rgba(212,175,55,.1)",borderRadius:8,padding:"5px 7px",fontWeight:700,fontSize:13,color:"#D4AF37",border:"1px solid rgba(212,175,55,.2)",flexShrink:0,letterSpacing:1}}>TR</div>
+              <span style={{color:"rgba(240,236,216,.25)",fontWeight:700,fontSize:15}}>-</span>
               {/* İki haneli */}
               <input
                 value={t.p1}
@@ -954,9 +972,9 @@ function BulkEarTagInput({ tags, onTagsChange }) {
                   onTagsChange(newTags);
                   if(v.length===2) rowRefs.current[`p2_${i}`]?.focus();
                 }}
-                style={{width:38,padding:"5px 4px",borderRadius:6,border:"1px solid #E8E5DC",fontSize:13,fontWeight:700,textAlign:"center",outline:"none"}}
+                style={{width:38,padding:"5px 4px",borderRadius:8,border:"1px solid rgba(212,175,55,.18)",fontSize:13,fontWeight:700,textAlign:"center",outline:"none",background:"rgba(26,26,46,.8)",color:"#F0ECD8"}}
               />
-              <span style={{color:"#aaa",fontWeight:700,fontSize:15}}>-</span>
+              <span style={{color:"rgba(240,236,216,.25)",fontWeight:700,fontSize:15}}>-</span>
               {/* Son haneler */}
               <input
                 ref={el=>rowRefs.current[`p2_${i}`]=el}
@@ -969,13 +987,13 @@ function BulkEarTagInput({ tags, onTagsChange }) {
                   newTags[i]={p1:t.p1,p2:v,full:`TR-${t.p1}-${v}`};
                   onTagsChange(newTags);
                 }}
-                style={{flex:1,padding:"5px 6px",borderRadius:6,border:"1px solid #E8E5DC",fontSize:13,fontWeight:700,outline:"none",letterSpacing:1,minWidth:0}}
+                style={{flex:1,padding:"5px 6px",borderRadius:8,border:"1px solid rgba(212,175,55,.18)",fontSize:13,fontWeight:700,outline:"none",letterSpacing:1,minWidth:0,background:"rgba(26,26,46,.8)",color:"#F0ECD8"}}
               />
               {/* Satır mikrofon butonu — EarTagInput'taki MicBtn ile aynı mantık */}
               <MicBtn onResult={txt=>handleRowMic(txt,i)} style={{height:32,minWidth:32,padding:"0 6px",flexShrink:0}}/>
               {/* Sil */}
               <button type="button" onClick={()=>onTagsChange(tags.filter((_,j)=>j!==i))}
-                style={{background:"#FFF0EE",border:"none",borderRadius:6,color:"#BE3B31",fontWeight:700,fontSize:13,cursor:"pointer",padding:"4px 7px",flexShrink:0}}>✕</button>
+                style={{background:"rgba(190,59,49,.1)",border:"1px solid rgba(190,59,49,.2)",borderRadius:8,color:"#FF6B6B",fontWeight:700,fontSize:13,cursor:"pointer",padding:"4px 7px",flexShrink:0}}>✕</button>
             </div>
           ))}
         </div>
@@ -1110,7 +1128,7 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
       </div>
 
       {/* Sekme */}
-      <div style={{display:"flex",background:"#F2F0EA",borderRadius:8,overflow:"hidden",marginTop:4}}>
+      <div style={{display:"flex",background:"rgba(20,20,36,.6)",borderRadius:8,overflow:"hidden",marginTop:4}}>
         <button onClick={()=>setTab("elle")} style={{flex:1,padding:"9px 0",border:"none",fontWeight:700,fontSize:12,cursor:"pointer",background:tab==="elle"?"#4A7C3F":"transparent",color:tab==="elle"?"#fff":"#8c8c7e"}}>✏️ Elle Giriş</button>
         <button onClick={()=>setTab("dosya")} style={{flex:1,padding:"9px 0",border:"none",fontWeight:700,fontSize:12,cursor:"pointer",background:tab==="dosya"?"#4A7C3F":"transparent",color:tab==="dosya"?"#fff":"#8c8c7e"}}>📁 Dosya Yükle</button>
       </div>
@@ -1118,7 +1136,7 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
       {/* Elle giriş */}
       {tab==="elle" && <>
         <FL>Küpe Numaraları</FL>
-        <div style={{fontSize:11,color:"#8c8c7e",marginBottom:4}}>💡 Sesli "TR" dediğinizde yeni küpe satırı başlar</div>
+        <div style={{fontSize:11,color:"rgba(240,236,216,.35)",marginBottom:4}}>💡 Sesli "TR" dediğinizde yeni küpe satırı başlar</div>
         <BulkEarTagInput tags={tags} onTagsChange={setTags}/>
       </>}
 
@@ -1127,19 +1145,19 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
         <button onClick={downloadTemplate} style={{...S.btnOutline,width:"100%",padding:10,fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
           📥 Excel Şablonu İndir
         </button>
-        <div style={{fontSize:11,color:"#8c8c7e",textAlign:"center"}}>Şablonu doldurup yükleyin (Küpe No, Cinsiyet)</div>
-        <label style={{display:"block",background:"#F5FAF0",border:"1.5px dashed #4A7C3F",borderRadius:10,padding:"14px",textAlign:"center",cursor:"pointer"}}>
+        <div style={{fontSize:11,color:"rgba(240,236,216,.35)",textAlign:"center"}}>Şablonu doldurup yükleyin (Küpe No, Cinsiyet)</div>
+        <label style={{display:"block",background:"rgba(26,46,26,.5)",border:"1.5px dashed #4A7C3F",borderRadius:10,padding:"14px",textAlign:"center",cursor:"pointer"}}>
           <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={handleFile}/>
           <div style={{fontSize:22}}>📂</div>
-          <div style={{fontSize:13,color:"#4A7C3F",fontWeight:700,marginTop:4}}>Excel / CSV Seç</div>
-          <div style={{fontSize:10,color:"#8c8c7e",marginTop:2}}>.xlsx, .xls, .csv desteklenir</div>
+          <div style={{fontSize:13,color:"#D4AF37",fontWeight:700,marginTop:4}}>Excel / CSV Seç</div>
+          <div style={{fontSize:10,color:"rgba(240,236,216,.35)",marginTop:2}}>.xlsx, .xls, .csv desteklenir</div>
         </label>
-        {fileRows.length>0 && <div style={{fontSize:11,color:"#3D5A25",background:"#E3F0DC",borderRadius:8,padding:"6px 10px"}}>
+        {fileRows.length>0 && <div style={{fontSize:11,color:"#5BAD52",background:"rgba(74,124,63,.2)",borderRadius:8,padding:"6px 10px"}}>
           ✅ {fileRows.length} satır okundu
         </div>}
       </>}
 
-      {saving && <div style={{background:"#E6F1FB",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#0C447C",fontWeight:600}}>
+      {saving && <div style={{background:"rgba(40,115,168,.2)",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#42A5F5",fontWeight:600}}>
         ⏳ Kaydediliyor: {done} / {validCount}
       </div>}
 
@@ -1214,24 +1232,24 @@ function ModalWrap({title,onClose,children}){
   return ReactDOM.createPortal(
     <div style={{position:"fixed",inset:0,zIndex:9999,overflowY:"auto",backgroundColor:"rgba(0,0,0,.65)",WebkitOverflowScrolling:"touch"}}>
       <div style={{minHeight:"100%",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px 100px"}}>
-        <div onClick={e=>e.stopPropagation()} style={{background:"#FAFAF5",borderRadius:16,width:"100%",maxWidth:456,marginTop:8}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 18px 12px",borderBottom:"1px solid #F2F0EA",position:"sticky",top:0,background:"#FAFAF5",borderRadius:"16px 16px 0 0",zIndex:1}}>
-            <div style={{fontWeight:800,fontSize:15,color:"#1e1e1e",flex:1,paddingRight:10}}>{title}</div>
-            <button onClick={onClose} style={{background:"#F2F0EA",border:"none",borderRadius:"50%",width:32,height:32,fontSize:16,cursor:"pointer",color:"#555",flexShrink:0}}>✕</button>
+        <div onClick={e=>e.stopPropagation()} style={{background:"rgba(10,10,15,.97)",borderRadius:16,width:"100%",maxWidth:456,marginTop:8}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 20px 14px",borderBottom:"1px solid rgba(212,175,55,.1)",position:"sticky",top:0,background:"rgba(16,16,28,.98)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderRadius:"24px 24px 0 0",zIndex:1}}>
+            <div style={{fontWeight:700,fontSize:15,color:"#F0ECD8",flex:1,paddingRight:10,letterSpacing:"-.2px"}}>{title}</div>
+            <button onClick={onClose} style={{background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.1)",borderRadius:"50%",width:32,height:32,fontSize:14,cursor:"pointer",color:"rgba(240,236,216,.6)",flexShrink:0}}>✕</button>
           </div>
-          <div style={{padding:"14px 18px 20px",display:"flex",flexDirection:"column",gap:10}}>{children}</div>
+          <div style={{padding:"16px 20px 24px",display:"flex",flexDirection:"column",gap:10}}>{children}</div>
         </div>
       </div>
     </div>,
     el
   );
 }
-function FL({children}){return <div style={{fontSize:12,fontWeight:700,color:"#555",marginBottom:3,marginTop:4}}>{children}</div>;}
-function ErrBox({msg}){return <div style={{background:"#FFF0EE",border:"1px solid #F5C0BA",borderRadius:8,padding:"8px 12px",fontSize:13,color:"#BE3B31",fontWeight:600}}>⚠️ {msg}</div>;}
-function StatusPicker({value,onChange}){return <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{[["tedavi_altında","Tedavide","#FFF8EC","#B8750A"],["iyileşti","İyileşti","#E3F0DC","#3D5A25"],["kronik","Kronik","#F0E6F6","#7B2D8E"],["öldü","Öldü","#FFF0EE","#BE3B31"]].map(([v,l,bg,c])=><button key={v} onClick={()=>onChange(v)} style={{padding:"6px 14px",borderRadius:20,border:`2px solid ${value===v?c:"#E8E5DC"}`,background:value===v?bg:"#fff",color:value===v?c:"#8c8c7e",fontWeight:700,fontSize:12,cursor:"pointer"}}>{l}</button>)}</div>;}
-function Stat({v,l,bg,c}){return <div style={{background:bg,borderRadius:10,padding:"10px 8px",textAlign:"center",flex:1}}><div style={{fontSize:20,fontWeight:900,color:c}}>{v}</div><div style={{fontSize:10,color:c,fontWeight:600,opacity:.75}}>{l}</div></div>;}
-function Badge({bg,color,text}){return <span style={{background:bg,color,fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:10,whiteSpace:"nowrap"}}>{text}</span>;}
-function StatusBadge({status}){const m={"tedavi_altında":["#FFF8EC","#B8750A","Tedavide"],"iyileşti":["#E3F0DC","#3D5A25","İyileşti"],"kronik":["#F0E6F6","#7B2D8E","Kronik"],"öldü":["#FFF0EE","#BE3B31","Öldü"]};const [bg,c,t]=m[status]||["#F2F0EA","#8c8c7e",status];return <span style={{background:bg,color:c,fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10}}>{t}</span>;}
+function FL({children}){return <div style={{fontSize:11,fontWeight:600,color:"rgba(212,175,55,.7)",marginBottom:5,marginTop:8,letterSpacing:".5px",textTransform:"uppercase"}}>{children}</div>;}
+function ErrBox({msg}){return <div style={{background:"rgba(190,59,49,.15)",border:"1px solid rgba(190,59,49,.4)",borderRadius:12,padding:"10px 14px",fontSize:13,color:"#FF6B6B",fontWeight:600}}>⚠️ {msg}</div>;}
+function StatusPicker({value,onChange}){return <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{[["tedavi_altında","Tedavide","rgba(212,175,55,.2)","#D4AF37"],["iyileşti","İyileşti","rgba(74,124,63,.2)","#5BAD52"],["kronik","Kronik","rgba(123,75,148,.2)","#B97FD4"],["öldü","Öldü","rgba(190,59,49,.2)","#FF6B6B"]].map(([v,l,bg,col])=><button key={v} onClick={()=>onChange(v)} style={{padding:"7px 16px",borderRadius:20,border:`1.5px solid ${value===v?col:"rgba(255,255,255,.1)"}`,background:value===v?bg:"transparent",color:value===v?col:"rgba(240,236,216,.4)",fontWeight:600,fontSize:12,cursor:"pointer",transition:"all .2s"}}>{l}</button>)}</div>;}
+function Stat({v,l,bg,c}){return <div style={{background:"rgba(26,26,46,.8)",border:"1px solid rgba(212,175,55,.12)",borderRadius:14,padding:"12px 8px",textAlign:"center",flex:1,backdropFilter:"blur(8px)"}}><div style={{fontSize:22,fontWeight:800,color:"#D4AF37",letterSpacing:"-1px"}}>{v}</div><div style={{fontSize:10,color:"rgba(240,236,216,.5)",fontWeight:600,marginTop:2,letterSpacing:".3px"}}>{l}</div></div>;}
+function Badge({bg,color,text}){return <span style={{background:"rgba(212,175,55,.15)",color:"#D4AF37",fontSize:9,fontWeight:700,padding:"3px 8px",borderRadius:10,whiteSpace:"nowrap",border:"1px solid rgba(212,175,55,.2)"}}>{text}</span>;}
+function StatusBadge({status}){const m={"tedavi_altında":["rgba(212,175,55,.2)","#D4AF37","Tedavide"],"iyileşti":["rgba(74,124,63,.2)","#5BAD52","İyileşti"],"kronik":["rgba(123,75,148,.2)","#B97FD4","Kronik"],"öldü":["rgba(190,59,49,.2)","#FF6B6B","Öldü"]};const [bg,col,t]=m[status]||["rgba(255,255,255,.08)","rgba(240,236,216,.5)",status];return <span style={{background:bg,color:col,fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:10,border:`1px solid ${col}44`}}>{t}</span>;}
 // ── Son İşlemler ──
 const ACTIVITY_ICONS = {
   saglik_eklendi:   {ic:"🩺", bg:"#FFF0EE", label:"Sağlık kaydı eklendi"},
@@ -1262,11 +1280,11 @@ function RecentActivities({ activities, onDelete, currentUser }) {
   const [expanded, setExpanded] = useState(true);
   if(!activities || activities.length===0) return null;
   return (
-    <div style={{background:"#fff",borderRadius:14,marginBottom:12,padding:0,overflow:"hidden",border:"1px solid #D4A574",boxShadow:"0 1px 3px rgba(0,0,0,.03)"}}>
-      <div style={{background:"#4A2C0A",padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div style={{color:"#FAD7A0",fontWeight:700,fontSize:13}}>🕐 Son İşlemler</div>
+    <div style={{background:"rgba(26,26,46,.75)",borderRadius:14,marginBottom:12,padding:0,overflow:"hidden",border:"1px solid #D4A574",boxShadow:"0 1px 3px rgba(0,0,0,.03)"}}>
+      <div style={{background:"rgba(212,175,55,.12)",borderRadius:"14px 14px 0 0",padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(212,175,55,.1)"}}>
+        <div style={{color:"#D4AF37",fontWeight:700,fontSize:13,letterSpacing:".3px"}}>🕐 SON İŞLEMLER</div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <span style={{color:"#D4A574",fontSize:10}}>Son {activities.length} kayıt</span>
+          <span style={{color:"rgba(212,175,55,.4)",fontSize:10}}>Son {activities.length} kayıt</span>
           <button onClick={()=>setExpanded(!expanded)} style={{background:"none",border:"none",color:"#D4A574",fontSize:12,cursor:"pointer"}}>{expanded?"▲":"▼"}</button>
         </div>
       </div>
@@ -1276,14 +1294,14 @@ function RecentActivities({ activities, onDelete, currentUser }) {
           <div key={a.id} style={{padding:"10px 14px",borderBottom:i<activities.length-1?"1px solid #FEF5E7":"none",display:"flex",gap:10,alignItems:"flex-start"}}>
             <div style={{width:32,height:32,borderRadius:8,background:info.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{info.ic}</div>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12,fontWeight:700,color:"#1e1e1e"}}>{a.description||info.label}</div>
-              {a.detail&&<div style={{fontSize:11,color:"#555",marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.detail}</div>}
+              <div style={{fontSize:12,fontWeight:700,color:"#F0ECD8"}}>{a.description||info.label}</div>
+              {a.detail&&<div style={{fontSize:11,color:"rgba(240,236,216,.55)",marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.detail}</div>}
               <div style={{display:"flex",gap:6,alignItems:"center",marginTop:3}}>
                 <span style={{fontSize:10,color:"#7B4A1E",fontWeight:600}}>👤 {a.user_name||"—"}</span>
-                <span style={{fontSize:10,color:"#aaa"}}>· {timeAgo(a.created_at)}</span>
+                <span style={{fontSize:10,color:"rgba(240,236,216,.25)"}}>· {timeAgo(a.created_at)}</span>
               </div>
             </div>
-            {isVet&&<button onClick={()=>onDelete(a.id)} style={{background:"none",border:"none",color:"#ccc",fontSize:14,cursor:"pointer",padding:"0 2px",flexShrink:0}}>✕</button>}
+            {isVet&&<button onClick={()=>onDelete(a.id)} style={{background:"none",border:"none",color:"rgba(240,236,216,.2)",fontSize:14,cursor:"pointer",padding:"0 2px",flexShrink:0}}>✕</button>}
           </div>
         );
       })}
@@ -1321,12 +1339,12 @@ function AnnouncementBox({ announcements, setAnnouncements, currentUser, vaccine
   };
 
   return (
-    <div style={{...S.card,marginBottom:12,background:"#FFFDF5",border:"1.5px solid #F0D49A"}}>
+    <div style={{...S.card,marginBottom:12,border:"1px solid rgba(212,175,55,.2)"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:expanded?10:0}}>
-        <div style={{fontWeight:800,fontSize:14,color:"#B8750A"}}>
+        <div style={{fontWeight:800,fontSize:14,color:"#D4AF37"}}>
           📢 Duyurular {(announcements.length+urgentVaccines.length)>0&&`(${announcements.length+urgentVaccines.length})`}
         </div>
-        <button onClick={()=>setExpanded(!expanded)} style={{...S.ghost,fontSize:12,color:"#8c8c7e"}}>{expanded?"▲ Gizle":"▼ Göster"}</button>
+        <button onClick={()=>setExpanded(!expanded)} style={{...S.ghost,fontSize:12,color:"rgba(240,236,216,.35)"}}>{expanded?"▲ Gizle":"▼ Göster"}</button>
       </div>
       {expanded && <>
         {/* Yaklaşan aşı uyarıları */}
@@ -1335,13 +1353,13 @@ function AnnouncementBox({ announcements, setAnnouncements, currentUser, vaccine
           const b=BREEDS.find(x=>x.id===r.breed);
           const d=daysUntil(r.date);
           return (
-            <div key={r.id} style={{display:"flex",alignItems:"start",gap:8,padding:"8px 10px",background:"#FFF0EE",borderRadius:8,marginBottom:6,border:"1px solid #F5C0BA"}}>
+            <div key={r.id} style={{display:"flex",alignItems:"start",gap:8,padding:"8px 10px",background:"rgba(190,59,49,.15)",borderRadius:8,marginBottom:6,border:"1px solid #F5C0BA"}}>
               <div style={{flex:1}}>
-                <div style={{fontSize:13,color:"#BE3B31",fontWeight:700,marginBottom:2}}>
+                <div style={{fontSize:13,color:"#FF6B6B",fontWeight:700,marginBottom:2}}>
                   ⚠️ Aşı Yaklaşıyor: {vt?.name}
                 </div>
-                <div style={{fontSize:11,color:"#555"}}>{b?.emoji} {b?.name} · {r.groupName}</div>
-                <div style={{fontSize:10,color:"#BE3B31",fontWeight:600}}>📅 {fmt(r.date)} — {d===0?"Bugün!":d===1?"Yarın!":`${d} gün kaldı`}</div>
+                <div style={{fontSize:11,color:"rgba(240,236,216,.55)"}}>{b?.emoji} {b?.name} · {r.groupName}</div>
+                <div style={{fontSize:10,color:"#FF6B6B",fontWeight:600}}>📅 {fmt(r.date)} — {d===0?"Bugün!":d===1?"Yarın!":`${d} gün kaldı`}</div>
               </div>
             </div>
           );
@@ -1354,15 +1372,15 @@ function AnnouncementBox({ announcements, setAnnouncements, currentUser, vaccine
             {saving?"...":"Gönder"}
           </button>
         </div>
-        {announcements.length===0 && urgentVaccines.length===0 && <div style={{fontSize:12,color:"#aaa",textAlign:"center",padding:"8px 0"}}>Henüz duyuru yok</div>}
+        {announcements.length===0 && urgentVaccines.length===0 && <div style={{fontSize:12,color:"rgba(240,236,216,.25)",textAlign:"center",padding:"8px 0"}}>Henüz duyuru yok</div>}
         {announcements.map(a=>(
-          <div key={a.id} style={{display:"flex",alignItems:"start",gap:8,padding:"8px 10px",background:"#FFF8EC",borderRadius:8,marginBottom:6,border:"1px solid #F5E0A0"}}>
+          <div key={a.id} style={{display:"flex",alignItems:"start",gap:8,padding:"8px 10px",background:"rgba(212,175,55,.1)",borderRadius:8,marginBottom:6,border:"1px solid #F5E0A0"}}>
             <div style={{flex:1}}>
-              <div style={{fontSize:13,color:"#1e1e1e",fontWeight:500,marginBottom:3}}>{a.message}</div>
-              <div style={{fontSize:10,color:"#B8750A",fontWeight:600}}>{a.user_name} · {fmtDT(a.created_at)}</div>
+              <div style={{fontSize:13,color:"#F0ECD8",fontWeight:500,marginBottom:3}}>{a.message}</div>
+              <div style={{fontSize:10,color:"#D4AF37",fontWeight:600}}>{a.user_name} · {fmtDT(a.created_at)}</div>
             </div>
             {isVet && (
-              <button onClick={()=>del(a.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:11,padding:"3px 8px",flexShrink:0}}>✕</button>
+              <button onClick={()=>del(a.id)} style={{...S.btnSm,background:"rgba(190,59,49,.15)",color:"#FF6B6B",fontSize:11,padding:"3px 8px",flexShrink:0}}>✕</button>
             )}
           </div>
         ))}
@@ -1371,7 +1389,7 @@ function AnnouncementBox({ announcements, setAnnouncements, currentUser, vaccine
   );
 }
 
-function Empty({text}){return <div style={{textAlign:"center",padding:30,color:"#8c8c7e",fontSize:13}}>{text}</div>;}
+function Empty({text}){return <div style={{textAlign:"center",padding:40,color:"rgba(240,236,216,.25)",fontSize:13,fontWeight:500}}><div style={{fontSize:36,marginBottom:10,opacity:.4}}>🌙</div>{text}</div>;}
 const DEATH_CAUSES = ["Pnömoni","Doğum komplikasyonu","Yaralanma","Zehirlenme","Parazit","Bilinmiyor","Diğer"];
 
 function DeathsPage({ deaths, currentUser, onDelete }) {
@@ -1489,7 +1507,7 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
               <img key={i} src={url} alt={`foto-${i}`} style={{width:"100%",borderRadius:12,objectFit:"cover"}} onClick={e=>e.stopPropagation()}/>
             ))}
           </div>
-          <button onClick={()=>setViewPhotos(null)} style={{marginTop:16,background:"#fff",border:"none",borderRadius:10,padding:"10px 28px",fontWeight:700,fontSize:14,cursor:"pointer"}}>Kapat</button>
+          <button onClick={()=>setViewPhotos(null)} style={{marginTop:16,background:"rgba(26,26,46,.75)",border:"none",borderRadius:10,padding:"10px 28px",fontWeight:700,fontSize:14,cursor:"pointer"}}>Kapat</button>
         </div>
       )}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
@@ -1501,11 +1519,11 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
 
       {showForm && (
         <div style={{...S.card,marginBottom:12,background:"#FFF8F8",border:"1.5px solid #F5C0BA"}}>
-          <div style={{fontWeight:700,fontSize:14,color:"#BE3B31",marginBottom:10}}>{editDeath?"✏️ Kaydı Düzenle":"➕ Ölüm Kaydı"}</div>
+          <div style={{fontWeight:700,fontSize:14,color:"#FF6B6B",marginBottom:10}}>{editDeath?"✏️ Kaydı Düzenle":"➕ Ölüm Kaydı"}</div>
           {err&&<ErrBox msg={err}/>}
           <FL>Irk *</FL>
           <div style={{display:"flex",gap:6,marginBottom:4}}>
-            {BREEDS.map(b=><button key={b.id} onClick={()=>setBreed(b.id)} style={{flex:1,padding:"7px 0",borderRadius:8,border:`1.5px solid ${breed===b.id?b.color:"#E8E5DC"}`,background:breed===b.id?b.bg:"#fff",color:breed===b.id?b.color:"#8c8c7e",fontWeight:breed===b.id?700:400,fontSize:11,cursor:"pointer"}}>{b.emoji} {b.name}</button>)}
+            {BREEDS.map(b=><button key={b.id} onClick={()=>setBreed(b.id)} style={{flex:1,padding:"7px 0",borderRadius:8,border:`1.5px solid ${breed===b.id?b.color:"#E8E5DC"}`,background:breed===b.id?b.bg:"#fff",color:breed===b.id?b.color:"rgba(240,236,216,.35)",fontWeight:breed===b.id?700:400,fontSize:11,cursor:"pointer"}}>{b.emoji} {b.name}</button>)}
           </div>
           <FL>Kategori *</FL>
           <div style={{display:"flex",gap:6}}>
@@ -1535,21 +1553,21 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
           <label style={{display:"block",background:"#FFF8F8",border:"1.5px dashed #BE3B31",borderRadius:10,padding:"12px",textAlign:"center",cursor:"pointer"}}>
             <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>setPhotos(p=>[...p,...Array.from(e.target.files)])}/>
             <div style={{fontSize:22}}>📷</div>
-            <div style={{fontSize:12,color:"#BE3B31",fontWeight:600,marginTop:2}}>Galeriden Seç</div>
-            <div style={{fontSize:10,color:"#8c8c7e"}}>Birden fazla seçilebilir</div>
+            <div style={{fontSize:12,color:"#FF6B6B",fontWeight:600,marginTop:2}}>Galeriden Seç</div>
+            <div style={{fontSize:10,color:"rgba(240,236,216,.35)"}}>Birden fazla seçilebilir</div>
           </label>
           {photos.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:6}}>
             {photos.map((f,i)=>(
               <div key={i} style={{position:"relative"}}>
-                <img src={URL.createObjectURL(f)} style={{width:64,height:64,objectFit:"cover",borderRadius:8,border:"1px solid #E8E5DC"}}/>
-                <button onClick={()=>setPhotos(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#BE3B31",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:11,cursor:"pointer",lineHeight:"18px",textAlign:"center",padding:0}}>×</button>
+                <img src={URL.createObjectURL(f)} style={{width:64,height:64,objectFit:"cover",borderRadius:8,border:"1px solid rgba(212,175,55,.12)"}}/>
+                <button onClick={()=>setPhotos(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#C0392B",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:11,cursor:"pointer",lineHeight:"18px",textAlign:"center",padding:0}}>×</button>
               </div>
             ))}
           </div>}
-          {uploading&&<div style={{fontSize:11,color:"#4A7C3F",marginTop:4}}>⏳ Fotoğraflar yükleniyor...</div>}
+          {uploading&&<div style={{fontSize:11,color:"#D4AF37",marginTop:4}}>⏳ Fotoğraflar yükleniyor...</div>}
           <div style={{display:"flex",gap:8,marginTop:4}}>
             <button onClick={()=>{setShowForm(false);reset();}} style={{...S.btnOutline,flex:1,padding:11}}>İptal</button>
-            <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:11,background:"#BE3B31",opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
+            <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:11,background:"#C0392B",opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
           </div>
         </div>
       )}
@@ -1567,21 +1585,21 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
               <div style={{flex:1}}>
                 <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · {d.category==="oglak"?"🍼 Oğlak":"🐐 Anaç"} · 📅 {fmt(d.deathDate)}{d.deathTime?` · ⏰ ${d.deathTime}`:""}</div>
-                <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>Küpe: {d.earTag}</div>
-                <div style={{fontSize:12,color:"#BE3B31",marginTop:2,fontWeight:600}}>☠️ {d.cause}</div>
-                {d.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:2}}>📝 {d.notes}</div>}
-                <div style={{fontSize:10,color:"#aaa",marginTop:4}}>Ekleyen: {d.createdBy}</div>
+                <div style={{fontWeight:700,fontSize:14,color:"#F0ECD8"}}>Küpe: {d.earTag}</div>
+                <div style={{fontSize:12,color:"#FF6B6B",marginTop:2,fontWeight:600}}>☠️ {d.cause}</div>
+                {d.notes&&<div style={{fontSize:11,color:"rgba(240,236,216,.55)",fontStyle:"italic",marginTop:2}}>📝 {d.notes}</div>}
+                <div style={{fontSize:10,color:"rgba(240,236,216,.25)",marginTop:4}}>Ekleyen: {d.createdBy}</div>
                 {deathPhotos[d.id]?.length>0&&(
                   <button onClick={()=>setViewPhotos({deathId:d.id,urls:deathPhotos[d.id]})}
-                    style={{...S.btnSm,background:"#E6F1FB",color:"#0C447C",fontSize:10,padding:"3px 8px",marginTop:6}}>
+                    style={{...S.btnSm,background:"rgba(40,115,168,.2)",color:"#42A5F5",fontSize:10,padding:"3px 8px",marginTop:6}}>
                     📷 {deathPhotos[d.id].length} Fotoğraf
                   </button>
                 )}
               </div>
               <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
-                <span style={{background:"#FFF0EE",color:"#BE3B31",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8}}>Öldü</span>
-                {currentUser!=="Misafir" && <button onClick={()=>openEdit(d)} style={{...S.btnSm,background:"#EEF6FC",color:"#2873A8",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>}
-                {isVet&&<button onClick={()=>del(d.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
+                <span style={{background:"rgba(190,59,49,.15)",color:"#FF6B6B",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8}}>Öldü</span>
+                {currentUser!=="Misafir" && <button onClick={()=>openEdit(d)} style={{...S.btnSm,background:"rgba(40,115,168,.15)",color:"#64B5F6",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>}
+                {isVet&&<button onClick={()=>del(d.id)} style={{...S.btnSm,background:"rgba(190,59,49,.15)",color:"#FF6B6B",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
               </div>
             </div>
           </div>
@@ -1667,12 +1685,12 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
       </div>
 
       {showForm && (
-        <div style={{...S.card,marginBottom:12,background:"#F5FAF0",border:"1.5px solid #D4E8C2"}}>
-          <div style={{fontWeight:700,fontSize:14,color:"#3D5A25",marginBottom:10}}>➕ Toplu Tedavi Kaydı</div>
+        <div style={{...S.card,marginBottom:12,background:"rgba(26,46,26,.5)",border:"1.5px solid #D4E8C2"}}>
+          <div style={{fontWeight:700,fontSize:14,color:"#5BAD52",marginBottom:10}}>➕ Toplu Tedavi Kaydı</div>
           {err&&<ErrBox msg={err}/>}
           <FL>Irk *</FL>
           <div style={{display:"flex",gap:6}}>
-            {BREEDS.map(b=><button key={b.id} onClick={()=>setBreed(b.id)} style={{flex:1,padding:"7px 0",borderRadius:8,border:`1.5px solid ${breed===b.id?b.color:"#E8E5DC"}`,background:breed===b.id?b.bg:"#fff",color:breed===b.id?b.color:"#8c8c7e",fontWeight:breed===b.id?700:400,fontSize:11,cursor:"pointer"}}>{b.emoji} {b.name}</button>)}
+            {BREEDS.map(b=><button key={b.id} onClick={()=>setBreed(b.id)} style={{flex:1,padding:"7px 0",borderRadius:8,border:`1.5px solid ${breed===b.id?b.color:"#E8E5DC"}`,background:breed===b.id?b.bg:"#fff",color:breed===b.id?b.color:"rgba(240,236,216,.35)",fontWeight:breed===b.id?700:400,fontSize:11,cursor:"pointer"}}>{b.emoji} {b.name}</button>)}
           </div>
           <FL>Kategori *</FL>
           <div style={{display:"flex",gap:6}}>
@@ -1719,21 +1737,21 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:6}}>
               <div style={{flex:1}}>
                 <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · {gt.category==="oglak"?"🍼 Oğlak":"🐐 Anaç"} · {gt.groupName}{gt.startDate?` · 📅 ${fmt(gt.startDate)}`:""}</div>
-                <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{gt.condition}</div>
-                {gt.treatment&&<div style={{fontSize:12,color:"#333",marginTop:2}}>💊 {gt.treatment}</div>}
-                {days.length>0&&<div style={{fontSize:10,background:"#E3F0DC",color:"#3D5A25",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
+                <div style={{fontWeight:700,fontSize:14,color:"#F0ECD8"}}>{gt.condition}</div>
+                {gt.treatment&&<div style={{fontSize:12,color:"rgba(240,236,216,.85)",marginTop:2}}>💊 {gt.treatment}</div>}
+                {days.length>0&&<div style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#5BAD52",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
                   📅 {doneDays}/{days.length} gün · {doneDays<days.length?`${doneDays+1}. günde`:"Tamamlandı"}
                 </div>}
-                {gt.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:2}}>📝 {gt.notes}</div>}
-                <div style={{fontSize:10,color:"#aaa",marginTop:4}}>Ekleyen: {gt.createdBy}</div>
+                {gt.notes&&<div style={{fontSize:11,color:"rgba(240,236,216,.55)",fontStyle:"italic",marginTop:2}}>📝 {gt.notes}</div>}
+                <div style={{fontSize:10,color:"rgba(240,236,216,.25)",marginTop:4}}>Ekleyen: {gt.createdBy}</div>
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end"}}>
                 <StatusBadge status={gt.status}/>
-                {isVet&&<button onClick={()=>del(gt.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
+                {isVet&&<button onClick={()=>del(gt.id)} style={{...S.btnSm,background:"rgba(190,59,49,.15)",color:"#FF6B6B",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
               </div>
             </div>
             {days.length>0&&(
-              <div style={{borderTop:"1px solid #F2F0EA",paddingTop:8}}>
+              <div style={{borderTop:"1px solid rgba(255,255,255,.06)",paddingTop:8}}>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                   {days.map(day=>{
                     const isPast=day.plannedDate<today;
@@ -1746,7 +1764,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
                         <div style={{fontSize:11,fontWeight:700,color:day.done?"#3D5A25":isToday?"#2873A8":isPast?"#BE3B31":"#aaa"}}>
                           {day.done?"✅":isToday?"🔵":isPast?"⚠️":"⏳"} {day.dayNumber}.gün
                         </div>
-                        {day.done&&<div style={{fontSize:9,color:"#3D5A25"}}>{day.doneBy}</div>}
+                        {day.done&&<div style={{fontSize:9,color:"#5BAD52"}}>{day.doneBy}</div>}
                         {!day.done&&!isFuture&&(
                           <button onClick={()=>markDay(day)} disabled={markingDay===day.id}
                             style={{marginTop:4,padding:"3px 6px",borderRadius:6,background:"#4A7C3F",color:"#fff",border:"none",fontSize:9,cursor:"pointer",width:"100%"}}>
@@ -1821,8 +1839,8 @@ function BirthModal({ onSave, onClose, currentUser, editData }) {
       <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
         {options.map(([v,l])=>{
           const sel=value===v;
-          const c=colorMap?.[v]||{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"};
-          return <button key={v} onClick={()=>onChange(v)} style={{flex:1,padding:"8px 0",borderRadius:8,border:`1.5px solid ${sel?c.border:"#E8E5DC"}`,background:sel?c.bg:"#fff",color:sel?c.color:"#8c8c7e",fontWeight:sel?700:400,fontSize:12,cursor:"pointer",minWidth:60}}>{l}</button>;
+          const c=colorMap?.[v]||{bg:"#E3F0DC",color:"#5BAD52",border:"#4A7C3F"};
+          return <button key={v} onClick={()=>onChange(v)} style={{flex:1,padding:"8px 0",borderRadius:8,border:`1.5px solid ${sel?c.border:"#E8E5DC"}`,background:sel?c.bg:"#fff",color:sel?c.color:"rgba(240,236,216,.35)",fontWeight:sel?700:400,fontSize:12,cursor:"pointer",minWidth:60}}>{l}</button>;
         })}
       </div>
     </div>
@@ -1831,17 +1849,17 @@ function BirthModal({ onSave, onClose, currentUser, editData }) {
   return <ModalWrap title={editData?"✏️ Doğum Kaydı Düzenle":"🐣 Yeni Doğum Kaydı"} onClose={onClose}>
     {err&&<ErrBox msg={err}/>}
     <BtnGroup label="Irk *" options={BREEDS.map(b=>[b.id,b.emoji+" "+b.name])} value={breed} onChange={setBreed}
-      colorMap={{saanen:{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"},honamli:{bg:"#F0E6F6",color:"#5B2D8E",border:"#7B4B94"},halep:{bg:"#FFF0E6",color:"#7A3B1E",border:"#B8602A"}}}/>
+      colorMap={{saanen:{bg:"#E3F0DC",color:"#5BAD52",border:"#4A7C3F"},honamli:{bg:"#F0E6F6",color:"#BA68C8",border:"#7B4B94"},halep:{bg:"#FFF0E6",color:"#E8975A",border:"#B8602A"}}}/>
     <FL>Ana Hayvan Küpe No *</FL>
     <VoiceInput value={motherEarTag} onChange={setMotherEarTag} placeholder="TR-15-0042"/>
     <BtnGroup label="Doğum Türü *" options={[["normal","✅ Normal"],["gunsuz","⚠️ Günsüz"],["atik","❌ Atık"]]} value={birthType} onChange={v=>{setBirthType(v);if(v==="atik"){setKidCount(0);setKids([]);}}}
-      colorMap={{normal:{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"},gunsuz:{bg:"#FFF8EC",color:"#B8750A",border:"#D4850A"},atik:{bg:"#FFF0EE",color:"#BE3B31",border:"#BE3B31"}}}/>
+      colorMap={{normal:{bg:"#E3F0DC",color:"#5BAD52",border:"#4A7C3F"},gunsuz:{bg:"#FFF8EC",color:"#D4AF37",border:"#D4850A"},atik:{bg:"#FFF0EE",color:"#FF6B6B",border:"#BE3B31"}}}/>
     {birthType!=="atik" && <>
       <BtnGroup label="Yavru Sayısı" options={[[1,"1"],[2,"2"],[3,"3"],[4,"4"]]} value={kidCount} onChange={updateKidCount}
-        colorMap={{1:{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"},2:{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"},3:{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"},4:{bg:"#E3F0DC",color:"#3D5A25",border:"#4A7C3F"}}}/>
+        colorMap={{1:{bg:"#E3F0DC",color:"#5BAD52",border:"#4A7C3F"},2:{bg:"#E3F0DC",color:"#5BAD52",border:"#4A7C3F"},3:{bg:"#E3F0DC",color:"#5BAD52",border:"#4A7C3F"},4:{bg:"#E3F0DC",color:"#5BAD52",border:"#4A7C3F"}}}/>
       {kids.map((kid,i)=>(
-        <div key={i} style={{background:"#F5FAF0",borderRadius:10,padding:10}}>
-          <div style={{fontSize:12,fontWeight:700,color:"#3D5A25",marginBottom:6}}>🍼 {i+1}. Yavru</div>
+        <div key={i} style={{background:"rgba(26,46,26,.5)",borderRadius:10,padding:10}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#5BAD52",marginBottom:6}}>🍼 {i+1}. Yavru</div>
           <FL>Küpe No</FL>
           <EarTagInput value={kid.earTag||"TR--"} onChange={v=>{const k=[...kids];k[i]={...k[i],earTag:v};setKids(k);}}/>
           <FL>Cinsiyet</FL>
@@ -1857,7 +1875,7 @@ function BirthModal({ onSave, onClose, currentUser, editData }) {
     <FL>Tarih *</FL>
     <input type="date" value={birthDate} onChange={e=>setBirthDate(e.target.value)} style={S.input}/>
     <FL>Notlar</FL>
-    <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
+    <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.6}}/>
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
       <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
@@ -1892,7 +1910,7 @@ function BirthsPage({ births, currentUser, onDelete, onAdd }) {
   };
 
   const typeLabel = {normal:"Normal",gunsuz:"Günsüz",atik:"Atık"};
-  const typeBg = {normal:{bg:"#E3F0DC",color:"#3D5A25"},gunsuz:{bg:"#FFF8EC",color:"#B8750A"},atik:{bg:"#FFF0EE",color:"#BE3B31"}};
+  const typeBg = {normal:{bg:"#E3F0DC",color:"#5BAD52"},gunsuz:{bg:"#FFF8EC",color:"#D4AF37"},atik:{bg:"#FFF0EE",color:"#FF6B6B"}};
 
   return (
     <div className="anim-fade">
@@ -1912,8 +1930,8 @@ function BirthsPage({ births, currentUser, onDelete, onAdd }) {
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:12}}>
-        <Stat v={stats.total} l="Toplam" bg="#E8E5DC" c="#444"/>
-        <Stat v={stats.normal} l="Normal" bg="#E3F0DC" c="#3D5A25"/>
+        <Stat v={stats.total} l="Toplam" bg="rgba(255,255,255,.06)" c="rgba(240,236,216,.6)"/>
+        <Stat v={stats.normal} l="Normal" bg="rgba(91,173,82,.15)" c="#5BAD52"/>
         <Stat v={stats.atik} l="Atık" bg="#FFF0EE" c="#BE3B31"/>
         <Stat v={stats.kids} l="Yavru" bg="#EEF6FC" c="#2873A8"/>
       </div>
@@ -1926,44 +1944,44 @@ function BirthsPage({ births, currentUser, onDelete, onAdd }) {
       {sorted.length===0 && <Empty text="Henüz doğum kaydı yok"/>}
       {sorted.map(birth=>{
         const b=BREEDS.find(x=>x.id===birth.breed);
-        const tc=typeBg[birth.birthType]||{bg:"#F2F0EA",color:"#555"};
+        const tc=typeBg[birth.birthType]||{bg:"#F2F0EA",color:"rgba(240,236,216,.55)"};
         const kids = typeof birth.kids==="string" ? JSON.parse(birth.kids||"[]") : (birth.kids||[]);
         return (
           <div key={birth.id} style={{...S.card,padding:12,marginBottom:8,border:`1.5px solid ${b?.color}22`}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:8}}>
               <div>
                 <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · 📅 {fmt(birth.birthDate)}</div>
-                <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>Ana: {birth.motherEarTag}</div>
+                <div style={{fontWeight:700,fontSize:14,color:"#F0ECD8"}}>Ana: {birth.motherEarTag}</div>
               </div>
               <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
                 <span style={{background:tc.bg,color:tc.color,fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8}}>{typeLabel[birth.birthType]}</span>
-                {currentUser!=="Misafir" && <button onClick={()=>setEditBirth(birth)} style={{...S.btnSm,background:"#EEF6FC",color:"#2873A8",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>}
-                {isVet && <button onClick={()=>deleteBirth(birth.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
+                {currentUser!=="Misafir" && <button onClick={()=>setEditBirth(birth)} style={{...S.btnSm,background:"rgba(40,115,168,.15)",color:"#64B5F6",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>}
+                {isVet && <button onClick={()=>deleteBirth(birth.id)} style={{...S.btnSm,background:"rgba(190,59,49,.15)",color:"#FF6B6B",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
               </div>
             </div>
             {kids.length>0 && (
-              <div style={{borderTop:"1px solid #F2F0EA",paddingTop:8}}>
-                <div style={{fontSize:11,color:"#8c8c7e",marginBottom:6,fontWeight:600}}>{kids.length} Yavru:</div>
+              <div style={{borderTop:"1px solid rgba(255,255,255,.06)",paddingTop:8}}>
+                <div style={{fontSize:11,color:"rgba(240,236,216,.35)",marginBottom:6,fontWeight:600}}>{kids.length} Yavru:</div>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                   {kids.map((kid,i)=>(
-                    <div key={i} style={{background:"#F5FAF0",borderRadius:8,padding:"5px 10px",minWidth:90}}>
-                      <div style={{fontSize:11,fontWeight:700,color:"#3D5A25"}}>🍼 {kid.earTag||"—"}</div>
-                      <div style={{fontSize:10,color:"#8c8c7e"}}>{kid.gender==="dişi"?"♀ Dişi":"♂ Erkek"}</div>
+                    <div key={i} style={{background:"rgba(26,46,26,.5)",borderRadius:8,padding:"5px 10px",minWidth:90}}>
+                      <div style={{fontSize:11,fontWeight:700,color:"#5BAD52"}}>🍼 {kid.earTag||"—"}</div>
+                      <div style={{fontSize:10,color:"rgba(240,236,216,.35)"}}>{kid.gender==="dişi"?"♀ Dişi":"♂ Erkek"}</div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            {birth.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:6}}>📝 {birth.notes}</div>}
-            <div style={{fontSize:10,color:"#aaa",marginTop:4}}>Ekleyen: {birth.createdBy}</div>
+            {birth.notes&&<div style={{fontSize:11,color:"rgba(240,236,216,.55)",fontStyle:"italic",marginTop:6}}>📝 {birth.notes}</div>}
+            <div style={{fontSize:10,color:"rgba(240,236,216,.25)",marginTop:4}}>Ekleyen: {birth.createdBy}</div>
           </div>
         );
       })}
     </div>
   );
 }
-function MiniPill({label,val,color}){return <div style={{display:"flex",alignItems:"center",gap:4}}><span style={{fontSize:13,fontWeight:900,color}}>{val}</span><span style={{fontSize:10,color:"#8c8c7e"}}>{label}</span></div>;}
-function PillTag({bg,color,text}){return <span style={{background:bg,color,fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:8,whiteSpace:"nowrap"}}>{text}</span>;}
+function MiniPill({label,val,color}){return <div style={{display:"flex",alignItems:"center",gap:4}}><span style={{fontSize:13,fontWeight:900,color}}>{val}</span><span style={{fontSize:10,color:"rgba(240,236,216,.35)"}}>{label}</span></div>;}
+function PillTag({bg,color,text}){return <span style={{background:"rgba(212,175,55,.12)",color:"#D4AF37",fontSize:11,fontWeight:600,padding:"4px 12px",borderRadius:10,whiteSpace:"nowrap",border:"1px solid rgba(212,175,55,.18)"}}>{text}</span>;}
 
 // ── Raporlar ──
 function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, groupTreatments, treatmentDaysData, currentUser, onDeleteReport}) {
@@ -2120,12 +2138,12 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
     <div className="anim-fade">
       {confirmDelete && (
         <div onClick={()=>setConfirmDelete(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,padding:20,width:"100%",maxWidth:320}}>
-            <div style={{fontWeight:800,fontSize:16,color:"#1e1e1e",marginBottom:8}}>🗑 Raporu Sil</div>
-            <div style={{fontSize:13,color:"#555",marginBottom:16}}>Bu rapor kalıcı olarak silinecek. Emin misiniz?</div>
+          <div onClick={e=>e.stopPropagation()} style={{background:"rgba(16,16,28,.96)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:22,padding:22,width:"100%",maxWidth:320,border:"1px solid rgba(212,175,55,.15)"}}>
+            <div style={{fontWeight:800,fontSize:16,color:"#F0ECD8",marginBottom:8}}>🗑 Raporu Sil</div>
+            <div style={{fontSize:13,color:"rgba(240,236,216,.55)",marginBottom:16}}>Bu rapor kalıcı olarak silinecek. Emin misiniz?</div>
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>setConfirmDelete(null)} style={{...S.btnOutline,flex:1,padding:10}}>İptal</button>
-              <button onClick={()=>handleDelete(confirmDelete)} style={{...S.btnPrimary,flex:1,padding:10,background:"#BE3B31"}}>Evet, Sil</button>
+              <button onClick={()=>handleDelete(confirmDelete)} style={{...S.btnPrimary,flex:1,padding:10,background:"#C0392B"}}>Evet, Sil</button>
             </div>
           </div>
         </div>
@@ -2179,8 +2197,8 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
           </div>
 
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:12}}>
-            <Stat v={filteredSuru.length} l="Toplam" bg="#E8E5DC" c="#444"/>
-            <Stat v={filteredSuru.filter(g=>g.category==="anac").length} l="Anaç" bg="#E3F0DC" c="#3D5A25"/>
+            <Stat v={filteredSuru.length} l="Toplam" bg="rgba(255,255,255,.06)" c="rgba(240,236,216,.6)"/>
+            <Stat v={filteredSuru.filter(g=>g.category==="anac").length} l="Anaç" bg="rgba(91,173,82,.15)" c="#5BAD52"/>
             <Stat v={filteredSuru.filter(g=>g.category==="oglak").length} l="Oğlak" bg="#FFF4E6" c="#B8602A"/>
           </div>
 
@@ -2191,8 +2209,8 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
               <div key={g.id} style={{...S.card,padding:"10px 12px",marginBottom:5,display:"flex",alignItems:"center",gap:10}}>
                 <div style={{width:36,height:36,borderRadius:"50%",background:b?.bg||"#F2F0EA",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{b?.emoji}</div>
                 <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:13,color:"#1e1e1e"}}>{g.name}</div>
-                  <div style={{fontSize:11,color:"#8c8c7e"}}>
+                  <div style={{fontWeight:700,fontSize:13,color:"#F0ECD8"}}>{g.name}</div>
+                  <div style={{fontSize:11,color:"rgba(240,236,216,.35)"}}>
                     🏷 {g.earTag} · {g.gender==="erkek"?"♂ Erkek":"♀ Dişi"} · {g.category==="anac"?"🐐 Anaç":"🍼 Oğlak"}
                   </div>
                 </div>
@@ -2207,8 +2225,8 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
       {mainTab==="saglik" && (
         <div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:12}}>
-            <Stat v={stats.total} l="Toplam" bg="#E8E5DC" c="#444"/>
-            <Stat v={stats.iyilesti} l="İyileşti" bg="#E3F0DC" c="#3D5A25"/>
+            <Stat v={stats.total} l="Toplam" bg="rgba(255,255,255,.06)" c="rgba(240,236,216,.6)"/>
+            <Stat v={stats.iyilesti} l="İyileşti" bg="rgba(91,173,82,.15)" c="#5BAD52"/>
             <Stat v={stats.oldu} l="Öldü" bg="#FFF0EE" c="#BE3B31"/>
           </div>
           {sorted.length===0 && <Empty text="Henüz sağlık raporu yok"/>}
@@ -2222,24 +2240,24 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:6}}>
                   <div style={{flex:1}}>
                     <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · {r.goatName} {r.goatEarTag?`(${r.goatEarTag})`:""}</div>
-                    <div style={{fontWeight:800,fontSize:14,color:"#1e1e1e"}}>{r.condition}</div>
-                    <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.dateStarted)} → {fmt(r.dateClosed)}</div>
+                    <div style={{fontWeight:800,fontSize:14,color:"#F0ECD8"}}>{r.condition}</div>
+                    <div style={{fontSize:11,color:"rgba(240,236,216,.35)"}}>📅 {fmt(r.dateStarted)} → {fmt(r.dateClosed)}</div>
                   </div>
                   <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
                     <span style={{background:isDeath?"#FFF0EE":"#E3F0DC",color:isDeath?"#BE3B31":"#3D5A25",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8,whiteSpace:"nowrap"}}>{r.closeReason}</span>
-                    {isVet && <button onClick={()=>setConfirmDelete(r.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
+                    {isVet && <button onClick={()=>setConfirmDelete(r.id)} style={{...S.btnSm,background:"rgba(190,59,49,.15)",color:"#FF6B6B",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
                   </div>
                 </div>
-                {r.treatment&&<div style={{fontSize:12,color:"#333",marginBottom:4}}>💊 {r.treatment}</div>}
-                {r.closeNote&&<div style={{fontSize:12,color:"#555",fontStyle:"italic",marginBottom:4}}>📝 {r.closeNote}</div>}
-                <div style={{fontSize:10,color:"#aaa",marginBottom:8}}>Ekleyen: {r.createdByName}</div>
+                {r.treatment&&<div style={{fontSize:12,color:"rgba(240,236,216,.85)",marginBottom:4}}>💊 {r.treatment}</div>}
+                {r.closeNote&&<div style={{fontSize:12,color:"rgba(240,236,216,.55)",fontStyle:"italic",marginBottom:4}}>📝 {r.closeNote}</div>}
+                <div style={{fontSize:10,color:"rgba(240,236,216,.25)",marginBottom:8}}>Ekleyen: {r.createdByName}</div>
                 <button onClick={()=>setExpandedReport(isExpanded?null:r.id)}
-                  style={{...S.btnSm,background:"#F2F0EA",color:"#555",fontSize:11,width:"100%",padding:"6px 0",textAlign:"center"}}>
+                  style={{...S.btnSm,background:"rgba(20,20,36,.6)",color:"rgba(240,236,216,.55)",fontSize:11,width:"100%",padding:"6px 0",textAlign:"center"}}>
                   {isExpanded?"▲ Geçmişi Gizle":"▼ İşlem Geçmişini Göster"} ({rLogs.length})
                 </button>
                 {isExpanded && (
-                  <div style={{marginTop:8,borderTop:"1px solid #F2F0EA",paddingTop:8}}>
-                    {rLogs.length===0 && <div style={{fontSize:11,color:"#aaa",textAlign:"center",padding:8}}>Geçmiş kaydı bulunamadı</div>}
+                  <div style={{marginTop:8,borderTop:"1px solid rgba(255,255,255,.06)",paddingTop:8}}>
+                    {rLogs.length===0 && <div style={{fontSize:11,color:"rgba(240,236,216,.25)",textAlign:"center",padding:8}}>Geçmiş kaydı bulunamadı</div>}
                     {rLogs.map((l,i)=>(
                       <div key={l.id} style={{display:"flex",gap:8,padding:"6px 0",borderBottom:i<rLogs.length-1?"1px dashed #F2F0EA":"none"}}>
                         <div style={{width:26,height:26,borderRadius:"50%",background:l.action==="sonlandırma"?"#FFF0EE":l.action==="açılış"?"#E3F0DC":"#EEF6FC",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,flexShrink:0}}>
@@ -2247,10 +2265,10 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
                         </div>
                         <div style={{flex:1}}>
                           <div style={{display:"flex",justifyContent:"space-between"}}>
-                            <div style={{fontSize:11,fontWeight:700,color:"#333"}}>{l.userName}</div>
-                            <div style={{fontSize:10,color:"#aaa"}}>{fmtDT(l.createdAt)}</div>
+                            <div style={{fontSize:11,fontWeight:700,color:"rgba(240,236,216,.85)"}}>{l.userName}</div>
+                            <div style={{fontSize:10,color:"rgba(240,236,216,.25)"}}>{fmtDT(l.createdAt)}</div>
                           </div>
-                          <div style={{fontSize:11,color:"#555",marginTop:1}}>{l.actionDetail}</div>
+                          <div style={{fontSize:11,color:"rgba(240,236,216,.55)",marginTop:1}}>{l.actionDetail}</div>
                         </div>
                       </div>
                     ))}
@@ -2267,7 +2285,7 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
         <div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:6,marginBottom:12}}>
             <Stat v={vaccineReports.length} l="Toplam Uygulama" bg="#EEF6FC" c="#2873A8"/>
-            <Stat v={vaccineReports.reduce((s,r)=>s+(r.goatCount||0),0)} l="Toplam Doz" bg="#E3F0DC" c="#3D5A25"/>
+            <Stat v={vaccineReports.reduce((s,r)=>s+(r.goatCount||0),0)} l="Toplam Doz" bg="rgba(91,173,82,.15)" c="#5BAD52"/>
           </div>
           {sortedVR.length===0 && <Empty text="Henüz aşı raporu yok"/>}
           {sortedVR.map(r=>{
@@ -2279,10 +2297,10 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
                   <div style={{flex:1}}>
                     <div style={{fontSize:11,fontWeight:700,color:b?.color,marginBottom:2}}>{b?.emoji} {b?.name} · {r.groupName}</div>
                     <div style={{fontWeight:800,fontSize:14,color:vt?.color||"#333"}}>💉 {vt?.name}</div>
-                    {r.goatCount>0&&<div style={{fontSize:11,color:"#555",marginTop:1}}>👥 {r.goatCount} hayvan: {r.goatNames}</div>}
-                    <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.date)}{r.batchNo?` · Parti: ${r.batchNo}`:""}</div>
-                    <div style={{fontSize:11,color:"#3D5A25",fontWeight:600,marginTop:2}}>✅ Uygulayan: {r.appliedBy||r.createdBy}</div>
-                    <div style={{fontSize:10,color:"#aaa",marginTop:1}}>Ekleyen: {r.createdBy}{r.appliedAt?` · ${fmtDT(r.appliedAt)}`:""}</div>
+                    {r.goatCount>0&&<div style={{fontSize:11,color:"rgba(240,236,216,.55)",marginTop:1}}>👥 {r.goatCount} hayvan: {r.goatNames}</div>}
+                    <div style={{fontSize:11,color:"rgba(240,236,216,.35)"}}>📅 {fmt(r.date)}{r.batchNo?` · Parti: ${r.batchNo}`:""}</div>
+                    <div style={{fontSize:11,color:"#5BAD52",fontWeight:600,marginTop:2}}>✅ Uygulayan: {r.appliedBy||r.createdBy}</div>
+                    <div style={{fontSize:10,color:"rgba(240,236,216,.25)",marginTop:1}}>Ekleyen: {r.createdBy}{r.appliedAt?` · ${fmtDT(r.appliedAt)}`:""}</div>
                   </div>
                   {isVet && (
                     <button onClick={async()=>{
@@ -2290,10 +2308,10 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
                         const {error} = await sb.from("vaccine_reports").delete().eq("id",r.id);
                         if(!error) setVaccineReportsLocal(p=>p.filter(x=>x.id!==r.id));
                       }
-                    }} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px",flexShrink:0,marginLeft:8}}>🗑 Sil</button>
+                    }} style={{...S.btnSm,background:"rgba(190,59,49,.15)",color:"#FF6B6B",fontSize:10,padding:"3px 8px",flexShrink:0,marginLeft:8}}>🗑 Sil</button>
                   )}
                 </div>
-                {r.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:4}}>📝 {r.notes}</div>}
+                {r.notes&&<div style={{fontSize:11,color:"rgba(240,236,216,.55)",fontStyle:"italic",marginTop:4}}>📝 {r.notes}</div>}
               </div>
             );
           })}
@@ -2304,8 +2322,8 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
       {mainTab==="dogum" && (
         <div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:12}}>
-            <Stat v={filteredBirths.length} l="Toplam" bg="#E8E5DC" c="#444"/>
-            <Stat v={filteredBirths.filter(b=>b.birthType==="normal").length} l="Normal" bg="#E3F0DC" c="#3D5A25"/>
+            <Stat v={filteredBirths.length} l="Toplam" bg="rgba(255,255,255,.06)" c="rgba(240,236,216,.6)"/>
+            <Stat v={filteredBirths.filter(b=>b.birthType==="normal").length} l="Normal" bg="rgba(91,173,82,.15)" c="#5BAD52"/>
             <Stat v={filteredBirths.filter(b=>b.birthType==="atik").length} l="Atık" bg="#FFF0EE" c="#BE3B31"/>
           </div>
           {filteredBirths.length===0&&<Empty text="Doğum kaydı yok"/>}
@@ -2319,15 +2337,15 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:6}}>
                   <div>
                     <div style={{fontSize:11,fontWeight:700,color:br?.color}}>{br?.emoji} {br?.name} · 📅 {fmt(birth.birthDate)}</div>
-                    <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>Ana: {birth.motherEarTag}</div>
-                    {birth.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic"}}>📝 {birth.notes}</div>}
+                    <div style={{fontWeight:700,fontSize:14,color:"#F0ECD8"}}>Ana: {birth.motherEarTag}</div>
+                    {birth.notes&&<div style={{fontSize:11,color:"rgba(240,236,216,.55)",fontStyle:"italic"}}>📝 {birth.notes}</div>}
                   </div>
                   <span style={{background:tc.bg,color:tc.c,fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8}}>{birth.birthType==="normal"?"Normal":birth.birthType==="gunsuz"?"Günsüz":"Atık"}</span>
                 </div>
                 {kids.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                  {kids.map((k,i)=><div key={i} style={{background:"#F5FAF0",borderRadius:8,padding:"4px 10px",fontSize:11}}>🍼 {k.earTag||"—"} · {k.gender==="dişi"?"♀":"♂"}</div>)}
+                  {kids.map((k,i)=><div key={i} style={{background:"rgba(26,46,26,.5)",borderRadius:8,padding:"4px 10px",fontSize:11}}>🍼 {k.earTag||"—"} · {k.gender==="dişi"?"♀":"♂"}</div>)}
                 </div>}
-                <div style={{fontSize:10,color:"#aaa",marginTop:4}}>Ekleyen: {birth.createdBy}</div>
+                <div style={{fontSize:10,color:"rgba(240,236,216,.25)",marginTop:4}}>Ekleyen: {birth.createdBy}</div>
               </div>
             );
           })}
@@ -2346,12 +2364,12 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                   <div>
                     <div style={{fontSize:11,fontWeight:700,color:br?.color}}>{br?.emoji} {br?.name} · {d.category==="oglak"?"🍼 Oğlak":"🐐 Anaç"} · 📅 {fmt(d.deathDate)}{d.deathTime?` · ⏰ ${d.deathTime}`:""}</div>
-                    <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>Küpe: {d.earTag}</div>
-                    <div style={{fontSize:12,color:"#BE3B31",fontWeight:600}}>☠️ {d.cause}</div>
-                    {d.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic"}}>📝 {d.notes}</div>}
-                    <div style={{fontSize:10,color:"#aaa",marginTop:4}}>Ekleyen: {d.createdBy}</div>
+                    <div style={{fontWeight:700,fontSize:14,color:"#F0ECD8"}}>Küpe: {d.earTag}</div>
+                    <div style={{fontSize:12,color:"#FF6B6B",fontWeight:600}}>☠️ {d.cause}</div>
+                    {d.notes&&<div style={{fontSize:11,color:"rgba(240,236,216,.55)",fontStyle:"italic"}}>📝 {d.notes}</div>}
+                    <div style={{fontSize:10,color:"rgba(240,236,216,.25)",marginTop:4}}>Ekleyen: {d.createdBy}</div>
                   </div>
-                  <span style={{background:"#FFF0EE",color:"#BE3B31",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8}}>Öldü</span>
+                  <span style={{background:"rgba(190,59,49,.15)",color:"#FF6B6B",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8}}>Öldü</span>
                 </div>
               </div>
             );
@@ -2362,7 +2380,7 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
       {/* TOPLU TEDAVİ RAPORLARI */}
       {mainTab==="toplu" && (
         <div>
-          <div style={{marginBottom:10}}><Stat v={filteredGT.length} l="Toplam Kayıt" bg="#E3F0DC" c="#3D5A25"/></div>
+          <div style={{marginBottom:10}}><Stat v={filteredGT.length} l="Toplam Kayıt" bg="rgba(91,173,82,.15)" c="#5BAD52"/></div>
           {filteredGT.length===0&&<Empty text="Toplu tedavi kaydı yok"/>}
           {[...filteredGT].sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0)).map(gt=>{
             const br=BREEDS.find(x=>x.id===gt.breed);
@@ -2373,14 +2391,14 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                   <div style={{flex:1}}>
                     <div style={{fontSize:11,fontWeight:700,color:br?.color}}>{br?.emoji} {br?.name} · {gt.category==="oglak"?"🍼 Oğlak":"🐐 Anaç"} · {gt.groupName}</div>
-                    <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{gt.condition}</div>
-                    {gt.treatment&&<div style={{fontSize:12,color:"#333"}}>💊 {gt.treatment}</div>}
-                    {gt.startDate&&<div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(gt.startDate)}</div>}
-                    {days.length>0&&<div style={{fontSize:10,background:"#E3F0DC",color:"#3D5A25",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
+                    <div style={{fontWeight:700,fontSize:14,color:"#F0ECD8"}}>{gt.condition}</div>
+                    {gt.treatment&&<div style={{fontSize:12,color:"rgba(240,236,216,.85)"}}>💊 {gt.treatment}</div>}
+                    {gt.startDate&&<div style={{fontSize:11,color:"rgba(240,236,216,.35)"}}>📅 {fmt(gt.startDate)}</div>}
+                    {days.length>0&&<div style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#5BAD52",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
                       📅 {doneDays}/{days.length} gün · {doneDays<days.length?`${doneDays+1}. günde`:"Tamamlandı"}
                     </div>}
-                    {gt.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:2}}>📝 {gt.notes}</div>}
-                    <div style={{fontSize:10,color:"#aaa",marginTop:4}}>Ekleyen: {gt.createdBy}</div>
+                    {gt.notes&&<div style={{fontSize:11,color:"rgba(240,236,216,.55)",fontStyle:"italic",marginTop:2}}>📝 {gt.notes}</div>}
+                    <div style={{fontSize:10,color:"rgba(240,236,216,.25)",marginTop:4}}>Ekleyen: {gt.createdBy}</div>
                   </div>
                   <StatusBadge status={gt.status}/>
                 </div>
@@ -2397,17 +2415,17 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
 // ── Aşı Türleri (Genişletilmiş) ──
 const VACCINE_TYPES_EXT = [
   { id:"keci_ciger",     name:"Keçi Ciğer",      color:"#8B2020" },
-  { id:"mastitis",       name:"Mastitis",         color:"#BE3B31" },
+  { id:"mastitis",       name:"Mastitis",         color:"#FF6B6B" },
   { id:"pastorella",     name:"Pastörella",       color:"#B8602A" },
   { id:"coxiella",       name:"Coxiella",         color:"#D4850A" },
   { id:"abort_durdurma", name:"Abort Durdurma",   color:"#7B4B94" },
-  { id:"agalaksi",       name:"Agalaksi",         color:"#2873A8" },
-  { id:"ic_parazit",     name:"İç Parazit",       color:"#4A7C3F" },
-  { id:"dis_parazit",    name:"Dış Parazit",      color:"#3D5A25" },
-  { id:"celerme",        name:"Çelerme",          color:"#8B5A1B" },
+  { id:"agalaksi",       name:"Agalaksi",         color:"#64B5F6" },
+  { id:"ic_parazit",     name:"İç Parazit",       color:"#D4AF37" },
+  { id:"dis_parazit",    name:"Dış Parazit",      color:"#5BAD52" },
+  { id:"celerme",        name:"Çelerme",          color:"#E8975A" },
   { id:"brusella",       name:"Brusella",         color:"#7B4B94" },
   { id:"ppr_veba",       name:"PPR/Veba",         color:"#B8602A" },
-  { id:"diger",          name:"Diğer",            color:"#555" },
+  { id:"diger",          name:"Diğer",            color:"rgba(240,236,216,.55)" },
 ];
 
 // ── Grup Aşı Modal ──
@@ -2444,10 +2462,10 @@ function GroupVaccineModal({ group, goats, onSave, onClose, currentUser }) {
 
   return <ModalWrap title={`💉 ${group.name} — Aşı Uygula`} onClose={onClose}>
     {err&&<ErrBox msg={err}/>}
-    <div style={{background:"#F5FAF0",borderRadius:10,padding:10,marginBottom:4}}>
-      <div style={{fontSize:12,fontWeight:700,color:"#3D5A25",marginBottom:2}}>👥 {group.name}</div>
-      {group.description&&<div style={{fontSize:11,color:"#8c8c7e"}}>{group.description}</div>}
-      {groupGoats.length>0&&<div style={{fontSize:11,color:"#555",marginTop:2}}>{groupGoats.length} hayvan: {groupGoats.map(g=>g.name).join(", ")}</div>}
+    <div style={{background:"rgba(26,46,26,.5)",borderRadius:10,padding:10,marginBottom:4}}>
+      <div style={{fontSize:12,fontWeight:700,color:"#5BAD52",marginBottom:2}}>👥 {group.name}</div>
+      {group.description&&<div style={{fontSize:11,color:"rgba(240,236,216,.35)"}}>{group.description}</div>}
+      {groupGoats.length>0&&<div style={{fontSize:11,color:"rgba(240,236,216,.55)",marginTop:2}}>{groupGoats.length} hayvan: {groupGoats.map(g=>g.name).join(", ")}</div>}
     </div>
     <FL>Aşı Türü *</FL>
     <select value={vaccineType} onChange={e=>setVaccineType(e.target.value)} style={S.select}>
@@ -2459,7 +2477,7 @@ function GroupVaccineModal({ group, goats, onSave, onClose, currentUser }) {
     <FL>Parti / Seri No</FL>
     <VoiceInput value={batchNo} onChange={setBatchNo} placeholder="örn. VAK-2026-A1"/>
     <FL>Notlar</FL>
-    <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
+    <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={2} style={{...S.input,resize:"vertical",lineHeight:1.6}}/>
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
       <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>
@@ -2490,16 +2508,16 @@ function AddMembersModal({ group, breed, goats, onSave, onClose }) {
   };
 
   return <ModalWrap title={`👥 ${group.name} — Hayvanlar`} onClose={onClose}>
-    <div style={{fontSize:12,color:"#8c8c7e",marginBottom:8}}>{selected.size} hayvan seçili</div>
-    {breedGoats.length===0 && <div style={{fontSize:12,color:"#aaa",textAlign:"center",padding:12}}>Bu ırkta henüz hayvan yok</div>}
+    <div style={{fontSize:12,color:"rgba(240,236,216,.35)",marginBottom:8}}>{selected.size} hayvan seçili</div>
+    {breedGoats.length===0 && <div style={{fontSize:12,color:"rgba(240,236,216,.25)",textAlign:"center",padding:12}}>Bu ırkta henüz hayvan yok</div>}
     {breedGoats.map(g=>{
       const sel=selected.has(g.id);
       return <div key={g.id} onClick={()=>toggle(g.id)} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:8,background:sel?breed.bg:"#F9F9F6",border:`1.5px solid ${sel?breed.color+"44":"#E8E5DC"}`,cursor:"pointer",marginBottom:4}}>
-        <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${sel?breed.color:"#ccc"}`,background:sel?breed.color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+        <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${sel?breed.color:"rgba(240,236,216,.2)"}`,background:sel?breed.color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           {sel&&<span style={{color:"#fff",fontSize:11,fontWeight:900}}>✓</span>}
         </div>
-        <span style={{fontSize:13,fontWeight:sel?700:400,color:sel?breed.color:"#444"}}>{g.name}</span>
-        <span style={{fontSize:10,color:"#8c8c7e",marginLeft:"auto"}}>{g.earTag} · {g.category==="anac"?"Anaç":"Oğlak"}</span>
+        <span style={{fontSize:13,fontWeight:sel?700:400,color:sel?breed.color:"rgba(240,236,216,.75)"}}>{g.name}</span>
+        <span style={{fontSize:10,color:"rgba(240,236,216,.35)",marginLeft:"auto"}}>{g.earTag} · {g.category==="anac"?"Anaç":"Oğlak"}</span>
       </div>;
     })}
     <div style={{display:"flex",gap:8,marginTop:8}}>
@@ -2539,11 +2557,11 @@ function CreateGroupModal({ breed, goats, onSave, onClose, currentUser }) {
   const GoatRow = ({g}) => {
     const sel=selected.has(g.id);
     return <div onClick={()=>toggle(g.id)} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,background:sel?breed.bg:"#F9F9F6",border:`1.5px solid ${sel?breed.color+"44":"#E8E5DC"}`,cursor:"pointer",marginBottom:4}}>
-      <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${sel?breed.color:"#ccc"}`,background:sel?breed.color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+      <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${sel?breed.color:"rgba(240,236,216,.2)"}`,background:sel?breed.color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
         {sel&&<span style={{color:"#fff",fontSize:11,fontWeight:900}}>✓</span>}
       </div>
-      <span style={{fontSize:13,fontWeight:sel?700:400,color:sel?breed.color:"#444"}}>{g.name}</span>
-      <span style={{fontSize:10,color:"#8c8c7e",marginLeft:"auto"}}>{g.earTag} · {g.category==="anac"?"Anaç":"Oğlak"}</span>
+      <span style={{fontSize:13,fontWeight:sel?700:400,color:sel?breed.color:"rgba(240,236,216,.75)"}}>{g.name}</span>
+      <span style={{fontSize:10,color:"rgba(240,236,216,.35)",marginLeft:"auto"}}>{g.earTag} · {g.category==="anac"?"Anaç":"Oğlak"}</span>
     </div>;
   };
 
@@ -2554,14 +2572,14 @@ function CreateGroupModal({ breed, goats, onSave, onClose, currentUser }) {
     <FL>Açıklama</FL>
     <VoiceInput value={desc} onChange={setDesc} placeholder="İsteğe bağlı..."/>
     <FL>Hayvan Seç (opsiyonel — sonradan da eklenebilir)</FL>
-    <div style={{fontSize:11,color:"#8c8c7e",marginBottom:8}}>{selected.size} hayvan seçildi</div>
-    {breedGoats.length===0 && <div style={{fontSize:12,color:"#aaa",textAlign:"center",padding:8,background:"#F9F9F6",borderRadius:8}}>Bu ırkta henüz hayvan yok</div>}
+    <div style={{fontSize:11,color:"rgba(240,236,216,.35)",marginBottom:8}}>{selected.size} hayvan seçildi</div>
+    {breedGoats.length===0 && <div style={{fontSize:12,color:"rgba(240,236,216,.25)",textAlign:"center",padding:8,background:"rgba(20,20,36,.8)",borderRadius:8}}>Bu ırkta henüz hayvan yok</div>}
     {anacList.length>0&&<>
-      <div style={{fontSize:11,fontWeight:700,color:"#3D5A25",marginBottom:4,marginTop:4}}>🐐 Anaçlar</div>
+      <div style={{fontSize:11,fontWeight:700,color:"#5BAD52",marginBottom:4,marginTop:4}}>🐐 Anaçlar</div>
       {anacList.map(g=><GoatRow key={g.id} g={g}/>)}
     </>}
     {oglakList.length>0&&<>
-      <div style={{fontSize:11,fontWeight:700,color:"#8B5A1B",marginBottom:4,marginTop:8}}>🍼 Oğlaklar</div>
+      <div style={{fontSize:11,fontWeight:700,color:"#E8975A",marginBottom:4,marginTop:8}}>🍼 Oğlaklar</div>
       {oglakList.map(g=><GoatRow key={g.id} g={g}/>)}
     </>}
     <div style={{display:"flex",gap:8,marginTop:8}}>
@@ -2597,14 +2615,14 @@ function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCr
     <div>
       {confirmDeleteGroup && (
         <div onClick={()=>setConfirmDeleteGroup(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,padding:20,width:"100%",maxWidth:320}}>
-            <div style={{fontWeight:800,fontSize:16,color:"#1e1e1e",marginBottom:8}}>🗑 Grubu Sil</div>
-            <div style={{fontSize:13,color:"#555",marginBottom:16}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"rgba(16,16,28,.96)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:22,padding:22,width:"100%",maxWidth:320,border:"1px solid rgba(212,175,55,.15)"}}>
+            <div style={{fontWeight:800,fontSize:16,color:"#F0ECD8",marginBottom:8}}>🗑 Grubu Sil</div>
+            <div style={{fontSize:13,color:"rgba(240,236,216,.55)",marginBottom:16}}>
               <b>{breedGroups.find(g=>g.id===confirmDeleteGroup)?.name}</b> grubu kalıcı silinecek. Emin misiniz?
             </div>
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>setConfirmDeleteGroup(null)} style={{...S.btnOutline,flex:1,padding:10}}>İptal</button>
-              <button onClick={()=>deleteGroup(confirmDeleteGroup)} style={{...S.btnPrimary,flex:1,padding:10,background:"#BE3B31",border:"none"}}>Evet, Sil</button>
+              <button onClick={()=>deleteGroup(confirmDeleteGroup)} style={{...S.btnPrimary,flex:1,padding:10,background:"#C0392B",border:"none"}}>Evet, Sil</button>
             </div>
           </div>
         </div>
@@ -2621,7 +2639,7 @@ function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCr
 
       <button onClick={()=>setShowCreateGroup(true)} style={{...S.btnOutline,width:"100%",marginBottom:10,fontSize:13}}>➕ Yeni Grup Oluştur</button>
 
-      <div style={{display:"flex",background:"#fff",borderRadius:10,marginBottom:10,border:"1px solid #E8E5DC",overflow:"hidden"}}>
+      <div style={{display:"flex",background:"rgba(26,26,46,.75)",borderRadius:10,marginBottom:10,border:"1px solid rgba(212,175,55,.12)",overflow:"hidden"}}>
         <button onClick={()=>setViewTab("gruplar")} style={{...S.tabBtn,background:viewTab==="gruplar"?breed.color:"transparent",color:viewTab==="gruplar"?"#fff":"#8c8c7e",fontSize:12}}>👥 Gruplar</button>
         <button onClick={()=>setViewTab("gecmis")} style={{...S.tabBtn,background:viewTab==="gecmis"?breed.color:"transparent",color:viewTab==="gecmis"?"#fff":"#8c8c7e",fontSize:12}}>📋 Aşı Geçmişi</button>
       </div>
@@ -2637,16 +2655,16 @@ function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCr
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:8}}>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:800,fontSize:14,color:breed.color}}>{group.name}</div>
-                    {group.description&&<div style={{fontSize:11,color:"#8c8c7e"}}>{group.description}</div>}
-                    <div style={{fontSize:11,color:"#555",marginTop:2}}>👥 {memberGoats.length} hayvan {memberGoats.length>0?`· ${memberGoats.map(g=>g.name).join(", ")}`:""}  </div>
+                    {group.description&&<div style={{fontSize:11,color:"rgba(240,236,216,.35)"}}>{group.description}</div>}
+                    <div style={{fontSize:11,color:"rgba(240,236,216,.55)",marginTop:2}}>👥 {memberGoats.length} hayvan {memberGoats.length>0?`· ${memberGoats.map(g=>g.name).join(", ")}`:""}  </div>
                   </div>
                   {isVet && (
                     <button onClick={()=>setConfirmDeleteGroup(group.id)}
-                      style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:11,padding:"4px 8px",flexShrink:0}}>🗑</button>
+                      style={{...S.btnSm,background:"rgba(190,59,49,.15)",color:"#FF6B6B",fontSize:11,padding:"4px 8px",flexShrink:0}}>🗑</button>
                   )}
                 </div>
                 {lastVaccine && (
-                  <div style={{fontSize:11,color:"#4A7C3F",background:"#F5FAF0",padding:"4px 8px",borderRadius:6,marginBottom:8}}>
+                  <div style={{fontSize:11,color:"#D4AF37",background:"rgba(26,46,26,.5)",padding:"4px 8px",borderRadius:6,marginBottom:8}}>
                     Son aşı: {VACCINE_TYPES_EXT.find(v=>v.id===lastVaccine.vaccineType)?.name} · {fmt(lastVaccine.date)}
                   </div>
                 )}
@@ -2671,13 +2689,13 @@ function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCr
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                   <div>
                     <div style={{fontWeight:700,fontSize:13,color:vt?.color||"#333"}}>💉 {vt?.name}</div>
-                    <div style={{fontSize:11,color:"#555",marginTop:1}}>👥 {r.groupName} · {r.goatCount} hayvan</div>
-                    <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.date)}{r.batchNo?` · Parti: ${r.batchNo}`:""}</div>
-                    <div style={{fontSize:10,color:"#aaa",marginTop:1}}>{r.goatNames}</div>
+                    <div style={{fontSize:11,color:"rgba(240,236,216,.55)",marginTop:1}}>👥 {r.groupName} · {r.goatCount} hayvan</div>
+                    <div style={{fontSize:11,color:"rgba(240,236,216,.35)"}}>📅 {fmt(r.date)}{r.batchNo?` · Parti: ${r.batchNo}`:""}</div>
+                    <div style={{fontSize:10,color:"rgba(240,236,216,.25)",marginTop:1}}>{r.goatNames}</div>
                   </div>
-                  <div style={{fontSize:10,color:"#aaa",textAlign:"right"}}>{r.createdBy}</div>
+                  <div style={{fontSize:10,color:"rgba(240,236,216,.25)",textAlign:"right"}}>{r.createdBy}</div>
                 </div>
-                {r.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:4}}>📝 {r.notes}</div>}
+                {r.notes&&<div style={{fontSize:11,color:"rgba(240,236,216,.55)",fontStyle:"italic",marginTop:4}}>📝 {r.notes}</div>}
               </div>
             );
           })}
@@ -2728,7 +2746,7 @@ function VaccineScheduleModal({ breed, vaccineGroups, onSave, onClose, currentUs
   };
 
   return (
-    <div className="anim-fade" style={{background:"#FAFAF5",minHeight:"100vh",padding:"0 0 20px"}}>
+    <div className="anim-fade" style={{background:"rgba(10,10,15,.97)",minHeight:"100vh",padding:"0 0 20px"}}>
       <div style={{background:"#4A7C3F",padding:"12px 14px 10px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,zIndex:200}}>
         <button onClick={onClose} style={{...S.ghost,color:"#fff",fontSize:22,padding:"0 6px 0 0"}}>‹</button>
         <div style={{color:"#fff",fontWeight:800,fontSize:15}}>{editData?"✏️ Aşı Düzenle":breed.emoji+" "+breed.name+" — Takvime Ekle"}</div>
@@ -2736,7 +2754,7 @@ function VaccineScheduleModal({ breed, vaccineGroups, onSave, onClose, currentUs
       <div style={{padding:"16px 14px",display:"flex",flexDirection:"column",gap:10}}>
         {err&&<ErrBox msg={err}/>}
         {breedGroups.length===0 && (
-          <div style={{background:"#FFF8EC",border:"1px solid #F0D49A",borderRadius:10,padding:12,fontSize:13,color:"#8B5A1B"}}>
+          <div style={{background:"rgba(212,175,55,.1)",border:"1px solid #F0D49A",borderRadius:10,padding:12,fontSize:13,color:"#E8975A"}}>
             ⚠️ Bu ırk için henüz grup yok. Önce Sürü → {breed.name} → 💉 Aşı sekmesinden grup oluşturun.
           </div>
         )}
@@ -2755,7 +2773,7 @@ function VaccineScheduleModal({ breed, vaccineGroups, onSave, onClose, currentUs
         <FL>Parti / Seri No</FL>
         <input value={batchNo} onChange={e=>setBatchNo(e.target.value)} style={S.input} placeholder="örn. VAK-2026-A1"/>
         <FL>Notlar</FL>
-        <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3} style={{...S.input,resize:"vertical",lineHeight:1.5}}/>
+        <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3} style={{...S.input,resize:"vertical",lineHeight:1.6}}/>
         <div style={{display:"flex",gap:8,marginTop:8}}>
           <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:13}}>İptal</button>
           <button onClick={save} disabled={saving||breedGroups.length===0} style={{...S.btnPrimary,flex:2,padding:13,opacity:(saving||breedGroups.length===0)?.5:1}}>
@@ -2849,19 +2867,19 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
 
     return (
       <div className="anim-slide">
-        {showSchedule && <div style={{position:"fixed",inset:0,zIndex:500,background:"#FAFAF5"}}>
+        {showSchedule && <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(10,10,15,.97)"}}>
           <VaccineScheduleModal breed={breed} vaccineGroups={vaccineGroups}
             onSave={r=>{onScheduleAdded(r);setLocalReports(p=>[r,...p]);setShowSchedule(false);}}
             onClose={()=>setShowSchedule(false)} currentUser={currentUser}/>
         </div>}
-        {editSchedule && <div style={{position:"fixed",inset:0,zIndex:500,background:"#FAFAF5"}}>
+        {editSchedule && <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(10,10,15,.97)"}}>
           <VaccineScheduleModal breed={breed} vaccineGroups={vaccineGroups} editData={editSchedule}
             onSave={r=>{setLocalReports(p=>p.map(x=>x.id===editSchedule.id?r:x));setEditSchedule(null);}}
             onClose={()=>setEditSchedule(null)} currentUser={currentUser}/>
         </div>}
 
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-          <button onClick={()=>setSelBreed(null)} style={{...S.ghost,fontSize:22,color:"#555",padding:0}}>‹</button>
+          <button onClick={()=>setSelBreed(null)} style={{...S.ghost,fontSize:22,color:"rgba(240,236,216,.55)",padding:0}}>‹</button>
           <div style={{fontSize:20}}>{breed.emoji}</div>
           <h2 style={{...S.title,margin:0}}>{breed.name} — Aşı Takvimi</h2>
         </div>
@@ -2870,8 +2888,8 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
           + Takvime Aşı Ekle
         </button>
 
-        <div style={{fontWeight:700,fontSize:13,color:"#2873A8",marginBottom:8}}>📅 Yaklaşan / Planlanan</div>
-        {upcoming.length===0 && <div style={{...S.card,padding:10,marginBottom:8,textAlign:"center",color:"#aaa",fontSize:12}}>Planlanan aşı yok</div>}
+        <div style={{fontWeight:700,fontSize:13,color:"#64B5F6",marginBottom:8}}>📅 Yaklaşan / Planlanan</div>
+        {upcoming.length===0 && <div style={{...S.card,padding:10,marginBottom:8,textAlign:"center",color:"rgba(240,236,216,.25)",fontSize:12}}>Planlanan aşı yok</div>}
         {upcoming.map(r=>{
           const vt=VACCINE_TYPES_EXT.find(v=>v.id===r.vaccineType);
           const d=daysUntil(r.date);
@@ -2882,9 +2900,9 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:13,color:vt?.color||"#333"}}>💉 {vt?.name}</div>
-                  <div style={{fontSize:11,color:"#555"}}>👥 {r.groupName}</div>
-                  <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.date)}{r.batchNo?` · Parti: ${r.batchNo}`:""}</div>
-                  {isApplied && <div style={{fontSize:10,color:"#3D5A25",fontWeight:700,marginTop:2}}>✅ Uygulandı · {r.appliedBy} · {fmtDT(r.appliedAt)}</div>}
+                  <div style={{fontSize:11,color:"rgba(240,236,216,.55)"}}>👥 {r.groupName}</div>
+                  <div style={{fontSize:11,color:"rgba(240,236,216,.35)"}}>📅 {fmt(r.date)}{r.batchNo?` · Parti: ${r.batchNo}`:""}</div>
+                  {isApplied && <div style={{fontSize:10,color:"#5BAD52",fontWeight:700,marginTop:2}}>✅ Uygulandı · {r.appliedBy} · {fmtDT(r.appliedAt)}</div>}
                 </div>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
                   {!isApplied && <div style={{textAlign:"right"}}>
@@ -2896,17 +2914,17 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
                     style={{...S.btnPrimary,fontSize:11,padding:"5px 10px",opacity:applyingId===r.id?.6:1}}>
                     {applyingId===r.id?"...":"✅ Uygulandı"}
                   </button>}
-                  {!isApplied && <button onClick={()=>setEditSchedule(r)} style={{...S.btnSm,background:"#EEF6FC",color:"#2873A8",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>}
-                  {isVet && <button onClick={()=>deleteReport(r.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
+                  {!isApplied && <button onClick={()=>setEditSchedule(r)} style={{...S.btnSm,background:"rgba(40,115,168,.15)",color:"#64B5F6",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>}
+                  {isVet && <button onClick={()=>deleteReport(r.id)} style={{...S.btnSm,background:"rgba(190,59,49,.15)",color:"#FF6B6B",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
                 </div>
               </div>
-              {r.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:4}}>📝 {r.notes}</div>}
+              {r.notes&&<div style={{fontSize:11,color:"rgba(240,236,216,.55)",fontStyle:"italic",marginTop:4}}>📝 {r.notes}</div>}
             </div>
           );
         })}
 
         {past.length>0&&<>
-          <div style={{fontWeight:700,fontSize:13,color:"#8c8c7e",marginBottom:8,marginTop:12}}>📋 Geçmiş</div>
+          <div style={{fontWeight:700,fontSize:13,color:"rgba(240,236,216,.35)",marginBottom:8,marginTop:12}}>📋 Geçmiş</div>
           {past.map(r=>{
             const vt=VACCINE_TYPES_EXT.find(v=>v.id===r.vaccineType);
             const isApplied=r.status==="uygulandı";
@@ -2915,17 +2933,17 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:700,fontSize:13,color:vt?.color||"#333"}}>💉 {vt?.name}</div>
-                    <div style={{fontSize:11,color:"#555"}}>👥 {r.groupName}</div>
-                    <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(r.date)} · {r.createdBy}</div>
-                    {isApplied && <div style={{fontSize:10,color:"#3D5A25",fontWeight:700}}>✅ Uygulandı · {r.appliedBy}</div>}
+                    <div style={{fontSize:11,color:"rgba(240,236,216,.55)"}}>👥 {r.groupName}</div>
+                    <div style={{fontSize:11,color:"rgba(240,236,216,.35)"}}>📅 {fmt(r.date)} · {r.createdBy}</div>
+                    {isApplied && <div style={{fontSize:10,color:"#5BAD52",fontWeight:700}}>✅ Uygulandı · {r.appliedBy}</div>}
                   </div>
                   <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
                     {!isApplied && <button onClick={()=>markApplied(r)} disabled={applyingId===r.id}
                       style={{...S.btnOutline,fontSize:11,padding:"5px 10px",opacity:applyingId===r.id?.6:1}}>
                       {applyingId===r.id?"...":"✅ Uygulandı"}
                     </button>}
-                    {!isApplied && <button onClick={()=>setEditSchedule(r)} style={{...S.btnSm,background:"#EEF6FC",color:"#2873A8",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>}
-                    {isVet && <button onClick={()=>deleteReport(r.id)} style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
+                    {!isApplied && <button onClick={()=>setEditSchedule(r)} style={{...S.btnSm,background:"rgba(40,115,168,.15)",color:"#64B5F6",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>}
+                    {isVet && <button onClick={()=>deleteReport(r.id)} style={{...S.btnSm,background:"rgba(190,59,49,.15)",color:"#FF6B6B",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
                   </div>
                 </div>
               </div>
@@ -2946,17 +2964,17 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
         const urgent=upcoming.filter(r=>daysUntil(r.date)<=3);
         return (
           <div key={b.id} onClick={()=>setSelBreed(b.id)} className="anim-fade"
-            style={{...S.card,padding:0,marginBottom:10,cursor:"pointer",overflow:"hidden",border:`1.5px solid ${b.color}22`,animationDelay:`${i*.07}s`}}>
+            style={{borderRadius:20,marginBottom:10,cursor:"pointer",overflow:"hidden",background:`linear-gradient(135deg,${b.color}15 0%,rgba(16,16,28,.92) 100%)`,border:`1px solid ${b.color}28`,boxShadow:"0 6px 24px rgba(0,0,0,.3)",backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",animationDelay:`${i*.07}s`}}>
             <div style={{display:"flex",alignItems:"center"}}>
-              <div style={{width:64,background:b.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,alignSelf:"stretch"}}>{b.emoji}</div>
+              <div style={{width:68,background:`${b.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,alignSelf:"stretch",borderRight:`1px solid ${b.color}20`}}>{b.emoji}</div>
               <div style={{flex:1,padding:"14px 16px"}}>
-                <div style={{fontWeight:800,fontSize:17,color:b.color,marginBottom:4}}>{b.name}</div>
+                <div style={{fontWeight:700,fontSize:17,color:"#F0ECD8",marginBottom:4,letterSpacing:"-.2px"}}>{b.name}</div>
                 <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                  <PillTag bg="#EEF6FC" color="#2873A8" text={`📅 ${upcoming.length} planlı`}/>
+                  <PillTag bg="rgba(100,181,246,.1)" color="#64B5F6" text={`📅 ${upcoming.length} planlı`}/>
                   {urgent.length>0&&<PillTag bg="#FFF0EE" color="#BE3B31" text={`⚠️ ${urgent.length} acil`}/>}
                 </div>
               </div>
-              <div style={{padding:"0 14px",color:"#ccc",fontSize:22}}>›</div>
+              <div style={{padding:"0 14px",color:"rgba(240,236,216,.2)",fontSize:22}}>›</div>
             </div>
           </div>
         );
@@ -2991,10 +3009,10 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
           {goat.archived && <PillTag bg="#FFF0EE" color="#BE3B31" text="ARŞİVLENDİ"/>}
         </div>
         <div style={{fontSize:40,margin:"4px 0"}}>{goat.category==="anac"?"🐐":"🍼"}</div>
-        <h2 style={{margin:"2px 0",fontSize:22,fontWeight:900,color:"#1e1e1e"}}>{goat.name}</h2>
-        <div style={{fontSize:12,color:"#8c8c7e"}}>🏷 {goat.earTag} · {goat.gender==="dişi"?"♀ Dişi":"♂ Erkek"} · {getAge(goat.birthDate)}</div>
+        <h2 style={{margin:"2px 0",fontSize:22,fontWeight:900,color:"#F0ECD8"}}>{goat.name}</h2>
+        <div style={{fontSize:12,color:"rgba(240,236,216,.35)"}}>🏷 {goat.earTag} · {goat.gender==="dişi"?"♀ Dişi":"♂ Erkek"} · {getAge(goat.birthDate)}</div>
       </div>
-      <div style={{display:"flex",background:"#fff",borderRadius:10,marginBottom:8,border:"1px solid #E8E5DC",overflow:"hidden"}}>
+      <div style={{display:"flex",background:"rgba(26,26,46,.75)",borderRadius:10,marginBottom:8,border:"1px solid rgba(212,175,55,.12)",overflow:"hidden"}}>
         {[["info","Bilgiler"],["health","Sağlık"],["vaccines","Aşılar"]].map(([k,l])=>(
           <button key={k} onClick={()=>setDetailTab(k)} style={{...S.tabBtn,background:detailTab===k?"#4A7C3F":"transparent",color:detailTab===k?"#fff":"#8c8c7e",fontSize:12}}>{l}</button>
         ))}
@@ -3003,12 +3021,12 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
         <div style={S.card}>
           {[["Irk",b?.name],["Kategori",goat.category==="anac"?"Anaç":"Oğlak"],["Doğum",fmt(goat.birthDate)],["Yaş",getAge(goat.birthDate)],["Ağırlık",goat.weight?`${goat.weight} kg`:"—"],["Renk",goat.color||"—"],["Üreme",goat.reproductionStatus||"—"],["Oğlak Sayısı",goat.kidCount||"—"]].map(([l,v],i,arr)=>(
             <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:i<arr.length-1?"1px solid #F2F0EA":"none"}}>
-              <span style={{fontSize:13,color:"#8c8c7e",fontWeight:500}}>{l}</span>
-              <span style={{fontSize:13,color:"#1e1e1e",textAlign:"right",maxWidth:"55%"}}>{v||"—"}</span>
+              <span style={{fontSize:13,color:"rgba(240,236,216,.35)",fontWeight:500}}>{l}</span>
+              <span style={{fontSize:13,color:"#F0ECD8",textAlign:"right",maxWidth:"55%"}}>{v||"—"}</span>
             </div>
           ))}
-          {goat.archived && <div style={{marginTop:8,padding:"8px 10px",background:"#FFF0EE",borderRadius:8,fontSize:12,color:"#BE3B31"}}><b>Arşiv Nedeni:</b> {goat.archiveReason}</div>}
-          {goat.notes && <div style={{marginTop:4,padding:"8px 10px",background:"#F5F3ED",borderRadius:8,fontSize:12,color:"#555"}}><b>Not:</b> {goat.notes}</div>}
+          {goat.archived && <div style={{marginTop:8,padding:"8px 10px",background:"rgba(190,59,49,.15)",borderRadius:8,fontSize:12,color:"#FF6B6B"}}><b>Arşiv Nedeni:</b> {goat.archiveReason}</div>}
+          {goat.notes && <div style={{marginTop:4,padding:"8px 10px",background:"rgba(20,20,36,.8)",borderRadius:8,fontSize:12,color:"rgba(240,236,216,.55)"}}><b>Not:</b> {goat.notes}</div>}
         </div>
       )}
       {detailTab==="health" && (
@@ -3019,31 +3037,31 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
             <div key={h.id} onClick={()=>setSelRecord(h.id)} style={{...S.card,padding:12,marginBottom:5,cursor:"pointer",border:"1.5px solid #E8E5DC"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                 <div>
-                  <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{h.condition}</div>
-                  <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(h.date)} · {h.createdByName}</div>
+                  <div style={{fontWeight:700,fontSize:14,color:"#F0ECD8"}}>{h.condition}</div>
+                  <div style={{fontSize:11,color:"rgba(240,236,216,.35)"}}>📅 {fmt(h.date)} · {h.createdByName}</div>
                 </div>
                 <StatusBadge status={h.status}/>
               </div>
-              {h.treatment&&<div style={{fontSize:12,marginTop:5,color:"#333"}}>💊 {h.treatment}</div>}
+              {h.treatment&&<div style={{fontSize:12,marginTop:5,color:"rgba(240,236,216,.85)"}}>💊 {h.treatment}</div>}
               {/* Geçmiş logları */}
               {logs.filter(l=>l.healthRecordId===h.id).length>0 && (
-                <div style={{marginTop:8,borderTop:"1px solid #F2F0EA",paddingTop:6}}>
-                  <div style={{fontSize:10,fontWeight:700,color:"#8c8c7e",marginBottom:4}}>📋 İŞLEM GEÇMİŞİ</div>
+                <div style={{marginTop:8,borderTop:"1px solid rgba(255,255,255,.06)",paddingTop:6}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"rgba(240,236,216,.35)",marginBottom:4}}>📋 İŞLEM GEÇMİŞİ</div>
                   {logs.filter(l=>l.healthRecordId===h.id).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).map((l,i)=>(
                     <div key={l.id} style={{display:"flex",gap:6,padding:"4px 0",borderBottom:i<logs.filter(x=>x.healthRecordId===h.id).length-1?"1px dashed #F2F0EA":"none"}}>
                       <div style={{width:20,height:20,borderRadius:"50%",background:l.action==="sonlandırma"?"#FFF0EE":l.action==="açılış"?"#E3F0DC":"#EEF6FC",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,flexShrink:0}}>
                         {l.action==="sonlandırma"?"✅":l.action==="açılış"?"🆕":"✏️"}
                       </div>
                       <div style={{flex:1}}>
-                        <div style={{fontSize:11,fontWeight:700,color:"#333"}}>{l.userName}</div>
-                        <div style={{fontSize:10,color:"#555"}}>{l.actionDetail}</div>
-                        <div style={{fontSize:9,color:"#aaa"}}>{fmtDT(l.createdAt)}</div>
+                        <div style={{fontSize:11,fontWeight:700,color:"rgba(240,236,216,.85)"}}>{l.userName}</div>
+                        <div style={{fontSize:10,color:"rgba(240,236,216,.55)"}}>{l.actionDetail}</div>
+                        <div style={{fontSize:9,color:"rgba(240,236,216,.25)"}}>{fmtDT(l.createdAt)}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-              <div style={{fontSize:10,color:"#4A7C3F",marginTop:6,fontWeight:600}}>👆 Düzenle / Sonlandır</div>
+              <div style={{fontSize:10,color:"rgba(212,175,55,.4)",marginTop:6,fontWeight:500,letterSpacing:".3px"}}>👆 Düzenle / Sonlandır</div>
             </div>
           ))}
         </div>
@@ -3060,14 +3078,14 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                   <div>
                     <div style={{fontWeight:700,fontSize:14,color:vd?.color||"#333"}}>💉 {vd?.name}</div>
-                    <div style={{fontSize:11,color:"#8c8c7e",marginTop:2}}>📅 {fmt(v.date)}{v.batchNo?` · Parti: ${v.batchNo}`:""}</div>
-                    <div style={{fontSize:11,color:"#8c8c7e",marginTop:1}}>👤 {v.createdByName}</div>
+                    <div style={{fontSize:11,color:"rgba(240,236,216,.35)",marginTop:2}}>📅 {fmt(v.date)}{v.batchNo?` · Parti: ${v.batchNo}`:""}</div>
+                    <div style={{fontSize:11,color:"rgba(240,236,216,.35)",marginTop:1}}>👤 {v.createdByName}</div>
                   </div>
                   <div style={{textAlign:"right"}}>
                     <div style={{fontSize:11,fontWeight:700,color:d<=15?"#BE3B31":d<=30?"#D4850A":"#4A7C3F"}}>
                       {d>=0?`${d} gün`:"Geçti"}
                     </div>
-                    <div style={{fontSize:9,color:"#aaa"}}>sonraki</div>
+                    <div style={{fontSize:9,color:"rgba(240,236,216,.25)"}}>sonraki</div>
                   </div>
                 </div>
                 <div style={{fontSize:11,marginTop:6,color:d<=15?"#BE3B31":d<=30?"#D4850A":"#4A7C3F",fontWeight:600,background:d<=15?"#FFF0EE":d<=30?"#FFF8EC":"#F5FAF0",padding:"4px 8px",borderRadius:6}}>
@@ -3523,49 +3541,70 @@ function App(){
 
   if(showLogin) return (
     <div style={{.S.loginWrap, background:"transparent", position:"relative"}}>
-      <style>{css+`body{background-image:${theme.photo ? "url("+theme.photo+")" : "none"};background-size:cover;background-position:center top;background-repeat:no-repeat;background-attachment:scroll;min-height:100vh;}`}</style>
+      <style>{css+`
+        body{
+          background:#0A0A0F;
+          background-image:${theme.photo ? "url("+theme.photo+")" : "none"};
+          background-size:cover;
+          background-position:center top;
+          background-repeat:no-repeat;
+          background-attachment:scroll;
+          min-height:100vh;
+          font-family:'Poppins',system-ui,sans-serif;
+        }
+        select option{background:#1A1A2E;color:#F0ECD8;}
+        button:active{opacity:.85;}
+      `}</style>
       {/* Fotoğraf üstü karartma overlay */}
       <div style={{position:"fixed",inset:0,background:theme.overlay||"rgba(0,0,0,.5)",zIndex:0,pointerEvents:"none",WebkitTransform:"translateZ(0)"}}/>
       <div style={{width:"100%",maxWidth:420,padding:"0 16px",paddingBottom:20,position:"relative",zIndex:1}}>
 
         {/* Başlık */}
         <div style={{textAlign:"center",marginBottom:20,paddingTop:20}}>
-          <div style={{fontSize:48,animation:"pulse 2s infinite"}}>🐐</div>
-          <h1 style={{color:"#fff",fontSize:18,fontWeight:800,margin:"8px 0 2px",lineHeight:1.3}}>BURDUR Açık Cezaevi<br/>İş Yurtları Hayvancılık</h1>
-          <p style={{color:"rgba(255,255,255,.6)",fontSize:12,margin:0}}>🤖 Yapay Zeka Destekli · ☁️ Bulut Tabanlı</p>
+          <div style={{position:"relative",marginBottom:4}}>
+            <div style={{fontSize:60,filter:"drop-shadow(0 0 24px rgba(212,175,55,.6))",animation:"pulse 3s infinite"}}>🐐</div>
+          </div>
+          <h1 style={{color:"#F0ECD8",fontSize:16,fontWeight:800,margin:"12px 0 4px",lineHeight:1.4,letterSpacing:"-.3px",textAlign:"center"}}>
+            BURDUR AÇIK CEZAEVİ<br/>
+            <span style={{color:"#D4AF37"}}>İŞ YURTLARI HAYVANCILIK</span>
+          </h1>
+          <div style={{display:"flex",gap:8,justifyContent:"center",marginTop:6}}>
+            <span style={{background:"rgba(212,175,55,.15)",color:"#D4AF37",fontSize:10,fontWeight:600,padding:"3px 10px",borderRadius:20,border:"1px solid rgba(212,175,55,.25)"}}>🤖 Yapay Zeka</span>
+            <span style={{background:"rgba(212,175,55,.15)",color:"#D4AF37",fontSize:10,fontWeight:600,padding:"3px 10px",borderRadius:20,border:"1px solid rgba(212,175,55,.25)"}}>☁️ Bulut</span>
+          </div>
         </div>
 
         {/* Duyurular */}
-        <div style={{background:"rgba(255,255,255,.15)",borderRadius:14,padding:14,marginBottom:16,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",border:"1px solid rgba(255,255,255,.25)"}}>
-          <div style={{color:"#fff",fontWeight:800,fontSize:14,marginBottom:10}}>📢 Duyurular</div>
+        <div style={{background:"rgba(26,26,46,.75)",borderRadius:18,padding:14,marginBottom:16,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",border:"1px solid rgba(212,175,55,.15)"}}>
+          <div style={{color:"#D4AF37",fontWeight:700,fontSize:13,marginBottom:10,letterSpacing:".5px"}}>📢 DUYURULAR</div>
           <div style={{maxHeight:140,overflowY:"auto"}}>
-            {announcements.length===0 && <div style={{color:"rgba(255,255,255,.5)",fontSize:12,textAlign:"center",padding:"10px 0"}}>Henüz duyuru yok</div>}
+            {announcements.length===0 && <div style={{color:"rgba(240,236,216,.3)",fontSize:12,textAlign:"center",padding:"10px 0"}}>Henüz duyuru yok</div>}
             {announcements.map(a=>(
-              <div key={a.id} style={{background:"rgba(255,255,255,.1)",borderRadius:8,padding:"8px 10px",marginBottom:6}}>
-                <div style={{color:"#fff",fontSize:13,fontWeight:500,marginBottom:2}}>{a.message}</div>
-                <div style={{color:"rgba(255,255,255,.6)",fontSize:10}}>{a.user_name} · {fmtDT(a.created_at)}</div>
+              <div key={a.id} style={{background:"rgba(212,175,55,.08)",borderRadius:10,padding:"8px 12px",marginBottom:6,border:"1px solid rgba(212,175,55,.1)"}}>
+                <div style={{color:"#F0ECD8",fontSize:13,fontWeight:500,marginBottom:2}}>{a.message}</div>
+                <div style={{color:"rgba(212,175,55,.5)",fontSize:10}}>{a.user_name} · {fmtDT(a.created_at)}</div>
               </div>
             ))}
           </div>
-          <div style={{color:"rgba(255,255,255,.4)",fontSize:10,textAlign:"center",marginTop:6}}>Duyuru eklemek için giriş yapın</div>
+          <div style={{color:"rgba(240,236,216,.25)",fontSize:10,textAlign:"center",marginTop:6}}>Duyuru eklemek için giriş yapın</div>
         </div>
 
         {/* Giriş kutusu */}
-        <div style={{background:"rgba(255,255,255,.88)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:16,padding:20,boxShadow:"0 20px 60px rgba(0,0,0,.35)",border:"1px solid rgba(255,255,255,.5)"}}>
+        <div style={{background:"rgba(16,16,28,.92)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderRadius:24,padding:22,boxShadow:"0 24px 80px rgba(0,0,0,.6)",border:"1px solid rgba(212,175,55,.18)"}}>
 
           {/* Adım 1: Grup seç */}
           {!selUser && !selPerson && (
             <>
-              <h2 style={{margin:"0 0 12px",fontSize:16,fontWeight:800,color:"#1e1e1e"}}>Kimsiniz?</h2>
+              <h2 style={{margin:"0 0 14px",fontSize:15,fontWeight:700,color:"rgba(240,236,216,.7)",letterSpacing:"1px",textTransform:"uppercase"}}>Giriş Yapın</h2>
               {DEMO_USERS.filter(u=>u.id!=="u7").map(u=>(
                 <button key={u.id} onClick={()=>{setSelUser(u.id);setPinInput("");setPinError("");setPinStep("enter");setSelPerson(null);}}
-                  style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:"1px solid #E0DDD4",background:"#fff",cursor:"pointer",width:"100%",marginBottom:6,textAlign:"left"}}>
+                  style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderRadius:14,border:"1px solid rgba(212,175,55,.15)",background:"rgba(26,26,46,.6)",cursor:"pointer",width:"100%",marginBottom:8,textAlign:"left",transition:"all .2s"}}>
                   <span style={{fontSize:18}}>{u.emoji}</span>
                   <div style={{flex:1}}>
-                    <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{u.name}</div>
-                    {u.members.length>0 && <div style={{fontSize:10,color:"#8c8c7e"}}>{u.members.join(" · ")}</div>}
+                    <div style={{fontWeight:600,fontSize:14,color:"#F0ECD8"}}>{u.name}</div>
+                    {u.members.length>0 && <div style={{fontSize:10,color:"rgba(240,236,216,.35)"}}>{u.members.join(" · ")}</div>}
                   </div>
-                  <span style={{color:"#ccc",fontSize:16}}>›</span>
+                  <span style={{color:"rgba(212,175,55,.4)",fontSize:18}}>›</span>
                 </button>
               ))}
               {/* Misafir */}
@@ -3580,9 +3619,9 @@ function App(){
                   <div style={{fontWeight:700,fontSize:14,color:guestAccess.isOpen?theme.dark:"#8c8c7e"}}>Misafir</div>
                   <div style={{fontSize:10,color:guestAccess.isOpen?theme.primary:"#aaa"}}>{guestAccess.isOpen?"✅ Açık — Giriş yapabilirsiniz":"🔒 Kapalı — Veteriner Hekim açabilir"}</div>
                 </div>
-                {guestAccess.isOpen&&<span style={{color:"#4A7C3F",fontSize:16}}>›</span>}
+                {guestAccess.isOpen&&<span style={{color:"#D4AF37",fontSize:16}}>›</span>}
               </button>
-              {pinError&&<div style={{background:"#FFF0EE",border:"1px solid #F5C0BA",borderRadius:8,padding:"6px 10px",fontSize:12,color:"#BE3B31",fontWeight:600,marginTop:6}}>{pinError}</div>}
+              {pinError&&<div style={{background:"rgba(190,59,49,.15)",border:"1px solid rgba(190,59,49,.3)",borderRadius:10,padding:"8px 12px",fontSize:12,color:"#FF6B6B",fontWeight:600,marginTop:6}}>{pinError}</div>}
             </>
           )}
 
@@ -3599,19 +3638,19 @@ function App(){
             return (
               <>
                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-                  <button onClick={()=>{setSelUser(null);setPinError("");}} style={{...S.ghost,fontSize:20,color:"#8c8c7e",padding:0}}>‹</button>
-                  <div style={{fontWeight:800,fontSize:15,color:"#1e1e1e"}}>{user.emoji} {user.name}</div>
+                  <button onClick={()=>{setSelUser(null);setPinError("");}} style={{...S.ghost,fontSize:22,color:"rgba(212,175,55,.5)",padding:0}}>‹</button>
+                  <div style={{fontWeight:700,fontSize:15,color:"#F0ECD8"}}>{user.emoji} {user.name}</div>
                 </div>
-                <div style={{fontSize:13,color:"#555",marginBottom:10,fontWeight:600}}>Adınızı seçin:</div>
+                <div style={{fontSize:12,color:"rgba(240,236,216,.4)",marginBottom:10,fontWeight:500,letterSpacing:".5px",textTransform:"uppercase"}}>Adınızı seçin</div>
                 {user.members.map(m=>(
                   <button key={m} onClick={()=>{setSelPerson(m);setPinInput("");setPinError("");setPinStep(userPins[m]?"enter":"create");}}
-                    style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:"1px solid #E0DDD4",background:"#fff",cursor:"pointer",width:"100%",marginBottom:6,textAlign:"left"}}>
-                    <div style={{width:32,height:32,borderRadius:"50%",background:"#E3F0DC",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#3D5A25"}}>{m[0]}</div>
+                    style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderRadius:14,border:"1px solid rgba(212,175,55,.15)",background:"rgba(26,26,46,.6)",cursor:"pointer",width:"100%",marginBottom:8,textAlign:"left",transition:"all .2s"}}>
+                    <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(74,124,63,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#5BAD52"}}>{m[0]}</div>
                     <div style={{flex:1}}>
-                      <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{m}</div>
-                      <div style={{fontSize:10,color:userPins[m]?theme.primary:"#D4850A"}}>{userPins[m]?"🔐 PIN oluşturulmuş":"⚠️ Henüz PIN oluşturulmamış"}</div>
+                      <div style={{fontWeight:600,fontSize:14,color:"#F0ECD8"}}>{m}</div>
+                      <div style={{fontSize:10,color:userPins[m]?"#5BAD52":"#D4AF37"}}>{userPins[m]?"🔐 PIN oluşturulmuş":"⚠️ Henüz PIN oluşturulmamış"}</div>
                     </div>
-                    <span style={{color:"#ccc",fontSize:16}}>›</span>
+                    <span style={{color:"rgba(212,175,55,.4)",fontSize:18}}>›</span>
                   </button>
                 ))}
               </>
@@ -3627,38 +3666,38 @@ function App(){
                   if(u&&u.members.length===0){setSelUser(null);setSelPerson(null);}
                   else{setSelPerson(null);}
                   setPinInput("");setPinError("");setPinStep("enter");
-                }} style={{...S.ghost,fontSize:20,color:"#8c8c7e",padding:0}}>‹</button>
+                }} style={{...S.ghost,fontSize:22,color:"rgba(212,175,55,.5)",padding:0}}>‹</button>
                 <div>
-                  <div style={{fontWeight:800,fontSize:15,color:"#1e1e1e"}}>{selPerson}</div>
-                  <div style={{fontSize:11,color:"#8c8c7e"}}>
+                  <div style={{fontWeight:700,fontSize:15,color:"#F0ECD8"}}>{selPerson}</div>
+                  <div style={{fontSize:11,color:"rgba(240,236,216,.4)"}}>
                     {pinStep==="enter"?"PIN kodunuzu girin":pinStep==="create"?"Yeni PIN oluşturun (4 hane)":"PIN'i tekrar girin"}
                   </div>
                 </div>
               </div>
 
               {pinStep==="create"&&(
-                <div style={{background:"#FFF8EC",border:"1px solid #F0D49A",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#8B5A1B",marginBottom:10}}>
+                <div style={{background:"rgba(212,175,55,.1)",border:"1px solid rgba(212,175,55,.2)",borderRadius:10,padding:"8px 12px",fontSize:12,color:"#D4AF37",marginBottom:10}}>
                   ⚠️ İlk girişiniz! Kendinize 4 haneli bir PIN oluşturun.
                 </div>
               )}
               {pinStep==="confirm"&&(
-                <div style={{background:"#E3F0DC",border:"1px solid #D4E8C2",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#3D5A25",marginBottom:10}}>
+                <div style={{background:"rgba(74,124,63,.15)",border:"1px solid rgba(74,124,63,.3)",borderRadius:10,padding:"8px 12px",fontSize:12,color:"#5BAD52",marginBottom:10}}>
                   ✅ PIN'i onaylamak için tekrar girin.
                 </div>
               )}
 
               <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:12}}>
                 {[0,1,2,3].map(i=>(
-                  <div key={i} style={{width:44,height:52,borderRadius:10,border:`2px solid ${pinInput.length>i?theme.primary:"#E8E5DC"}`,background:pinInput.length>i?theme.light:"#F9F9F6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:900,color:theme.primary}}>
+                  <div key={i} style={{width:44,height:52,borderRadius:10,border:`2px solid ${pinInput.length>i?"#D4AF37":"rgba(212,175,55,.15)"}`,background:pinInput.length>i?"rgba(212,175,55,.15)":"rgba(255,255,255,.04)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:900,color:"#D4AF37"}}>
                     {pinInput.length>i?"●":""}
                   </div>
                 ))}
               </div>
-              {pinError&&<div style={{background:"#FFF0EE",border:"1px solid #F5C0BA",borderRadius:8,padding:"6px 10px",fontSize:12,color:"#BE3B31",fontWeight:600,marginBottom:10,textAlign:"center"}}>{pinError}</div>}
+              {pinError&&<div style={{background:"rgba(190,59,49,.15)",border:"1px solid rgba(190,59,49,.3)",borderRadius:10,padding:"8px 12px",fontSize:12,color:"#FF6B6B",fontWeight:600,marginBottom:10,textAlign:"center"}}>{pinError}</div>}
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
                 {[1,2,3,4,5,6,7,8,9,"",0,"⌫"].map((k,i)=>(
                   <button key={i} onClick={()=>handlePinKey(String(k==="⌫"?"⌫":k===""?"":k))}
-                    style={{padding:"14px 0",borderRadius:10,border:"1px solid #E8E5DC",background:k===""?"transparent":"#fff",fontSize:k==="⌫"?18:20,fontWeight:700,color:"#1e1e1e",cursor:k===""?"default":"pointer",boxShadow:k===""?"none":"0 1px 3px rgba(0,0,0,.06)"}}>
+                    style={{padding:"14px 0",borderRadius:12,border:"1px solid rgba(212,175,55,.12)",background:k===""?"transparent":"rgba(26,26,46,.8)",fontSize:k==="⌫"?18:20,fontWeight:600,color:"#F0ECD8",cursor:k===""?"default":"pointer",boxShadow:k===""?"none":"0 2px 8px rgba(0,0,0,.3)",transition:"all .15s"}}>
                     {k}
                   </button>
                 ))}
@@ -3680,14 +3719,24 @@ function App(){
       <style>{css+`
         :root{--primary:${theme.primary};--primary-dark:${theme.dark};--primary-light:${theme.light};}
         body{
+          background:#0A0A0F;
           background-image:${theme.photo ? "url("+theme.photo+")" : "none"};
           background-size:cover;
           background-position:center top;
           background-repeat:no-repeat;
           background-attachment:scroll;
           min-height:100vh;
+          font-family:'Poppins',system-ui,sans-serif;
+          color:#F0ECD8;
         }
         #root{background:transparent!important;}
+        input:focus,select:focus,textarea:focus{
+          border-color:rgba(212,175,55,.5)!important;
+          box-shadow:0 0 0 3px rgba(212,175,55,.1)!important;
+          outline:none!important;
+        }
+        button:active{opacity:.85;}
+        select option{background:#1A1A2E;color:#F0ECD8;}
       `}</style>
       {hModal&&!isGuest&&<HealthModal goats={goats} breedFilter={hModal.breedId||null} preGoatId={hModal.goatId||""} onSave={saveHealth} onClose={()=>setHModal(null)} currentUser={currentUser}/>}
       {vModal&&!isGuest&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
@@ -3707,10 +3756,10 @@ function App(){
       {/* Tema seçim sorusu — ilk giriş */}
       {showThemePrompt && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16,overflowY:"auto"}}>
-          <div style={{background:"#fff",borderRadius:20,padding:22,width:"100%",maxWidth:360,textAlign:"center"}}>
+          <div style={{background:"rgba(16,16,28,.97)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderRadius:24,padding:22,width:"100%",maxWidth:360,textAlign:"center",border:"1px solid rgba(212,175,55,.2)",boxShadow:"0 24px 80px rgba(0,0,0,.7)"}}>
             <div style={{fontSize:36,marginBottom:8}}>🎨</div>
-            <div style={{fontWeight:800,fontSize:17,color:"#1e1e1e",marginBottom:4}}>Arayüz Renginizi Seçin</div>
-            <div style={{fontSize:12,color:"#8c8c7e",marginBottom:16}}>Seçtiğiniz renk sadece size özel kaydedilir.</div>
+            <div style={{fontWeight:700,fontSize:17,color:"#F0ECD8",marginBottom:4,letterSpacing:"-.2px"}}>Tema Seçin</div>
+            <div style={{fontSize:12,color:"rgba(240,236,216,.4)",marginBottom:16}}>Seçtiğiniz tema size özel kaydedilir</div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,marginBottom:16,maxHeight:340,overflowY:"auto"}}>
               {COLOR_THEMES.map(t=>(
                 <button key={t.id} onClick={()=>saveTheme(t,true)}
@@ -3726,7 +3775,7 @@ function App(){
                 </button>
               ))}
             </div>
-            <button onClick={()=>saveTheme(DEFAULT_THEME,true)} style={{fontSize:12,color:"#aaa",background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>Varsayılanı kullan</button>
+            <button onClick={()=>saveTheme(DEFAULT_THEME,true)} style={{fontSize:12,color:"rgba(212,175,55,.4)",background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>Varsayılanı kullan</button>
           </div>
         </div>
       )}
@@ -3734,10 +3783,10 @@ function App(){
       {/* Ses tercihi sorusu */}
       {showSoundPrompt && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:"#fff",borderRadius:20,padding:28,width:"100%",maxWidth:320,textAlign:"center"}}>
+          <div style={{background:"rgba(16,16,28,.97)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderRadius:24,padding:28,width:"100%",maxWidth:320,textAlign:"center",border:"1px solid rgba(212,175,55,.2)",boxShadow:"0 24px 80px rgba(0,0,0,.7)"}}>
             <div style={{fontSize:40,marginBottom:12}}>🔊</div>
-            <div style={{fontWeight:800,fontSize:17,color:"#1e1e1e",marginBottom:8}}>Sesli Karşılama</div>
-            <div style={{fontSize:13,color:"#555",marginBottom:20,lineHeight:1.6}}>
+            <div style={{fontWeight:700,fontSize:17,color:"#F0ECD8",marginBottom:8,letterSpacing:"-.2px"}}>Sesli Karşılama</div>
+            <div style={{fontSize:13,color:"rgba(240,236,216,.5)",marginBottom:20,lineHeight:1.6}}>
               Her girişinizde sizi sesli karşılayalım mı?
             </div>
             <div style={{display:"flex",gap:10}}>
@@ -3754,29 +3803,29 @@ function App(){
 
       {archiveConfirm && (
         <div onClick={()=>setArchiveConfirm(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,padding:20,width:"100%",maxWidth:320}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"rgba(16,16,28,.96)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:22,padding:22,width:"100%",maxWidth:320,border:"1px solid rgba(212,175,55,.15)"}}>
             <div style={{fontSize:32,textAlign:"center",marginBottom:8}}>🗑</div>
-            <div style={{fontWeight:800,fontSize:16,color:"#1e1e1e",marginBottom:6,textAlign:"center"}}>Hayvanı Arşivle</div>
-            <div style={{fontSize:13,color:"#555",marginBottom:4,textAlign:"center"}}>
+            <div style={{fontWeight:700,fontSize:16,color:"#F0ECD8",marginBottom:6,textAlign:"center"}}>Hayvanı Arşivle</div>
+            <div style={{fontSize:13,color:"rgba(240,236,216,.6)",marginBottom:4,textAlign:"center"}}>
               <b>{goats.find(g=>g.id===archiveConfirm)?.name}</b> listeden kaldırılacak.
             </div>
-            <div style={{fontSize:12,color:"#8c8c7e",marginBottom:16,textAlign:"center"}}>Rapor bölümünde izleri kalır, geri alınamaz.</div>
+            <div style={{fontSize:12,color:"rgba(240,236,216,.3)",marginBottom:16,textAlign:"center"}}>Rapor bölümünde izleri kalır, geri alınamaz.</div>
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>setArchiveConfirm(null)} style={{...S.btnOutline,flex:1,padding:11}}>İptal</button>
-              <button onClick={()=>archiveGoat(archiveConfirm)} style={{...S.btnPrimary,flex:1,padding:11,background:"#BE3B31",border:"none"}}>Arşivle</button>
+              <button onClick={()=>archiveGoat(archiveConfirm)} style={{...S.btnPrimary,flex:1,padding:11,background:"#C0392B",border:"none"}}>Arşivle</button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="header-theme" style={{...S.header, background:theme.header, position:"relative", zIndex:200}}>
+      <div style={{...S.header,position:"relative",zIndex:200}}>
         {page==="home"
           ? <span style={{fontSize:20}}>🐐</span>
-          : <button onClick={goBack} style={{...S.ghost,color:"#fff",fontSize:26,padding:"0 8px 0 0",lineHeight:1,fontWeight:300}}>‹</button>
+          : <button onClick={goBack} style={{...S.ghost,color:"rgba(212,175,55,.7)",fontSize:26,padding:"0 8px 0 0",lineHeight:1,fontWeight:300}}>‹</button>
         }
         <div style={{flex:1}}>
-          <div style={{color:"#fff",fontWeight:800,fontSize:15}}>{selGoat&&goat?goat.name:selBreed&&breed?breed.name:page==="home"?"Hayvancılık":page==="health"?"Sağlık Kayıtları":page==="vaccines"?"Aşı Takvimi":page==="births"?"Doğum Kayıtları":page==="deaths"?"Ölüm Kayıtları":page==="group_tx"?"Toplu Tedavi":page==="reports"?"Raporlar":page==="profile"?"Profil":"Hayvancılık"}</div>
-          <div style={{color:"rgba(255,255,255,.5)",fontSize:10}}>
+          <div style={{color:"#F0ECD8",fontWeight:700,fontSize:15,letterSpacing:"-.2px"}}>{selGoat&&goat?goat.name:selBreed&&breed?breed.name:page==="home"?"Hayvancılık":page==="health"?"Sağlık Kayıtları":page==="vaccines"?"Aşı Takvimi":page==="births"?"Doğum Kayıtları":page==="deaths"?"Ölüm Kayıtları":page==="group_tx"?"Toplu Tedavi":page==="reports"?"Raporlar":page==="profile"?"Profil":"Hayvancılık"}</div>
+          <div style={{color:"rgba(212,175,55,.45)",fontSize:9,letterSpacing:".3px"}}>
             {isGuest?"👁 Misafir · Sadece Görüntüleme":"☁️ "+currentUser+" · "+activeGoats.length+" keçi"}
           </div>
         </div>
@@ -3811,23 +3860,53 @@ function App(){
               currentUser={currentUser}
             />
 
+            {/* Hero Banner */}
+            <div style={{
+              background:"linear-gradient(135deg,rgba(212,175,55,.1) 0%,rgba(16,16,28,.9) 100%)",
+              borderRadius:22,padding:"18px 16px",marginBottom:12,
+              border:"1px solid rgba(212,175,55,.18)",
+              boxShadow:"0 8px 32px rgba(0,0,0,.4),inset 0 1px 0 rgba(212,175,55,.08)"
+            }}>
+              <div style={{display:"flex",alignItems:"center",gap:14}}>
+                <div style={{fontSize:46,filter:"drop-shadow(0 0 16px rgba(212,175,55,.45))",flexShrink:0}}>🐐</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:9,color:"rgba(212,175,55,.5)",fontWeight:700,letterSpacing:"2px",textTransform:"uppercase",marginBottom:3}}>BURDUR AÇIK CEZAEVİ</div>
+                  <div style={{fontSize:15,fontWeight:800,color:"#F0ECD8",letterSpacing:"-.3px",lineHeight:1.3}}>İş Yurtları <span style={{color:"#D4AF37"}}>Hayvancılık</span></div>
+                  <div style={{display:"flex",gap:5,marginTop:7}}>
+                    <span style={{background:"rgba(212,175,55,.08)",color:"rgba(212,175,55,.5)",fontSize:8,fontWeight:700,padding:"2px 7px",borderRadius:8,border:"1px solid rgba(212,175,55,.12)"}}>🤖 Yapay Zeka</span>
+                    <span style={{background:"rgba(212,175,55,.08)",color:"rgba(212,175,55,.5)",fontSize:8,fontWeight:700,padding:"2px 7px",borderRadius:8,border:"1px solid rgba(212,175,55,.12)"}}>☁️ Bulut</span>
+                    <span style={{background:"rgba(91,173,82,.08)",color:"rgba(91,173,82,.6)",fontSize:8,fontWeight:700,padding:"2px 7px",borderRadius:8,border:"1px solid rgba(91,173,82,.12)"}}>● Canlı</span>
+                  </div>
+                </div>
+                <div style={{textAlign:"right",flexShrink:0}}>
+                  <div style={{fontSize:11,color:"rgba(240,236,216,.3)",fontWeight:500}}>Hoş geldiniz</div>
+                  <div style={{fontSize:13,color:"#D4AF37",fontWeight:700}}>{currentUser}</div>
+                </div>
+              </div>
+            </div>
+
             {/* Ana Navigasyon Grid */}
-            <div style={{padding:"12px 14px"}}>
+            <div style={{marginBottom:12}}>
               <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
                 {[
-                  ["goats","🐐","Sürü","#E3F0DC","#3D5A25"],
-                  ["health","🩺","Sağlık","#EEF6FC","#2873A8"],
-                  ["births","🐣","Doğum","#FFF8EC","#B8750A"],
-                  ["deaths","💀","Ölüm","#FFF0EE","#BE3B31"],
-                  ["group_tx","🏥","Toplu Tx","#F5FAF0","#4A7C3F"],
-                  ["vaccines","💉","Aşı","#F0E6F6","#5B2D8E"],
-                  ["reports","📊","Rapor","#E8F4FD","#1A6B9A"],
-                  ["profile","👤","Profil","#F5F3ED","#555"],
+                  ["goats","🐐","Sürü","rgba(91,173,82,.12)","#5BAD52"],
+                  ["health","🩺","Sağlık","rgba(100,181,246,.12)","#64B5F6"],
+                  ["births","🐣","Doğum","rgba(212,175,55,.12)","#D4AF37"],
+                  ["deaths","💀","Ölüm","rgba(190,59,49,.12)","#FF6B6B"],
+                  ["group_tx","🏥","Toplu Tx","rgba(91,173,82,.1)","#5BAD52"],
+                  ["vaccines","💉","Aşı","rgba(206,147,216,.12)","#CE93D8"],
+                  ["reports","📊","Rapor","rgba(100,181,246,.1)","#64B5F6"],
+                  ["profile","👤","Profil","rgba(212,175,55,.08)","#D4AF37"],
                 ].map(([k,ic,l,bg,color])=>(
                   <button key={k} onClick={()=>navigate(k)}
-                    style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"14px 4px",borderRadius:14,border:`1px solid ${color}22`,background:bg,cursor:"pointer"}}>
-                    <span style={{fontSize:24}}>{ic}</span>
-                    <span style={{fontSize:10,fontWeight:700,color:color,textAlign:"center",lineHeight:1.2}}>{l}</span>
+                    style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,
+                      padding:"14px 4px",borderRadius:16,
+                      border:`1px solid ${color}25`,
+                      background:bg,
+                      backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",
+                      cursor:"pointer",transition:"transform .15s,opacity .15s"}}>
+                    <span style={{fontSize:24,filter:`drop-shadow(0 0 8px ${color}60)`}}>{ic}</span>
+                    <span style={{fontSize:9,fontWeight:700,color:color,textAlign:"center",lineHeight:1.2,letterSpacing:".2px"}}>{l}</span>
                   </button>
                 ))}
               </div>
@@ -3838,27 +3917,33 @@ function App(){
         {/* GOATS BREED SELECT */}
         {page==="goats"&&!selBreed && (
           <div className="anim-fade">
-            <h2 style={{...S.title,marginBottom:12}}>🐐 Irk Seçin</h2>
+            <h2 style={{...S.title,marginBottom:16,color:"#D4AF37",fontSize:13,fontWeight:600,letterSpacing:"2px",textTransform:"uppercase"}}>🐐 Sürü Seçin</h2>
             {BREEDS.map((b,i)=>{
               const bs=breedStats[b.id];
               return (
                 <div key={b.id} onClick={()=>{setSelBreed(b.id);setBreedTab("surü");}} className="anim-fade"
-                  style={{...S.card,marginBottom:8,cursor:"pointer",border:`1.5px solid ${b.color}30`,padding:0,overflow:"hidden",animationDelay:`${i*.06}s`}}>
+                  style={{marginBottom:10,cursor:"pointer",borderRadius:22,overflow:"hidden",
+                    background:`linear-gradient(135deg,${b.color}18 0%,rgba(16,16,28,.95) 60%)`,
+                    border:`1px solid ${b.color}30`,
+                    boxShadow:`0 8px 32px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04)`,
+                    backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
+                    animationDelay:`${i*.08}s`,transition:"transform .15s,box-shadow .15s"}}>
                   <div style={{display:"flex",alignItems:"stretch"}}>
-                    <div style={{width:72,background:b.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"14px 0"}}>
-                      <span style={{fontSize:32}}>{b.emoji}</span>
-                      <span style={{fontSize:22,fontWeight:900,color:b.color,marginTop:4}}>{bs.total}</span>
+                    <div style={{width:80,background:`${b.color}15`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"16px 0",borderRight:`1px solid ${b.color}20`}}>
+                      <span style={{fontSize:34,filter:`drop-shadow(0 0 12px ${b.color}60)`}}>{b.emoji}</span>
+                      <span style={{fontSize:24,fontWeight:800,color:"#D4AF37",marginTop:6,letterSpacing:"-1px"}}>{bs.total}</span>
+                      <span style={{fontSize:9,color:"rgba(212,175,55,.4)",fontWeight:600}}>HAYVAN</span>
                     </div>
                     <div style={{flex:1,padding:"14px 16px"}}>
-                      <div style={{fontWeight:800,fontSize:18,color:b.color,marginBottom:2}}>{b.name}</div>
-                      <div style={{fontSize:12,color:"#8c8c7e",marginBottom:8}}>{b.desc}</div>
-                      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                        <PillTag bg="#E3F0DC" color="#3D5A25" text={`🐐 ${bs.anac} Anaç`}/>
-                        <PillTag bg="#FFF4E6" color="#8B5A1B" text={`🍼 ${bs.oglak} Oğlak`}/>
-                        {bs.sick>0&&<PillTag bg="#FFF0EE" color="#BE3B31" text={`🏥 ${bs.sick} Tedavide`}/>}
+                      <div style={{fontWeight:700,fontSize:18,color:"#F0ECD8",marginBottom:2,letterSpacing:"-.3px"}}>{b.name}</div>
+                      <div style={{fontSize:11,color:"rgba(240,236,216,.3)",marginBottom:10}}>{b.desc}</div>
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                        <span style={{background:`${b.color}18`,color:b.color,fontSize:10,fontWeight:600,padding:"3px 10px",borderRadius:8,border:`1px solid ${b.color}25`}}>🐐 {bs.anac} Anaç</span>
+                        <span style={{background:"rgba(184,96,42,.15)",color:"#E8975A",fontSize:10,fontWeight:600,padding:"3px 10px",borderRadius:8,border:"1px solid rgba(184,96,42,.2)"}}>🍼 {bs.oglak} Oğlak</span>
+                        {bs.sick>0&&<span style={{background:"rgba(190,59,49,.15)",color:"#FF6B6B",fontSize:10,fontWeight:600,padding:"3px 10px",borderRadius:8,border:"1px solid rgba(190,59,49,.2)"}}>🏥 {bs.sick} Tedavi</span>}
                       </div>
                     </div>
-                    <div style={{display:"flex",alignItems:"center",padding:"0 14px",color:"#ccc",fontSize:22}}>›</div>
+                    <div style={{display:"flex",alignItems:"center",padding:"0 14px",color:"rgba(212,175,55,.3)",fontSize:22}}>›</div>
                   </div>
                 </div>
               );
@@ -3874,17 +3959,17 @@ function App(){
                 <span style={{fontSize:34}}>{breed.emoji}</span>
                 <div>
                   <h2 style={{margin:0,fontSize:20,fontWeight:900,color:breed.color}}>{breed.name}</h2>
-                  <div style={{fontSize:12,color:"#8c8c7e"}}>{breed.desc}</div>
+                  <div style={{fontSize:12,color:"rgba(240,236,216,.35)"}}>{breed.desc}</div>
                 </div>
               </div>
               <div style={{display:"flex",gap:6,marginTop:10}}>
                 <Stat v={breedStats[breed.id].total} l="Toplam" bg={breed.bg} c={breed.color}/>
-                <Stat v={breedStats[breed.id].anac} l="Anaç" bg="#E3F0DC" c="#3D5A25"/>
-                <Stat v={breedStats[breed.id].oglak} l="Oğlak" bg="#FFF4E6" c="#8B5A1B"/>
+                <Stat v={breedStats[breed.id].anac} l="Anaç" bg="rgba(91,173,82,.15)" c="#5BAD52"/>
+                <Stat v={breedStats[breed.id].oglak} l="Oğlak" bg="rgba(184,96,42,.15)" c="#E8975A"/>
                 <Stat v={breedStats[breed.id].sick} l="Tedavide" bg="#FFF0EE" c="#BE3B31"/>
               </div>
             </div>
-            <div style={{display:"flex",background:"#fff",borderRadius:12,marginBottom:10,border:"1px solid #E8E5DC",overflow:"hidden"}}>
+            <div style={{display:"flex",background:"rgba(26,26,46,.75)",borderRadius:12,marginBottom:10,border:"1px solid rgba(212,175,55,.12)",overflow:"hidden"}}>
               {[["surü","🐐 Sürü"],["saglik","🩺 Sağlık"],["asi","💉 Aşı"]].map(([k,l])=>(
                 <button key={k} onClick={()=>setBreedTab(k)} style={{...S.tabBtn,background:breedTab===k?breed.color:"transparent",color:breedTab===k?"#fff":"#8c8c7e",fontSize:12}}>{l}</button>
               ))}
@@ -3892,7 +3977,7 @@ function App(){
 
             {breedTab==="surü" && (
               <div>
-                <div style={{display:"flex",background:"#fff",borderRadius:10,marginBottom:8,border:"1px solid #E8E5DC",overflow:"hidden"}}>
+                <div style={{display:"flex",background:"rgba(26,26,46,.75)",borderRadius:10,marginBottom:8,border:"1px solid rgba(212,175,55,.12)",overflow:"hidden"}}>
                   <button onClick={()=>setCatTab("anac")} style={{...S.tabBtn,background:catTab==="anac"?"#3D5A25":"transparent",color:catTab==="anac"?"#fff":"#8c8c7e",fontSize:12}}>
                     🐐 Anaçlar ({goats.filter(g=>g.breed===breed.id&&g.category==="anac"&&!g.archived).length})
                   </button>
@@ -3911,8 +3996,8 @@ function App(){
                       {catTab==="anac"?"🐐":"🍼"}
                     </div>
                     <div onClick={()=>{setSelGoat(g.id);setDetailTab("info");}} style={{flex:1,minWidth:0,cursor:"pointer"}}>
-                      <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{g.name}</div>
-                      <div style={{fontSize:11,color:"#8c8c7e",display:"flex",gap:6,flexWrap:"wrap"}}>
+                      <div style={{fontWeight:700,fontSize:14,color:"#F0ECD8"}}>{g.name}</div>
+                      <div style={{fontSize:11,color:"rgba(240,236,216,.35)",display:"flex",gap:6,flexWrap:"wrap"}}>
                         <span>🏷 {g.earTag}</span>
                         <span>{g.gender==="dişi"?"♀":"♂"}</span>
                         <span>{getAge(g.birthDate)}</span>
@@ -3925,7 +4010,7 @@ function App(){
                       {healthRecs.filter(h=>h.goatId===g.id&&!h.closed).length>0&&<Badge bg="#FFF8EC" color="#B8750A" text="TEDAVİDE"/>}
                     </div>
                     <button onClick={e=>{e.stopPropagation();setArchiveConfirm(g.id);}}
-                      style={{...S.btnSm,background:"#FFF0EE",color:"#BE3B31",fontSize:11,padding:"5px 8px",flexShrink:0}}>🗑</button>
+                      style={{...S.btnSm,background:"rgba(190,59,49,.15)",color:"#FF6B6B",fontSize:11,padding:"5px 8px",flexShrink:0}}>🗑</button>
                   </div>
                 ))}
               </div>
@@ -3960,15 +4045,15 @@ function App(){
                             <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                               <div style={{flex:1}}>
                                 <div style={{fontSize:11,fontWeight:700,color:breed.color,marginBottom:2}}>
-                                  {breed.emoji} {g?.name} <span style={{color:"#8c8c7e",fontWeight:400}}>({g?.earTag})</span>
+                                  {breed.emoji} {g?.name} <span style={{color:"rgba(240,236,216,.35)",fontWeight:400}}>({g?.earTag})</span>
                                 </div>
-                                <div style={{fontWeight:700,fontSize:14,color:"#1e1e1e"}}>{h.condition}</div>
-                                <div style={{fontSize:11,color:"#8c8c7e"}}>📅 {fmt(h.date)} · {h.createdByName}</div>
-                                {h.treatment&&<div style={{fontSize:12,color:"#333",marginTop:4}}>💊 {h.treatment}</div>}
-                                {h.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
+                                <div style={{fontWeight:700,fontSize:14,color:"#F0ECD8"}}>{h.condition}</div>
+                                <div style={{fontSize:11,color:"rgba(240,236,216,.35)"}}>📅 {fmt(h.date)} · {h.createdByName}</div>
+                                {h.treatment&&<div style={{fontSize:12,color:"rgba(240,236,216,.85)",marginTop:4}}>💊 {h.treatment}</div>}
+                                {h.notes&&<div style={{fontSize:11,color:"rgba(240,236,216,.55)",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
                                 {hDays.length>0&&(
                                   <div style={{marginTop:4,display:"flex",gap:4,alignItems:"center"}}>
-                                    <span style={{fontSize:10,background:"#E3F0DC",color:"#3D5A25",padding:"2px 8px",borderRadius:8,fontWeight:700}}>
+                                    <span style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#5BAD52",padding:"2px 8px",borderRadius:8,fontWeight:700}}>
                                       📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
                                     </span>
                                   </div>
@@ -4041,17 +4126,17 @@ function App(){
                               <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                                 <div style={{flex:1}}>
                                   <div style={{fontSize:12,fontWeight:700,color:b.color,marginBottom:2}}>
-                                    {g?.name ? `${g.name} ` : ""}<span style={{fontWeight:400,color:"#8c8c7e"}}>({h.goatEarTag||g?.earTag||"—"})</span>
+                                    {g?.name ? `${g.name} ` : ""}<span style={{fontWeight:400,color:"rgba(240,236,216,.35)"}}>({h.goatEarTag||g?.earTag||"—"})</span>
                                   </div>
-                                  <div style={{fontWeight:700,fontSize:13,color:"#1e1e1e"}}>{h.condition}</div>
-                                  {h.treatment&&<div style={{fontSize:11,color:"#333",marginTop:3}}>💊 {h.treatment}</div>}
-                                  {h.notes&&<div style={{fontSize:11,color:"#555",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
+                                  <div style={{fontWeight:700,fontSize:13,color:"#F0ECD8"}}>{h.condition}</div>
+                                  {h.treatment&&<div style={{fontSize:11,color:"rgba(240,236,216,.85)",marginTop:3}}>💊 {h.treatment}</div>}
+                                  {h.notes&&<div style={{fontSize:11,color:"rgba(240,236,216,.55)",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
                                   {hDays.length>0&&(
-                                    <div style={{fontSize:10,background:"#E3F0DC",color:"#3D5A25",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
+                                    <div style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#5BAD52",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
                                       📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
                                     </div>
                                   )}
-                                  {lastLog&&<div style={{fontSize:10,color:"#8c8c7e",marginTop:3}}>
+                                  {lastLog&&<div style={{fontSize:10,color:"rgba(240,236,216,.35)",marginTop:3}}>
                                     🕐 Son: {lastLog.userName} · {fmtDT(lastLog.createdAt)}
                                   </div>}
                                 </div>
@@ -4106,14 +4191,14 @@ function App(){
         {/* PROFILE */}
         {page==="profile" && (
           <div className="anim-fade">
-            <div style={{...S.card,textAlign:"center",padding:22,marginBottom:10}}>
+            <div style={{...S.cardGold,textAlign:"center",padding:24,marginBottom:12}}>
               <div style={{fontSize:44}}>{currentUser==="Misafir"?"👁":"👤"}</div>
-              <h2 style={{margin:"4px 0 2px",fontSize:20,fontWeight:900,color:"#1e1e1e"}}>{currentUser}</h2>
-              <div style={{fontSize:12,color:"#8c8c7e",marginTop:4}}>
+              <h2 style={{margin:"4px 0 2px",fontSize:20,fontWeight:900,color:"#F0ECD8"}}>{currentUser}</h2>
+              <div style={{fontSize:12,color:"rgba(240,236,216,.35)",marginTop:4}}>
                 {currentUser==="Misafir"?"Sadece Görüntüleme":DEMO_USERS.find(u=>u.name===currentUser)?.members?.join(" · ") || (DEMO_USERS.find(u=>u.name===currentUser)?.role==="veteriner"?"Veteriner Hekim":"Şef Yönetici")}
               </div>
               <div style={{marginTop:12}}>
-                <button onClick={()=>{setShowLogin(true);}} style={{...S.btnOutline,color:"#BE3B31",borderColor:"#BE3B31",fontSize:13}}>🚪 Çıkış Yap</button>
+                <button onClick={()=>{setShowLogin(true);}} style={{...S.btnOutline,color:"#FF6B6B",borderColor:"#BE3B31",fontSize:13}}>🚪 Çıkış Yap</button>
               </div>
             </div>
 
@@ -4121,7 +4206,7 @@ function App(){
             {!isGuest && (
               <div style={{...S.card,marginBottom:10}}>
                 <div style={{fontWeight:700,fontSize:13,color:theme.primary,marginBottom:8}}>🔊 Sesli Karşılama</div>
-                <div style={{fontSize:12,color:"#8c8c7e",marginBottom:10}}>
+                <div style={{fontSize:12,color:"rgba(240,236,216,.35)",marginBottom:10}}>
                   {soundPref===true?"Her girişinizde sesli karşılama aktif ✅":soundPref===false?"Sesli karşılama kapalı 🔇":"Henüz tercih belirlenmedi"}
                 </div>
                 <div style={{display:"flex",gap:8}}>
@@ -4147,13 +4232,13 @@ function App(){
             {!isGuest && (
               <div style={{...S.card,marginBottom:10}}>
                 <div style={{fontWeight:700,fontSize:13,color:theme.primary,marginBottom:8}}>🎨 Arayüz Rengi</div>
-                <div style={{fontSize:12,color:"#8c8c7e",marginBottom:10}}>
+                <div style={{fontSize:12,color:"rgba(240,236,216,.35)",marginBottom:10}}>
                   Şu an: <b style={{color:theme.primary}}>{theme.emoji} {theme.name}</b>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
                   {COLOR_THEMES.map(t=>(
                     <button key={t.id} onClick={()=>saveTheme(t,false)}
-                      style={{borderRadius:10,border:`2.5px solid ${theme.id===t.id?t.primary:"#E8E5DC"}`,background:"#fff",padding:0,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"stretch",overflow:"hidden",boxShadow:theme.id===t.id?`0 0 0 3px ${t.primary}44`:"none"}}>
+                      style={{borderRadius:10,border:`2.5px solid ${theme.id===t.id?t.primary:"#E8E5DC"}`,background:"rgba(26,26,46,.75)",padding:0,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"stretch",overflow:"hidden",boxShadow:theme.id===t.id?`0 0 0 3px ${t.primary}44`:"none"}}>
                       <div style={{height:44,backgroundImage:`url(${t.photo})`,backgroundSize:"cover",backgroundPosition:"center",position:"relative"}}>
                         <div style={{position:"absolute",inset:0,background:t.overlay,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{t.emoji}</div>
                       </div>
@@ -4165,20 +4250,20 @@ function App(){
             )}
             {currentUser==="Veteriner Hekim"||currentUser==="Bekir Zengin"||currentUser==="Ali Özen" && (
               <div style={{...S.card,marginBottom:10,border:`1.5px solid ${guestAccess.isOpen?"#4A7C3F":"#E8E5DC"}`}}>
-                <div style={{fontWeight:800,fontSize:14,color:"#1e1e1e",marginBottom:8}}>👁 Misafir Erişimi</div>
+                <div style={{fontWeight:800,fontSize:14,color:"#F0ECD8",marginBottom:8}}>👁 Misafir Erişimi</div>
                 {guestAccess.isOpen ? (
                   <div>
-                    <div style={{background:"#E3F0DC",borderRadius:8,padding:"8px 10px",marginBottom:10}}>
-                      <div style={{fontSize:13,fontWeight:700,color:"#3D5A25"}}>✅ Misafir girişi açık</div>
-                      <div style={{fontSize:11,color:"#555",marginTop:2}}>Siz kapatana kadar geçerli</div>
+                    <div style={{background:"rgba(74,124,63,.2)",borderRadius:8,padding:"8px 10px",marginBottom:10}}>
+                      <div style={{fontSize:13,fontWeight:700,color:"#5BAD52"}}>✅ Misafir girişi açık</div>
+                      <div style={{fontSize:11,color:"rgba(240,236,216,.55)",marginTop:2}}>Siz kapatana kadar geçerli</div>
                     </div>
-                    <button onClick={closeGuestAccess} style={{...S.btnOutline,width:"100%",color:"#BE3B31",borderColor:"#BE3B31",fontSize:13}}>
+                    <button onClick={closeGuestAccess} style={{...S.btnOutline,width:"100%",color:"#FF6B6B",borderColor:"#BE3B31",fontSize:13}}>
                       🔒 Misafir Girişini Kapat
                     </button>
                   </div>
                 ) : (
                   <div>
-                    <div style={{fontSize:12,color:"#8c8c7e",marginBottom:10}}>
+                    <div style={{fontSize:12,color:"rgba(240,236,216,.35)",marginBottom:10}}>
                       Misafir girişi şu an kapalı. Açarsanız siz kapatana kadar geçerli olur.
                     </div>
                     <button onClick={openGuestAccess} style={{...S.btnPrimary,width:"100%",fontSize:13}}>
@@ -4190,13 +4275,13 @@ function App(){
             )}
 
             <div style={S.card}>
-              <div style={{fontWeight:700,fontSize:13,color:"#4A7C3F",marginBottom:8}}>👥 Kullanıcılar & Vardiyalar</div>
+              <div style={{fontWeight:700,fontSize:13,color:"#D4AF37",marginBottom:8}}>👥 Kullanıcılar & Vardiyalar</div>
               {DEMO_USERS.filter(u=>u.id!=="u7").map(u=>(
-                <div key={u.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid #F2F0EA"}}>
+                <div key={u.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
                   <span style={{fontSize:18}}>{u.emoji}</span>
                   <div style={{flex:1}}>
-                    <div style={{fontWeight:700,fontSize:13,color:"#1e1e1e"}}>{u.name=="Bekir Zengin"||u.name=="Ali Özen"?u.name+" (Şef)":u.name}{u.name===currentUser?" (siz)":""}</div>
-                    {u.members && <div style={{fontSize:11,color:"#8c8c7e"}}>{u.members}</div>}
+                    <div style={{fontWeight:700,fontSize:13,color:"#F0ECD8"}}>{u.name=="Bekir Zengin"||u.name=="Ali Özen"?u.name+" (Şef)":u.name}{u.name===currentUser?" (siz)":""}</div>
+                    {u.members && <div style={{fontSize:11,color:"rgba(240,236,216,.35)"}}>{u.members}</div>}
                   </div>
                 </div>
               ))}
@@ -4209,9 +4294,9 @@ function App(){
       {page!=="home" && (
         <div style={S.nav}>
           {[["home","🏠","Ana"],["health","🩺","Sağlık"],["vaccines","💉","Aşı"]].map(([k,ic,l])=>(
-            <button key={k} onClick={()=>navigate(k)} style={{...S.ghost,display:"flex",flexDirection:"column",alignItems:"center",gap:1,padding:"6px 20px",color:page===k?"var(--primary,#4A7C3F)":"#8c8c7e"}}>
+            <button key={k} onClick={()=>navigate(k)} style={{...S.ghost,display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"6px 20px",color:page===k?"#D4AF37":"rgba(240,236,216,.3)",transition:"color .2s"}}>
               <span style={{fontSize:20}}>{ic}</span>
-              <span style={{fontSize:10,fontWeight:page===k?700:500}}>{l}</span>
+              <span style={{fontSize:9,fontWeight:page===k?700:500,letterSpacing:".3px",textTransform:"uppercase"}}>{l}</span>
             </button>
           ))}
         </div>
@@ -4222,29 +4307,111 @@ function App(){
 }
 
 const css=`
-  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
-  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+  @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  @keyframes glow{0%,100%{box-shadow:0 0 20px rgba(212,175,55,.3)}50%{box-shadow:0 0 35px rgba(212,175,55,.6)}}
+  @keyframes btnPress{0%{transform:scale(1)}50%{transform:scale(.97)}100%{transform:scale(1)}}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   ::-webkit-scrollbar{width:0}
-  .anim-fade{animation:fadeUp .3s ease both}
-  .anim-slide{animation:slideIn .3s ease both}
+  .anim-fade{animation:fadeUp .35s cubic-bezier(.16,1,.3,1) both}
+  .anim-slide{animation:slideIn .35s cubic-bezier(.16,1,.3,1) both}
+  .anim-up{animation:slideUp .4s cubic-bezier(.16,1,.3,1) both}
+  .btn-press:active{animation:btnPress .15s ease}
+  select option{background:#1A1A2E;color:#F0ECD8;}
 `;
 
 const S={
-  app:{fontFamily:"system-ui,-apple-system,sans-serif",background:"#FAFAF5",minHeight:"100vh",maxWidth:480,margin:"0 auto",position:"relative"},
-  loginWrap:{fontFamily:"system-ui,-apple-system,sans-serif",minHeight:"100vh",background:"linear-gradient(155deg,#2D4A20 0%,#4A7C3F 40%,#6B9F5B 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:20},
-  header:{background:"#4A7C3F",padding:"12px 14px 10px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,zIndex:200,boxShadow:"0 3px 16px rgba(74,124,63,.2)"},
-  nav:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"rgba(255,255,255,.88)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderTop:"1px solid rgba(232,229,220,.6)",display:"flex",justifyContent:"space-around",padding:"4px 0 6px",zIndex:200,boxShadow:"0 -2px 12px rgba(0,0,0,.1)"},
-  card:{background:"rgba(255,255,255,.95)",borderRadius:14,padding:14,border:"1px solid rgba(232,229,220,.8)",boxShadow:"0 2px 12px rgba(0,0,0,.08)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)"},
-  title:{margin:0,fontSize:18,fontWeight:800,color:"#1e1e1e"},
-  input:{padding:"9px 12px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:14,background:"#fff",color:"#1e1e1e",outline:"none",width:"100%",boxSizing:"border-box"},
-  select:{padding:"9px 12px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:14,background:"#fff",color:"#1e1e1e",outline:"none",width:"100%",boxSizing:"border-box"},
-  btnPrimary:{background:"var(--primary,#4A7C3F)",color:"#fff",border:"none",borderRadius:10,padding:"11px 16px",fontWeight:700,fontSize:14,cursor:"pointer"},
-  btnOutline:{background:"transparent",color:"var(--primary,#4A7C3F)",border:"2px solid var(--primary,#4A7C3F)",borderRadius:10,padding:"9px 16px",fontWeight:700,fontSize:14,cursor:"pointer"},
-  btnSm:{border:"none",borderRadius:8,padding:"5px 10px",fontWeight:700,fontSize:11,cursor:"pointer"},
+  app:{
+    fontFamily:"'Poppins',system-ui,sans-serif",
+    background:"#0A0A0F",
+    minHeight:"100vh",maxWidth:480,margin:"0 auto",position:"relative"
+  },
+  loginWrap:{
+    fontFamily:"'Poppins',system-ui,sans-serif",
+    minHeight:"100vh",
+    background:"#0A0A0F",
+    display:"flex",alignItems:"center",justifyContent:"center",padding:20
+  },
+  header:{
+    background:"rgba(10,10,15,.85)",
+    backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
+    padding:"14px 16px 12px",
+    display:"flex",alignItems:"center",gap:12,
+    position:"sticky",top:0,zIndex:200,
+    borderBottom:"1px solid rgba(212,175,55,.15)",
+    boxShadow:"0 4px 24px rgba(0,0,0,.4)"
+  },
+  nav:{
+    position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",
+    width:"100%",maxWidth:480,
+    background:"rgba(10,10,15,.92)",
+    backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
+    borderTop:"1px solid rgba(212,175,55,.12)",
+    display:"flex",justifyContent:"space-around",
+    padding:"8px 0 12px",zIndex:200,
+    boxShadow:"0 -8px 32px rgba(0,0,0,.5)"
+  },
+  card:{
+    background:"rgba(26,26,46,.75)",
+    backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
+    borderRadius:18,padding:16,
+    border:"1px solid rgba(212,175,55,.12)",
+    boxShadow:"0 8px 32px rgba(0,0,0,.3)"
+  },
+  cardGold:{
+    background:"linear-gradient(135deg,rgba(212,175,55,.15) 0%,rgba(26,26,46,.9) 100%)",
+    backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
+    borderRadius:18,padding:16,
+    border:"1px solid rgba(212,175,55,.3)",
+    boxShadow:"0 8px 32px rgba(0,0,0,.4)"
+  },
+  title:{margin:0,fontSize:20,fontWeight:800,color:"#F0ECD8",letterSpacing:"-.3px"},
+  input:{
+    padding:"12px 14px",borderRadius:12,
+    border:"1px solid rgba(212,175,55,.2)",
+    fontSize:14,fontWeight:500,
+    background:"rgba(255,255,255,.06)",
+    color:"#F0ECD8",outline:"none",width:"100%",
+    boxSizing:"border-box",
+    transition:"border-color .2s"
+  },
+  select:{
+    padding:"12px 14px",borderRadius:12,
+    border:"1px solid rgba(212,175,55,.2)",
+    fontSize:14,fontWeight:500,
+    background:"rgba(26,26,46,.9)",
+    color:"#F0ECD8",outline:"none",width:"100%",
+    boxSizing:"border-box"
+  },
+  btnPrimary:{
+    background:"linear-gradient(135deg,#D4AF37 0%,#F5D070 50%,#C8960C 100%)",
+    color:"#0A0A0F",border:"none",borderRadius:14,
+    padding:"13px 20px",fontWeight:700,fontSize:14,
+    cursor:"pointer",letterSpacing:".2px",
+    boxShadow:"0 4px 20px rgba(212,175,55,.4)",
+    transition:"all .2s"
+  },
+  btnOutline:{
+    background:"rgba(212,175,55,.08)",
+    color:"#D4AF37",
+    border:"1.5px solid rgba(212,175,55,.4)",
+    borderRadius:14,padding:"11px 20px",
+    fontWeight:600,fontSize:14,cursor:"pointer",
+    transition:"all .2s"
+  },
+  btnSm:{
+    border:"none",borderRadius:10,
+    padding:"6px 12px",fontWeight:600,fontSize:11,cursor:"pointer"
+  },
   ghost:{background:"none",border:"none",cursor:"pointer"},
-  tabBtn:{flex:1,padding:"10px 0",border:"none",fontWeight:700,fontSize:13,cursor:"pointer",transition:"all .15s"},
+  tabBtn:{
+    flex:1,padding:"11px 0",border:"none",
+    fontWeight:600,fontSize:13,cursor:"pointer",
+    transition:"all .2s",borderRadius:0
+  },
 };
 
 const root=ReactDOM.createRoot(document.getElementById("root"));
