@@ -98,6 +98,14 @@ const COLOR_THEMES = [
     photoCredit:"Unsplash / Fabrice Villard",
     overlay:"rgba(80,25,5,.55)"
   },
+  {
+    id:"keci", name:"Keçi Çiftliği", emoji:"🐐",
+    primary:"#6D4C41", dark:"#3E2723", light:"#D7CCC8", bg:"#EFEBE9",
+    header:"linear-gradient(135deg,rgba(62,39,35,.92),rgba(109,76,65,.88))",
+    photo:"https://images.unsplash.com/photo-1533318087102-b3ad366ed041?w=800&q=80",
+    photoCredit:"Unsplash",
+    overlay:"rgba(40,20,10,.52)"
+  },
 ];
 const DEFAULT_THEME = COLOR_THEMES[0];
 
@@ -3514,9 +3522,10 @@ function App(){
   };
 
   if(showLogin) return (
-    <div style={{...S.loginWrap, background:theme.photo?`url(${theme.photo}) center/cover no-repeat`:theme.loginBg, position:"relative"}}><style>{css}</style>
+    <div style={{.S.loginWrap, background:"transparent", position:"relative"}}>
+      <style>{css+`body{background-image:${theme.photo ? "url("+theme.photo+")" : "none"};background-size:cover;background-position:center top;background-repeat:no-repeat;background-attachment:scroll;min-height:100vh;}`}</style>
       {/* Fotoğraf üstü karartma overlay */}
-      <div style={{position:"fixed",inset:0,background:theme.overlay||"rgba(0,0,0,.5)",zIndex:0,pointerEvents:"none"}}/>
+      <div style={{position:"fixed",inset:0,background:theme.overlay||"rgba(0,0,0,.5)",zIndex:0,pointerEvents:"none",WebkitTransform:"translateZ(0)"}}/>
       <div style={{width:"100%",maxWidth:420,padding:"0 16px",paddingBottom:20,position:"relative",zIndex:1}}>
 
         {/* Başlık */}
@@ -3665,14 +3674,20 @@ function App(){
   if(loading) return <Loading/>;
 
   return (
-    <div style={{...S.app,"--primary":theme.primary,"--primary-dark":theme.dark,"--primary-light":theme.light,"--primary-bg":theme.bg,
-      backgroundImage:theme.photo?`url(${theme.photo})`:"none",
-      backgroundSize:"cover",backgroundPosition:"center",backgroundAttachment:"fixed"}}>
+    <div style={{...S.app,"--primary":theme.primary,"--primary-dark":theme.dark,"--primary-light":theme.light,"--primary-bg":theme.bg,background:"transparent"}}>
       {/* Fotoğraf üstü hafif overlay — içerik okunabilsin */}
-      {theme.photo&&<div style={{position:"fixed",inset:0,background:`${theme.overlay||"rgba(0,0,0,.45)"}`,zIndex:0,pointerEvents:"none"}}/>}
-      <style>{css+`:root{--primary:${theme.primary};--primary-dark:${theme.dark};--primary-light:${theme.light};}
-        .card-theme{background:rgba(255,255,255,.92)!important;backdrop-filter:blur(8px);}
-        .header-theme{background:${theme.header}!important;}
+      {theme.photo&&<div style={{position:"fixed",inset:0,background:`${theme.overlay||"rgba(0,0,0,.45)"}`,zIndex:0,pointerEvents:"none",WebkitTransform:"translateZ(0)"}}/>}
+      <style>{css+`
+        :root{--primary:${theme.primary};--primary-dark:${theme.dark};--primary-light:${theme.light};}
+        body{
+          background-image:${theme.photo ? "url("+theme.photo+")" : "none"};
+          background-size:cover;
+          background-position:center top;
+          background-repeat:no-repeat;
+          background-attachment:scroll;
+          min-height:100vh;
+        }
+        #root{background:transparent!important;}
       `}</style>
       {hModal&&!isGuest&&<HealthModal goats={goats} breedFilter={hModal.breedId||null} preGoatId={hModal.goatId||""} onSave={saveHealth} onClose={()=>setHModal(null)} currentUser={currentUser}/>}
       {vModal&&!isGuest&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
@@ -4217,11 +4232,11 @@ const css=`
 `;
 
 const S={
-  app:{fontFamily:"system-ui,-apple-system,sans-serif",background:"#FAFAF5",minHeight:"100vh",maxWidth:480,margin:"0 auto",position:"relative",overflow:"hidden"},
+  app:{fontFamily:"system-ui,-apple-system,sans-serif",background:"#FAFAF5",minHeight:"100vh",maxWidth:480,margin:"0 auto",position:"relative"},
   loginWrap:{fontFamily:"system-ui,-apple-system,sans-serif",minHeight:"100vh",background:"linear-gradient(155deg,#2D4A20 0%,#4A7C3F 40%,#6B9F5B 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:20},
   header:{background:"#4A7C3F",padding:"12px 14px 10px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,zIndex:200,boxShadow:"0 3px 16px rgba(74,124,63,.2)"},
   nav:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"rgba(255,255,255,.88)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderTop:"1px solid rgba(232,229,220,.6)",display:"flex",justifyContent:"space-around",padding:"4px 0 6px",zIndex:200,boxShadow:"0 -2px 12px rgba(0,0,0,.1)"},
-  card:{background:"rgba(255,255,255,.93)",borderRadius:14,padding:14,border:"1px solid rgba(232,229,220,.8)",boxShadow:"0 2px 12px rgba(0,0,0,.08)",backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)"},
+  card:{background:"rgba(255,255,255,.95)",borderRadius:14,padding:14,border:"1px solid rgba(232,229,220,.8)",boxShadow:"0 2px 12px rgba(0,0,0,.08)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)"},
   title:{margin:0,fontSize:18,fontWeight:800,color:"#1e1e1e"},
   input:{padding:"9px 12px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:14,background:"#fff",color:"#1e1e1e",outline:"none",width:"100%",boxSizing:"border-box"},
   select:{padding:"9px 12px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:14,background:"#fff",color:"#1e1e1e",outline:"none",width:"100%",boxSizing:"border-box"},
