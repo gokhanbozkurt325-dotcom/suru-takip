@@ -32,14 +32,72 @@ const SUPABASE_KEY = "sb_publishable_UjiZoLFj5VkqXoK3NpIw0g_QgWk7tt1";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
-// ── Renk Temaları ──
+// ── Renk & Fotoğraf Temaları ──
 const COLOR_THEMES = [
-  { id:"yesil",   name:"Orman Yeşili",  emoji:"🌿", primary:"#4A7C3F", dark:"#2D4A20", light:"#E3F0DC", bg:"#F5FAF0",  header:"linear-gradient(135deg,#2D4A20,#4A7C3F)", loginBg:"linear-gradient(155deg,#2D4A20 0%,#4A7C3F 40%,#6B9F5B 100%)" },
-  { id:"mavi",    name:"Okyanus Mavisi", emoji:"🌊", primary:"#1A6B9A", dark:"#0C3D5C", light:"#D6EAF8", bg:"#EBF5FB",  header:"linear-gradient(135deg,#0C3D5C,#1A6B9A)", loginBg:"linear-gradient(155deg,#0C3D5C 0%,#1A6B9A 40%,#2E86C1 100%)" },
-  { id:"mor",     name:"Asil Mor",       emoji:"🔮", primary:"#7B4B94", dark:"#4A2060", light:"#F0E6F6", bg:"#F9F3FC",  header:"linear-gradient(135deg,#4A2060,#7B4B94)", loginBg:"linear-gradient(155deg,#4A2060 0%,#7B4B94 40%,#9B6BB4 100%)" },
-  { id:"turuncu", name:"Gün Batımı",     emoji:"🌅", primary:"#C0550A", dark:"#7A3005", light:"#FDE8D8", bg:"#FEF4EE",  header:"linear-gradient(135deg,#7A3005,#C0550A)", loginBg:"linear-gradient(155deg,#7A3005 0%,#C0550A 40%,#E07030 100%)" },
-  { id:"lacivert", name:"Gece Laciveri", emoji:"🌙", primary:"#2C3E7A", dark:"#111A40", light:"#D6DCF5", bg:"#EEF0FA",  header:"linear-gradient(135deg,#111A40,#2C3E7A)", loginBg:"linear-gradient(155deg,#111A40 0%,#2C3E7A 40%,#3D5299 100%)" },
-  { id:"bordo",   name:"Koyu Bordo",     emoji:"🍷", primary:"#8B1A2F", dark:"#4A0010", light:"#F5D0D8", bg:"#FEF0F2",  header:"linear-gradient(135deg,#4A0010,#8B1A2F)", loginBg:"linear-gradient(155deg,#4A0010 0%,#8B1A2F 40%,#AA3050 100%)" },
+  {
+    id:"orman", name:"Orman", emoji:"🌲",
+    primary:"#2E7D32", dark:"#1B5E20", light:"#C8E6C9", bg:"#F1F8E9",
+    header:"linear-gradient(135deg,rgba(27,94,32,.92),rgba(46,125,50,.88))",
+    photo:"https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=80",
+    photoCredit:"Unsplash / Casey Horner",
+    overlay:"rgba(20,60,20,.55)"
+  },
+  {
+    id:"dag", name:"Dağlar", emoji:"🏔️",
+    primary:"#37474F", dark:"#1C313A", light:"#CFD8DC", bg:"#ECEFF1",
+    header:"linear-gradient(135deg,rgba(28,49,58,.92),rgba(55,71,79,.88))",
+    photo:"https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
+    photoCredit:"Unsplash / Kalen Emsley",
+    overlay:"rgba(20,30,40,.58)"
+  },
+  {
+    id:"gunbatimi", name:"Gün Batımı", emoji:"🌅",
+    primary:"#E65100", dark:"#BF360C", light:"#FFE0B2", bg:"#FFF3E0",
+    header:"linear-gradient(135deg,rgba(191,54,12,.92),rgba(230,81,0,.88))",
+    photo:"https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&q=80",
+    photoCredit:"Unsplash / Sime Basioli",
+    overlay:"rgba(100,30,0,.52)"
+  },
+  {
+    id:"gece", name:"Gece Gökyüzü", emoji:"🌌",
+    primary:"#5C6BC0", dark:"#283593", light:"#C5CAE9", bg:"#E8EAF6",
+    header:"linear-gradient(135deg,rgba(40,53,147,.92),rgba(92,107,192,.88))",
+    photo:"https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80",
+    photoCredit:"Unsplash / Vincentiu Solomon",
+    overlay:"rgba(10,15,60,.62)"
+  },
+  {
+    id:"cayir", name:"Yeşil Çayır", emoji:"🌾",
+    primary:"#558B2F", dark:"#33691E", light:"#DCEDC8", bg:"#F9FBE7",
+    header:"linear-gradient(135deg,rgba(51,105,30,.92),rgba(85,139,47,.88))",
+    photo:"https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80",
+    photoCredit:"Unsplash / Federico Respini",
+    overlay:"rgba(20,50,10,.50)"
+  },
+  {
+    id:"sis", name:"Sisli Orman", emoji:"🌫️",
+    primary:"#546E7A", dark:"#263238", light:"#B0BEC5", bg:"#ECEFF1",
+    header:"linear-gradient(135deg,rgba(38,50,56,.92),rgba(84,110,122,.88))",
+    photo:"https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=800&q=80",
+    photoCredit:"Unsplash / Johannes Plenio",
+    overlay:"rgba(30,40,45,.60)"
+  },
+  {
+    id:"kar", name:"Karlı Dağ", emoji:"❄️",
+    primary:"#0277BD", dark:"#01579B", light:"#B3E5FC", bg:"#E1F5FE",
+    header:"linear-gradient(135deg,rgba(1,87,155,.92),rgba(2,119,189,.88))",
+    photo:"https://images.unsplash.com/photo-1491555103944-7c647fd857e6?w=800&q=80",
+    photoCredit:"Unsplash / Eberhard Grossgasteiger",
+    overlay:"rgba(0,40,80,.50)"
+  },
+  {
+    id:"sonbahar", name:"Sonbahar", emoji:"🍂",
+    primary:"#E64A19", dark:"#BF360C", light:"#FFCCBC", bg:"#FBE9E7",
+    header:"linear-gradient(135deg,rgba(191,54,12,.92),rgba(230,74,25,.88))",
+    photo:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
+    photoCredit:"Unsplash / Fabrice Villard",
+    overlay:"rgba(80,25,5,.55)"
+  },
 ];
 const DEFAULT_THEME = COLOR_THEMES[0];
 
@@ -3456,8 +3514,10 @@ function App(){
   };
 
   if(showLogin) return (
-    <div style={{...S.loginWrap, background:theme.loginBg}}><style>{css}</style>
-      <div style={{width:"100%",maxWidth:420,padding:"0 16px",paddingBottom:20}}>
+    <div style={{...S.loginWrap, background:theme.photo?`url(${theme.photo}) center/cover no-repeat`:theme.loginBg, position:"relative"}}><style>{css}</style>
+      {/* Fotoğraf üstü karartma overlay */}
+      <div style={{position:"fixed",inset:0,background:theme.overlay||"rgba(0,0,0,.5)",zIndex:0,pointerEvents:"none"}}/>
+      <div style={{width:"100%",maxWidth:420,padding:"0 16px",paddingBottom:20,position:"relative",zIndex:1}}>
 
         {/* Başlık */}
         <div style={{textAlign:"center",marginBottom:20,paddingTop:20}}>
@@ -3467,7 +3527,7 @@ function App(){
         </div>
 
         {/* Duyurular */}
-        <div style={{background:"rgba(255,255,255,.12)",borderRadius:14,padding:14,marginBottom:16,backdropFilter:"blur(10px)"}}>
+        <div style={{background:"rgba(255,255,255,.15)",borderRadius:14,padding:14,marginBottom:16,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",border:"1px solid rgba(255,255,255,.25)"}}>
           <div style={{color:"#fff",fontWeight:800,fontSize:14,marginBottom:10}}>📢 Duyurular</div>
           <div style={{maxHeight:140,overflowY:"auto"}}>
             {announcements.length===0 && <div style={{color:"rgba(255,255,255,.5)",fontSize:12,textAlign:"center",padding:"10px 0"}}>Henüz duyuru yok</div>}
@@ -3482,7 +3542,7 @@ function App(){
         </div>
 
         {/* Giriş kutusu */}
-        <div style={{background:"rgba(255,255,255,.95)",borderRadius:16,padding:20,boxShadow:"0 20px 60px rgba(0,0,0,.25)"}}>
+        <div style={{background:"rgba(255,255,255,.88)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:16,padding:20,boxShadow:"0 20px 60px rgba(0,0,0,.35)",border:"1px solid rgba(255,255,255,.5)"}}>
 
           {/* Adım 1: Grup seç */}
           {!selUser && !selPerson && (
@@ -3605,8 +3665,15 @@ function App(){
   if(loading) return <Loading/>;
 
   return (
-    <div style={{...S.app,"--primary":theme.primary,"--primary-dark":theme.dark,"--primary-light":theme.light,"--primary-bg":theme.bg}}>
-      <style>{css+`:root{--primary:${theme.primary};--primary-dark:${theme.dark};--primary-light:${theme.light};}`}</style>
+    <div style={{...S.app,"--primary":theme.primary,"--primary-dark":theme.dark,"--primary-light":theme.light,"--primary-bg":theme.bg,
+      backgroundImage:theme.photo?`url(${theme.photo})`:"none",
+      backgroundSize:"cover",backgroundPosition:"center",backgroundAttachment:"fixed"}}>
+      {/* Fotoğraf üstü hafif overlay — içerik okunabilsin */}
+      {theme.photo&&<div style={{position:"fixed",inset:0,background:`${theme.overlay||"rgba(0,0,0,.45)"}`,zIndex:0,pointerEvents:"none"}}/>}
+      <style>{css+`:root{--primary:${theme.primary};--primary-dark:${theme.dark};--primary-light:${theme.light};}
+        .card-theme{background:rgba(255,255,255,.92)!important;backdrop-filter:blur(8px);}
+        .header-theme{background:${theme.header}!important;}
+      `}</style>
       {hModal&&!isGuest&&<HealthModal goats={goats} breedFilter={hModal.breedId||null} preGoatId={hModal.goatId||""} onSave={saveHealth} onClose={()=>setHModal(null)} currentUser={currentUser}/>}
       {vModal&&!isGuest&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
       {addGoatModal&&!isGuest&&<AddGoatModal breed={BREEDS.find(b=>b.id===(addGoatModal.breedId||addGoatModal))} defaultCategory={addGoatModal.defaultCategory||"anac"} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser}/>}
@@ -3629,12 +3696,18 @@ function App(){
             <div style={{fontSize:36,marginBottom:8}}>🎨</div>
             <div style={{fontWeight:800,fontSize:17,color:"#1e1e1e",marginBottom:4}}>Arayüz Renginizi Seçin</div>
             <div style={{fontSize:12,color:"#8c8c7e",marginBottom:16}}>Seçtiğiniz renk sadece size özel kaydedilir.</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,marginBottom:16,maxHeight:340,overflowY:"auto"}}>
               {COLOR_THEMES.map(t=>(
                 <button key={t.id} onClick={()=>saveTheme(t,true)}
-                  style={{borderRadius:12,border:`2.5px solid ${theme.id===t.id?t.primary:"#E8E5DC"}`,background:t.light,padding:"10px 6px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                  <div style={{width:32,height:32,borderRadius:"50%",background:t.header,flexShrink:0}}/>
-                  <div style={{fontSize:10,fontWeight:700,color:t.primary,lineHeight:1.2}}>{t.emoji} {t.name}</div>
+                  style={{borderRadius:12,border:`2.5px solid ${theme.id===t.id?t.primary:"#E8E5DC"}`,padding:0,cursor:"pointer",overflow:"hidden",boxShadow:theme.id===t.id?`0 0 0 3px ${t.primary}55`:"0 1px 4px rgba(0,0,0,.1)"}}>
+                  <div style={{height:70,backgroundImage:`url(${t.photo})`,backgroundSize:"cover",backgroundPosition:"center",position:"relative"}}>
+                    <div style={{position:"absolute",inset:0,background:t.overlay,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <span style={{fontSize:28}}>{t.emoji}</span>
+                    </div>
+                  </div>
+                  <div style={{padding:"6px 4px",background:theme.id===t.id?t.light:"#fff",textAlign:"center"}}>
+                    <div style={{fontSize:11,fontWeight:700,color:t.primary}}>{t.name}</div>
+                  </div>
                 </button>
               ))}
             </div>
@@ -3681,7 +3754,7 @@ function App(){
         </div>
       )}
 
-      <div style={{...S.header, background:theme.header}}>
+      <div className="header-theme" style={{...S.header, background:theme.header, position:"relative", zIndex:200}}>
         {page==="home"
           ? <span style={{fontSize:20}}>🐐</span>
           : <button onClick={goBack} style={{...S.ghost,color:"#fff",fontSize:26,padding:"0 8px 0 0",lineHeight:1,fontWeight:300}}>‹</button>
@@ -4065,9 +4138,11 @@ function App(){
                 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
                   {COLOR_THEMES.map(t=>(
                     <button key={t.id} onClick={()=>saveTheme(t,false)}
-                      style={{borderRadius:10,border:`2px solid ${theme.id===t.id?t.primary:"#E8E5DC"}`,background:theme.id===t.id?t.light:"#fff",padding:"8px 4px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                      <div style={{width:24,height:24,borderRadius:"50%",background:t.header}}/>
-                      <div style={{fontSize:9,fontWeight:700,color:t.primary,lineHeight:1.2,textAlign:"center"}}>{t.emoji} {t.name}</div>
+                      style={{borderRadius:10,border:`2.5px solid ${theme.id===t.id?t.primary:"#E8E5DC"}`,background:"#fff",padding:0,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"stretch",overflow:"hidden",boxShadow:theme.id===t.id?`0 0 0 3px ${t.primary}44`:"none"}}>
+                      <div style={{height:44,backgroundImage:`url(${t.photo})`,backgroundSize:"cover",backgroundPosition:"center",position:"relative"}}>
+                        <div style={{position:"absolute",inset:0,background:t.overlay,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{t.emoji}</div>
+                      </div>
+                      <div style={{fontSize:9,fontWeight:700,color:t.primary,lineHeight:1.2,textAlign:"center",padding:"4px 2px",background:theme.id===t.id?t.light:"#fff"}}>{t.name}</div>
                     </button>
                   ))}
                 </div>
@@ -4142,11 +4217,11 @@ const css=`
 `;
 
 const S={
-  app:{fontFamily:"system-ui,-apple-system,sans-serif",background:"#FAFAF5",minHeight:"100vh",maxWidth:480,margin:"0 auto",position:"relative"},
+  app:{fontFamily:"system-ui,-apple-system,sans-serif",background:"#FAFAF5",minHeight:"100vh",maxWidth:480,margin:"0 auto",position:"relative",overflow:"hidden"},
   loginWrap:{fontFamily:"system-ui,-apple-system,sans-serif",minHeight:"100vh",background:"linear-gradient(155deg,#2D4A20 0%,#4A7C3F 40%,#6B9F5B 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:20},
   header:{background:"#4A7C3F",padding:"12px 14px 10px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,zIndex:200,boxShadow:"0 3px 16px rgba(74,124,63,.2)"},
-  nav:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#fff",borderTop:"1px solid #E8E5DC",display:"flex",justifyContent:"space-around",padding:"4px 0 6px",zIndex:200,boxShadow:"0 -2px 12px rgba(0,0,0,.04)"},
-  card:{background:"#fff",borderRadius:14,padding:14,border:"1px solid #E8E5DC",boxShadow:"0 1px 3px rgba(0,0,0,.03)"},
+  nav:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"rgba(255,255,255,.88)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderTop:"1px solid rgba(232,229,220,.6)",display:"flex",justifyContent:"space-around",padding:"4px 0 6px",zIndex:200,boxShadow:"0 -2px 12px rgba(0,0,0,.1)"},
+  card:{background:"rgba(255,255,255,.93)",borderRadius:14,padding:14,border:"1px solid rgba(232,229,220,.8)",boxShadow:"0 2px 12px rgba(0,0,0,.08)",backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)"},
   title:{margin:0,fontSize:18,fontWeight:800,color:"#1e1e1e"},
   input:{padding:"9px 12px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:14,background:"#fff",color:"#1e1e1e",outline:"none",width:"100%",boxSizing:"border-box"},
   select:{padding:"9px 12px",borderRadius:8,border:"1px solid #E8E5DC",fontSize:14,background:"#fff",color:"#1e1e1e",outline:"none",width:"100%",boxSizing:"border-box"},
