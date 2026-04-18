@@ -74,6 +74,260 @@ const COLOR_THEMES = [
 ];
 const DEFAULT_THEME = COLOR_THEMES[0];
 
+// ── Hava Durumu Widget ──
+function WeatherWidget() {
+  const [weather, setWeather] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    // Open-Meteo API — ücretsiz, key gerektirmez
+    // Burdur koordinatları: 37.7167° N, 30.2833° E
+    const url = "https://api.open-meteo.com/v1/forecast?latitude=37.7167&longitude=30.2833&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,apparent_temperature&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=Europe%2FIstanbul&forecast_days=4";
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        const cur = data.current;
+        const daily = data.daily;
+        const wcode = cur.weather_code;
+        const getIcon = (code) => {
+          if(code===0) return "☀️";
+          if(code<=2) return "🌤️";
+          if(code<=3) return "☁️";
+          if(code<=48) return "🌫️";
+          if(code<=57) return "🌧️";
+          if(code<=67) return "🌧️";
+          if(code<=77) return "❄️";
+          if(code<=82) return "🌦️";
+          if(code<=86) return "🌨️";
+          if(code<=99) return "⛈️";
+          return "🌡️";
+        };
+        const getDesc = (code) => {
+          if(code===0) return "Açık";
+          if(code<=2) return "Az bulutlu";
+          if(code<=3) return "Bulutlu";
+          if(code<=48) return "Sisli";
+          if(code<=57) return "Çisenti";
+          if(code<=67) return "Yağmurlu";
+          if(code<=77) return "Karlı";
+          if(code<=82) return "Sağanak";
+          if(code<=86) return "Kar fırtınası";
+          if(code<=99) return "Gök gürültülü";
+          return "Değişken";
+        };
+        const days = ["Paz","Pzt","Sal","Çar","Per","Cum","Cmt"];
+        const forecast = daily.time.slice(1,4).map((date,i) => ({
+          day: days[new Date(date).getDay()],
+          max: Math.round(daily.temperature_2m_max[i+1]),
+          min: Math.round(daily.temperature_2m_min[i+1]),
+          icon: getIcon(daily.weather_code[i+1])
+        }));
+        setWeather({
+          temp: Math.round(cur.temperature_2m),
+          feels: Math.round(cur.apparent_temperature),
+          humidity: cur.relative_humidity_2m,
+          wind: Math.round(cur.wind_speed_10m),
+          icon: getIcon(wcode),
+          desc: getDesc(wcode),
+          forecast
+        });
+        setLoading(false);
+      })
+      .catch(() => { setError(true); setLoading(false); });
+  }, []);
+
+  if(loading) return (
+    <div style={{background:"#FFFFFF",borderRadius:18,padding:"16px",marginBottom:12,border:"1px solid rgba(0,0,0,.06)",boxShadow:"0 2px 12px rgba(0,0,0,.05)"}}>
+      <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <div style={{fontSize:32}}>🌤️</div>
+        <div>
+          <div style={{fontWeight:700,fontSize:14,color:"#111827"}}>Burdur Hava Durumu</div>
+          <div style={{fontSize:12,color:"#9CA3AF"}}>Yükleniyor...</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if(error || !weather) return null;
+
+  return (
+    <div style={{background:"linear-gradient(135deg,#EEF2FF 0%,#FFFFFF 100%)",borderRadius:18,padding:"16px",marginBottom:12,border:"1px solid rgba(99,102,241,.12)",boxShadow:"0 2px 12px rgba(0,0,0,.05)"}}>
+      {/* Üst kısım */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{fontSize:40,lineHeight:1}}>{weather.icon}</div>
+          <div>
+            <div style={{fontSize:11,color:"#9CA3AF",fontWeight:600,letterSpacing:".5px",textTransform:"uppercase"}}>📍 Burdur</div>
+            <div style={{fontSize:28,fontWeight:800,color:"#111827",lineHeight:1}}>{weather.temp}°<span style={{fontSize:14,fontWeight:500,color:"#6B7280"}}>C</span></div>
+            <div style={{fontSize:12,color:"#6B7280",marginTop:1}}>{weather.desc}</div>
+          </div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:11,color:"#9CA3AF"}}>Hissedilen</div>
+          <div style={{fontSize:16,fontWeight:700,color:"#374151"}}>{weather.feels}°C</div>
+          <div style={{fontSize:11,color:"#9CA3AF",marginTop:4}}>💧 {weather.humidity}%</div>
+          <div style={{fontSize:11,color:"#9CA3AF"}}>💨 {weather.wind} km/s</div>
+        </div>
+      </div>
+      {/* 3 günlük tahmin */}
+      <div style={{display:"flex",gap:6,borderTop:"1px solid rgba(0,0,0,.06)",paddingTop:10}}>
+        {weather.forecast.map((f,i) => (
+          <div key={i} style={{flex:1,textAlign:"center",background:"rgba(99,102,241,.06)",borderRadius:10,padding:"8px 4px"}}>
+            <div style={{fontSize:10,color:"#9CA3AF",fontWeight:600}}>{f.day}</div>
+            <div style={{fontSize:18,margin:"4px 0"}}>{f.icon}</div>
+            <div style={{fontSize:11,fontWeight:700,color:"#374151"}}>{f.max}°</div>
+            <div style={{fontSize:10,color:"#9CA3AF"}}>{f.min}°</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Keçi Eşleştirme Oyunu ──
+function GoatMatchGame() {
+  const GOAT_EMOJIS = ["🐐","🐑","🦙","🐏","🐮","🐷","🐔","🦆","🐇","🦊","🐺","🦁"];
+  const GOAT_NAMES  = ["Keçi","Koyun","Lama","Koç","İnek","Domuz","Tavuk","Ördek","Tavşan","Tilki","Kurt","Aslan"];
+
+  const initCards = () => {
+    const pairs = GOAT_EMOJIS.slice(0,8).map((e,i) => ({emoji:e,name:GOAT_NAMES[i]}));
+    const deck = [...pairs,...pairs].map((c,i) => ({...c,id:i,flipped:false,matched:false}));
+    return deck.sort(()=>Math.random()-.5);
+  };
+
+  const [cards, setCards] = React.useState(initCards);
+  const [flipped, setFlipped] = React.useState([]);
+  const [moves, setMoves] = React.useState(0);
+  const [won, setWon] = React.useState(false);
+  const [time, setTime] = React.useState(0);
+  const [running, setRunning] = React.useState(false);
+  const timerRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if(running) {
+      timerRef.current = setInterval(() => setTime(t => t+1), 1000);
+    } else {
+      clearInterval(timerRef.current);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [running]);
+
+  const reset = () => {
+    setCards(initCards());
+    setFlipped([]);
+    setMoves(0);
+    setWon(false);
+    setTime(0);
+    setRunning(false);
+  };
+
+  const flip = (card) => {
+    if(card.flipped || card.matched || flipped.length===2) return;
+    if(!running) setRunning(true);
+    const newCards = cards.map(c => c.id===card.id ? {...c,flipped:true} : c);
+    const newFlipped = [...flipped, card];
+    setCards(newCards);
+    setFlipped(newFlipped);
+
+    if(newFlipped.length===2) {
+      setMoves(m => m+1);
+      if(newFlipped[0].emoji===newFlipped[1].emoji) {
+        // Eşleşti!
+        setTimeout(() => {
+          const matched = newCards.map(c =>
+            c.emoji===newFlipped[0].emoji ? {...c,matched:true} : c
+          );
+          setCards(matched);
+          setFlipped([]);
+          if(matched.every(c => c.matched)) {
+            setWon(true);
+            setRunning(false);
+          }
+        }, 400);
+      } else {
+        // Eşleşmedi — kapat
+        setTimeout(() => {
+          setCards(prev => prev.map(c =>
+            newFlipped.some(f => f.id===c.id) ? {...c,flipped:false} : c
+          ));
+          setFlipped([]);
+        }, 900);
+      }
+    }
+  };
+
+  const fmtTime = s => `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+
+  return (
+    <div className="anim-fade">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <h2 style={{...S.title,fontSize:17}}>🐐 Keçi Eşleştirme</h2>
+        <button onClick={reset} style={{...S.btnSm,background:"rgba(var(--primary-rgb),.1)",color:"var(--primary,#8B5CF6)",padding:"6px 14px"}}>🔄 Yeniden</button>
+      </div>
+
+      {/* Skor */}
+      <div style={{display:"flex",gap:8,marginBottom:12}}>
+        <div style={{flex:1,background:"#FFFFFF",borderRadius:12,padding:"10px",textAlign:"center",border:"1px solid rgba(0,0,0,.06)",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+          <div style={{fontSize:18,fontWeight:800,color:"var(--primary,#8B5CF6)"}}>{moves}</div>
+          <div style={{fontSize:10,color:"#9CA3AF",fontWeight:600}}>HAREKETte</div>
+        </div>
+        <div style={{flex:1,background:"#FFFFFF",borderRadius:12,padding:"10px",textAlign:"center",border:"1px solid rgba(0,0,0,.06)",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+          <div style={{fontSize:18,fontWeight:800,color:"#059669"}}>{fmtTime(time)}</div>
+          <div style={{fontSize:10,color:"#9CA3AF",fontWeight:600}}>SÜRE</div>
+        </div>
+        <div style={{flex:1,background:"#FFFFFF",borderRadius:12,padding:"10px",textAlign:"center",border:"1px solid rgba(0,0,0,.06)",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+          <div style={{fontSize:18,fontWeight:800,color:"#D97706"}}>{cards.filter(c=>c.matched).length/2}/8</div>
+          <div style={{fontSize:10,color:"#9CA3AF",fontWeight:600}}>EŞLEŞTİ</div>
+        </div>
+      </div>
+
+      {/* Kart ızgarası */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+        {cards.map(card => (
+          <button
+            key={card.id}
+            onClick={() => flip(card)}
+            style={{
+              aspectRatio:"1",
+              borderRadius:14,
+              border: card.matched ? "2px solid #10B981" : card.flipped ? "2px solid var(--primary,#8B5CF6)" : "2px solid #E5E7EB",
+              background: card.matched ? "#ECFDF5" : card.flipped ? "rgba(var(--primary-rgb),.08)" : "#F9FAFB",
+              cursor: card.matched||card.flipped ? "default" : "pointer",
+              display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+              transition:"all .2s",
+              transform: card.flipped||card.matched ? "scale(1.02)" : "scale(1)",
+              boxShadow: card.matched ? "0 2px 8px rgba(16,185,129,.2)" : "0 1px 4px rgba(0,0,0,.06)",
+              WebkitAppearance:"none",
+              padding:0
+            }}
+          >
+            {card.flipped || card.matched ? (
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:28}}>{card.emoji}</div>
+                <div style={{fontSize:8,color:card.matched?"#059669":"var(--primary,#8B5CF6)",fontWeight:700,marginTop:2}}>{card.name}</div>
+              </div>
+            ) : (
+              <div style={{fontSize:24}}>🎴</div>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Kazandı ekranı */}
+      {won && (
+        <div style={{marginTop:16,background:"linear-gradient(135deg,#ECFDF5,#D1FAE5)",borderRadius:18,padding:20,textAlign:"center",border:"1px solid #A7F3D0"}}>
+          <div style={{fontSize:48,marginBottom:8}}>🎉</div>
+          <div style={{fontWeight:800,fontSize:20,color:"#065F46",marginBottom:4}}>Tebrikler!</div>
+          <div style={{fontSize:14,color:"#059669",marginBottom:4}}>Tüm keçileri eşleştirdin!</div>
+          <div style={{fontSize:13,color:"#6B7280",marginBottom:12}}>{moves} hamle · {fmtTime(time)}</div>
+          <button onClick={reset} style={{...S.btnPrimary,background:"#10B981",boxShadow:"0 4px 14px rgba(16,185,129,.4)"}}>🔄 Tekrar Oyna</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const BREEDS = [
   { id:"saanen",  name:"Saanen",  emoji:"🤍", color:"var(--primary,#8B5CF6)", bg:"#E3F0DC", bgCard:"#F5FAF0", desc:"Süt verimi yüksek, beyaz tüylü" },
   { id:"honamli", name:"Honamlı", emoji:"🖤", color:"#7B4B94", bg:"#F0E6F6", bgCard:"#F9F3FC", desc:"Yerli ırk, dayanıklı, uzun tüylü" },
@@ -3799,7 +4053,7 @@ function App(){
           : <button onClick={goBack} style={{...S.ghost,color:"rgba(212,175,55,.7)",fontSize:26,padding:"0 8px 0 0",lineHeight:1,fontWeight:300}}>‹</button>
         }
         <div style={{flex:1}}>
-          <div style={{color:"#111827",fontWeight:700,fontSize:15,letterSpacing:"-.2px"}}>{selGoat&&goat?goat.name:selBreed&&breed?breed.name:page==="home"?"Hayvancılık":page==="health"?"Sağlık Kayıtları":page==="vaccines"?"Aşı Takvimi":page==="births"?"Doğum Kayıtları":page==="deaths"?"Ölüm Kayıtları":page==="group_tx"?"Toplu Tedavi":page==="reports"?"Raporlar":page==="profile"?"Profil":"Hayvancılık"}</div>
+          <div style={{color:"#111827",fontWeight:700,fontSize:15,letterSpacing:"-.2px"}}>{selGoat&&goat?goat.name:selBreed&&breed?breed.name:page==="home"?"Hayvancılık":page==="health"?"Sağlık Kayıtları":page==="vaccines"?"Aşı Takvimi":page==="births"?"Doğum Kayıtları":page==="deaths"?"Ölüm Kayıtları":page==="group_tx"?"Toplu Tedavi":page==="reports"?"Raporlar":page==="profile"?"Profil":page==="game"?"🐐 Oyun":"Hayvancılık"}</div>
           <div style={{color:"rgba(var(--primary-rgb),.4)",fontSize:9,letterSpacing:".3px"}}>
             {isGuest?"👁 Misafir · Sadece Görüntüleme":"☁️ "+currentUser+" · "+activeGoats.length+" keçi"}
           </div>
@@ -3824,6 +4078,9 @@ function App(){
               currentUser={currentUser}
               vaccineReports={vaccineReports}
             />
+
+            {/* Hava Durumu */}
+            <WeatherWidget/>
 
             {/* Son İşlemler */}
             <RecentActivities
@@ -4162,6 +4419,13 @@ function App(){
 
         {page==="reports" && <ReportsPage reports={reports} goats={goats} logs={logs} vaccineReports={vaccineReports} births={births} deaths={deaths} groupTreatments={groupTreatments} treatmentDaysData={treatmentDaysData} currentUser={currentUser} onDeleteReport={deleteReport}/>}
 
+        {/* GAME */}
+        {page==="game" && (
+          <div style={{padding:"0 2px"}}>
+            <GoatMatchGame/>
+          </div>
+        )}
+
         {/* PROFILE */}
         {page==="profile" && (
           <div className="anim-fade">
@@ -4271,8 +4535,8 @@ function App(){
       {/* Alt Nav - ana sayfa hariç */}
       {page!=="home" && (
         <div style={S.nav}>
-          {[["home","🏠","Ana"],["health","🩺","Sağlık"],["vaccines","💉","Aşı"]].map(([k,ic,l])=>(
-            <button key={k} onClick={()=>navigate(k)} style={{...S.ghost,display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"6px 20px",color:page===k?"var(--primary,#8B5CF6)":"#9CA3AF",transition:"color .2s"}}>
+          {[["home","🏠","Ana"],["health","🩺","Sağlık"],["vaccines","💉","Aşı"],["game","🐐","Oyun"]].map(([k,ic,l])=>(
+            <button key={k} onClick={()=>navigate(k)} style={{...S.ghost,display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"6px 14px",color:page===k?"var(--primary,#8B5CF6)":"#9CA3AF",transition:"color .2s"}}>
               <span style={{fontSize:20}}>{ic}</span>
               <span style={{fontSize:9,fontWeight:page===k?700:500,letterSpacing:".3px",textTransform:"uppercase",color:page===k?"var(--primary,#8B5CF6)":"#9CA3AF"}}>{l}</span>
             </button>
