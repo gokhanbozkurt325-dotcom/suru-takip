@@ -665,16 +665,50 @@ function VaccineModal({ breed, goats, onSave, onClose, currentUser }) {
 
 // ── Hayvan Ekle ──
 // ── Toplu Küpe Girişi (sesli + elle) ──
-function BulkEarTagInput({ value, onChange }) {
+function BulkEarTagInput({ tags, onTagsChange }) {
   const [listening, setListening] = useState(false);
   const recRef = useRef(null);
-  const onChangeRef = useRef(onChange);
-  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+  const tagsRef = useRef(tags);
+  useEffect(()=>{ tagsRef.current = tags; },[tags]);
+
+  // Türkçe kelime → rakam
+  const toNums = (txt) => {
+    const direct = txt.replace(/[^0-9]/g,"");
+    if(direct) return direct;
+    let s = txt.toLowerCase()
+      .replace(/on\s*dokuz/g,"19").replace(/on\s*sekiz/g,"18").replace(/on\s*yedi/g,"17")
+      .replace(/on\s*altı/g,"16").replace(/on\s*beş/g,"15").replace(/on\s*dört/g,"14")
+      .replace(/on\s*üç/g,"13").replace(/on\s*iki/g,"12").replace(/on\s*bir/g,"11")
+      .replace(/\bon\b/g,"10").replace(/yirmi\s*dokuz/g,"29").replace(/yirmi\s*sekiz/g,"28")
+      .replace(/yirmi\s*yedi/g,"27").replace(/yirmi\s*altı/g,"26").replace(/yirmi\s*beş/g,"25")
+      .replace(/yirmi\s*dört/g,"24").replace(/yirmi\s*üç/g,"23").replace(/yirmi\s*iki/g,"22")
+      .replace(/yirmi\s*bir/g,"21").replace(/\byirmi\b/g,"20")
+      .replace(/sıfır/g,"0").replace(/bir/g,"1").replace(/iki/g,"2").replace(/üç/g,"3")
+      .replace(/dört/g,"4").replace(/beş/g,"5").replace(/altı/g,"6")
+      .replace(/yedi/g,"7").replace(/sekiz/g,"8").replace(/dokuz/g,"9");
+    return s.replace(/[^0-9]/g,"");
+  };
+
+  // Rakamlar → TR-xx-xxxxxxx (ilk 2 hane orta, geri kalanı son)
+  const buildTag = (nums) => {
+    const p1 = nums.slice(0,2);
+    const p2 = nums.slice(2);
+    return { p1, p2, full: `TR-${p1}-${p2}` };
+  };
+
+  const isTR = (txt) => /^(tr|te\s?er|tı\s?er|ti\s?ar|tire|t\.r\.)$/i.test(txt.trim());
+
+  // Aktif küpe index'i (en son eklenen)
+  const curIdxRef = useRef(-1);
+  const numBufRef = useRef("");
 
   const startVoice = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Sesli yazma desteklenmiyor. Chrome kullanın."); return; }
-    if (listening) { recRef.current?.stop(); setListening(false); return; }
+    const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){ alert("Sesli yazma desteklenmiyor. Chrome kullanın."); return; }
+    if(listening){ recRef.current?.stop(); setListening(false); return; }
+
+    curIdxRef.current = tagsRef.current.length - 1;
+    numBufRef.current = "";
 
     const r = new SR();
     r.lang = "tr-TR";
@@ -682,65 +716,110 @@ function BulkEarTagInput({ value, onChange }) {
     r.interimResults = false;
 
     r.onresult = (e) => {
-      const txt = e.results[e.results.length - 1][0].transcript.trim();
-      if (!txt) return;
+      const txt = e.results[e.results.length-1][0].transcript.trim();
+      if(!txt) return;
 
-      const isTR = /^(tr|te\s?er|tı\s?er|ti\s?ar|tire)$/i.test(txt);
-
-      if (isTR) {
-        // Yeni satır başlat
-        const cur = onChangeRef.current;
-        const prev = (document.querySelector("#bulkTagArea") || {value: ""}).value;
-        // value ref üzerinden al
-        cur((document.querySelector("#bulkTagArea") || {value:""}).value
-          ? (document.querySelector("#bulkTagArea").value.trimEnd() + "\nTR")
-          : "TR");
+      if(isTR(txt)){
+        // Yeni küpe ekle
+        numBufRef.current = "";
+        const newTags = [...tagsRef.current, {p1:"",p2:"",full:"TR--"}];
+        tagsRef.current = newTags;
+        curIdxRef.current = newTags.length - 1;
+        onTagsChange(newTags);
       } else {
-        // Mevcut son satıra ekle
-        const area = document.querySelector("#bulkTagArea");
-        if (!area) return;
-        const cur = area.value;
-        const lines = cur.split("\n");
-        lines[lines.length - 1] = lines[lines.length - 1] + txt;
-        onChangeRef.current(lines.join("\n"));
+        const nums = toNums(txt);
+        if(!nums) return;
+        numBufRef.current += nums;
+        const tag = buildTag(numBufRef.current);
+        if(curIdxRef.current >= 0){
+          const newTags = tagsRef.current.map((t,i)=>
+            i===curIdxRef.current ? tag : t
+          );
+          tagsRef.current = newTags;
+          onTagsChange(newTags);
+        } else {
+          // Henüz TR denmemişse otomatik ekle
+          const newTags = [...tagsRef.current, tag];
+          tagsRef.current = newTags;
+          curIdxRef.current = newTags.length - 1;
+          onTagsChange(newTags);
+        }
       }
     };
 
-    r.onerror = () => setListening(false);
-    r.onend = () => setListening(false);
+    r.onerror = ()=>setListening(false);
+    r.onend = ()=>setListening(false);
     recRef.current = r;
     r.start();
     setListening(true);
   };
 
-  const lines = (value || "").split("\n").filter(l => l.trim());
-  const validCount = lines.filter(l => l.trim().toUpperCase().startsWith("TR")).length;
-
   return (
     <div>
-      <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center" }}>
+      {/* Sesli giriş butonu */}
+      <div style={{display:"flex",gap:6,marginBottom:10,alignItems:"center"}}>
         <button type="button" onClick={startVoice}
-          style={{ padding: "10px 16px", borderRadius: 10, border: `1.5px solid ${listening ? "#BE3B31" : "#4A7C3F"}`, background: listening ? "#FFF0EE" : "#E3F0DC", color: listening ? "#BE3B31" : "#3D5A25", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-          <span>{listening ? "⏹" : "🎤"}</span>
-          {listening ? "Durdur" : "Sesli Gir"}
+          style={{padding:"10px 16px",borderRadius:10,border:`1.5px solid ${listening?"#BE3B31":"#4A7C3F"}`,background:listening?"#FFF0EE":"#E3F0DC",color:listening?"#BE3B31":"#3D5A25",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+          <span>{listening?"⏹":"🎤"}</span>
+          {listening?"Durdur":"Sesli Gir"}
         </button>
-        {listening && <div style={{ fontSize: 11, color: "#BE3B31", fontWeight: 600, background: "#FFF0EE", padding: "6px 10px", borderRadius: 8 }}>
-          ● Dinleniyor... "TR" = yeni küpe
+        {listening&&<div style={{fontSize:11,color:"#BE3B31",fontWeight:600,background:"#FFF0EE",padding:"6px 10px",borderRadius:8,flex:1}}>
+          ● Dinleniyor... <b>"TR"</b> = yeni küpe
         </div>}
       </div>
 
-      <textarea
-        id="bulkTagArea"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        rows={5}
-        placeholder={"TR152340012\nTR153210034\nTR241230056"}
-        style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1px solid #E8E5DC", fontSize: 13, fontFamily: "monospace", lineHeight: 2, resize: "vertical", boxSizing: "border-box", outline: "none" }}
-      />
+      {/* Elle ekleme butonu */}
+      <button type="button" onClick={()=>onTagsChange([...tags,{p1:"",p2:"",full:"TR--"}])}
+        style={{width:"100%",padding:"8px",borderRadius:8,border:"1.5px dashed #4A7C3F",background:"#F5FAF0",color:"#4A7C3F",fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10}}>
+        + Elle Küpe Ekle
+      </button>
 
-      {validCount > 0 && (
-        <div style={{ fontSize: 11, color: "#4A7C3F", fontWeight: 600, marginTop: 4 }}>
-          ✅ {validCount} küpe girildi
+      {/* Liste */}
+      {tags.length>0&&(
+        <div style={{background:"#F5F3ED",borderRadius:10,padding:10,maxHeight:280,overflowY:"auto"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"#555",marginBottom:8,display:"flex",justifyContent:"space-between"}}>
+            <span>📋 Küpe Listesi</span>
+            <span style={{color:"#4A7C3F"}}>{tags.filter(t=>t.p1&&t.p2).length} geçerli</span>
+          </div>
+          {tags.map((t,i)=>(
+            <div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,background:"#fff",borderRadius:8,padding:"6px 8px",border:`1px solid ${t.p1&&t.p2?"#D4E8C2":"#F5C0BA"}`}}>
+              <span style={{fontSize:11,color:"#aaa",fontWeight:700,minWidth:20}}>{i+1}.</span>
+              {/* TR sabit */}
+              <div style={{background:"#F2F0EA",borderRadius:6,padding:"5px 8px",fontWeight:700,fontSize:13,color:"#555",flexShrink:0}}>TR</div>
+              <span style={{color:"#aaa",fontWeight:700}}>-</span>
+              {/* İki haneli */}
+              <input
+                value={t.p1}
+                maxLength={2}
+                inputMode="numeric"
+                placeholder="xx"
+                onChange={e=>{
+                  const v=e.target.value.replace(/\D/g,"");
+                  const newTags=[...tags];
+                  newTags[i]={p1:v,p2:t.p2,full:`TR-${v}-${t.p2}`};
+                  onTagsChange(newTags);
+                }}
+                style={{width:42,padding:"5px 6px",borderRadius:6,border:"1px solid #E8E5DC",fontSize:13,fontWeight:700,textAlign:"center",outline:"none"}}
+              />
+              <span style={{color:"#aaa",fontWeight:700}}>-</span>
+              {/* Son haneler */}
+              <input
+                value={t.p2}
+                inputMode="numeric"
+                placeholder="xxxxxxx"
+                onChange={e=>{
+                  const v=e.target.value.replace(/\D/g,"");
+                  const newTags=[...tags];
+                  newTags[i]={p1:t.p1,p2:v,full:`TR-${t.p1}-${v}`};
+                  onTagsChange(newTags);
+                }}
+                style={{flex:1,padding:"5px 8px",borderRadius:6,border:"1px solid #E8E5DC",fontSize:13,fontWeight:700,outline:"none",letterSpacing:1}}
+              />
+              {/* Sil */}
+              <button type="button" onClick={()=>onTagsChange(tags.filter((_,j)=>j!==i))}
+                style={{background:"#FFF0EE",border:"none",borderRadius:6,color:"#BE3B31",fontWeight:700,fontSize:13,cursor:"pointer",padding:"4px 8px",flexShrink:0}}>✕</button>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -751,7 +830,7 @@ function BulkEarTagInput({ value, onChange }) {
 function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser }) {
   const [category, setCategory] = useState(defaultCategory||"anac");
   const [gender, setGender] = useState("dişi");
-  const [earTagsText, setEarTagsText] = useState("");
+  const [tags, setTags] = useState([]); // [{p1,p2,full}]
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const [done, setDone] = useState(0);
@@ -759,18 +838,11 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
   const [fileRows, setFileRows] = useState([]);
   const fileRef = useRef(null);
 
-  // Anlık liste: textarea'dan satırları parse et
-  const liveRows = useMemo(()=>{
-    if(!earTagsText.trim()) return [];
-    return earTagsText
-      .split("\n")
-      .map(t=>t.trim().toUpperCase())
-      .filter(t=>t.length>=2)
-      .map(t=>({ earTag:t, valid:t.startsWith("TR") && t.length>2, gender }));
-  },[earTagsText, gender]);
+  const validTags = tab==="elle"
+    ? tags.filter(t=>t.p1&&t.p2)
+    : fileRows.filter(r=>r.earTag&&r.earTag.startsWith("TR"));
 
-  const currentRows = tab==="elle" ? liveRows : fileRows.map(r=>({...r, valid:r.earTag.toString().toUpperCase().startsWith("TR")}));
-  const validCount = currentRows.filter(r=>r.valid).length;
+  const validCount = validTags.length;
   const handleFile = (e) => {
     const file = e.target.files[0];
     if(!file) return;
@@ -832,21 +904,20 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
   };
 
   const save = async () => {
-    const validRows = currentRows.filter(r=>r.valid && r.earTag && r.earTag.startsWith("TR-"));
-    if(validRows.length===0) { setErr("Eklenecek geçerli küpe no yok"); return; }
+    if(validCount===0) { setErr("Eklenecek geçerli küpe no yok"); return; }
     setSaving(true);
     setDone(0);
     setErr("");
     const savedGoats = [];
-    for(let i=0; i<validRows.length; i++){
-      const row = validRows[i];
+    const rows = tab==="elle" ? validTags.map(t=>({earTag:t.full, gender})) : fileRows.filter(r=>r.earTag&&r.earTag.startsWith("TR")).map(r=>({earTag:r.earTag, gender:r.gender||gender}));
+    for(let i=0; i<rows.length; i++){
+      const row = rows[i];
       const g = {
         id: "g"+Date.now()+i,
         name: row.earTag,
         earTag: row.earTag,
         gender: row.gender||gender,
-        breed: breed.id,
-        category,
+        breed: breed.id, category,
         birthDate:"", weight:"", color:"",
         motherTag:"", fatherTag:"",
         abortHistory:"hayır", reproductionStatus:"",
@@ -854,7 +925,7 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
         archived:false, archiveReason:""
       };
       const {error} = await sb.from("goats").insert(fromGoat(g));
-      if(!error){ savedGoats.push(g); }
+      if(!error) savedGoats.push(g);
       setDone(i+1);
       if(i%5===4) await new Promise(r=>setTimeout(r,200));
     }
@@ -888,9 +959,9 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
 
       {/* Elle giriş */}
       {tab==="elle" && <>
-        <FL>Küpe Numaraları * — Her satıra bir küpe (TR-xx-no formatında)</FL>
+        <FL>Küpe Numaraları</FL>
         <div style={{fontSize:11,color:"#8c8c7e",marginBottom:4}}>💡 Sesli "TR" dediğinizde yeni küpe satırı başlar</div>
-        <BulkEarTagInput value={earTagsText} onChange={setEarTagsText}/>
+        <BulkEarTagInput tags={tags} onTagsChange={setTags}/>
       </>}
 
       {/* Dosya yükleme */}
@@ -910,34 +981,9 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
         </div>}
       </>}
 
-      {/* Anlık liste - her TR girince anlık görünür */}
-      {currentRows.length>0 && (
-        <div style={{background:"#F5F3ED",borderRadius:10,padding:10,maxHeight:200,overflowY:"auto"}}>
-          <div style={{fontSize:11,fontWeight:700,color:"#555",marginBottom:6,display:"flex",justifyContent:"space-between"}}>
-            <span>📋 Küpe Listesi</span>
-            <span style={{color:validCount>0?"#4A7C3F":"#BE3B31"}}>{validCount} geçerli</span>
-          </div>
-          {currentRows.map((r,i)=>(
-            <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,padding:"4px 8px",borderRadius:6,background:r.valid?"#fff":"#FFF0EE",marginBottom:3,border:`1px solid ${r.valid?"#D4E8C2":"#F5C0BA"}`}}>
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <span style={{fontSize:10,color:"#aaa",minWidth:18}}>{i+1}.</span>
-                <span style={{fontWeight:700,color:r.valid?"#1e1e1e":"#BE3B31",fontFamily:"monospace"}}>{r.earTag||"(boş)"}</span>
-              </div>
-              <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                <span style={{color:"#8c8c7e",fontSize:10}}>{r.gender==="erkek"?"♂":"♀"} · {category==="anac"?"Anaç":"Oğlak"}</span>
-                {!r.valid&&<span style={{fontSize:9,color:"#BE3B31",fontWeight:700}}>Format hatalı</span>}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* İlerleme */}
-      {saving && (
-        <div style={{background:"#E6F1FB",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#0C447C",fontWeight:600}}>
-          ⏳ Kaydediliyor: {done} / {validCount}
-        </div>
-      )}
+      {saving && <div style={{background:"#E6F1FB",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#0C447C",fontWeight:600}}>
+        ⏳ Kaydediliyor: {done} / {validCount}
+      </div>}
 
       <div style={{display:"flex",gap:8,marginTop:4}}>
         <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
