@@ -16,25 +16,22 @@
   <title>BURDUR Açık Cezaevi Hayvancılık 🐐</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
+    html,body{overflow-x:hidden;}
     body{
       background:#F5F0FF;
       font-family:'Poppins',system-ui,-apple-system,sans-serif;
-      overflow-x:hidden;
       color:#111827;
     }
-    #root{max-width:480px;margin:0 auto;min-height:100vh;}
+    #root{max-width:480px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
     input,select,textarea,button{
       font-family:'Poppins',system-ui,-apple-system,sans-serif;
+      box-sizing:border-box;
     }
-    input,select,textarea{
-      color:#111827!important;
-    }
+    input,select,textarea{color:#111827!important;}
     input::placeholder,textarea::placeholder{color:#A0AEC0;}
-    ::-webkit-input-placeholder{color:#A0AEC0;}
     ::-webkit-scrollbar{width:0;height:0;}
-    .voice-wrap{display:flex;gap:6px;align-items:center;width:100%;overflow:hidden;}
-    .voice-wrap input,.voice-wrap textarea{flex:1;min-width:0;}
-    .voice-wrap button{flex-shrink:0;}
+    /* Mikrofon butonu asla taşmaz */
+    button[type="button"]{flex-shrink:0;}
   </style>
 </head>
 <body>
@@ -404,9 +401,9 @@ function EarTagInput({ value, onChange }) {
   };
 
   return (
-    <div style={{display:"flex",alignItems:"center",gap:4,width:"100%",overflow:"hidden"}}>
-      <div style={{background:"rgba(var(--primary-rgb),.08)",borderRadius:10,padding:"9px 10px",fontWeight:700,fontSize:14,color:"var(--primary,#8B5CF6)",border:"1px solid rgba(212,175,55,.25)",flexShrink:0,letterSpacing:1}}>TR</div>
-      <div style={{color:"#D1D5DB",fontWeight:700,fontSize:16}}>-</div>
+    <div style={{display:"flex",flexDirection:"row",alignItems:"center",gap:4,boxSizing:"border-box",width:"100%"}}>
+      <div style={{background:"rgba(var(--primary-rgb),.1)",borderRadius:10,padding:"9px 8px",fontWeight:700,fontSize:13,color:"var(--primary,#8B5CF6)",flexShrink:0,letterSpacing:1,boxSizing:"border-box"}}>TR</div>
+      <span style={{color:"#D1D5DB",fontWeight:700,flexShrink:0}}>-</span>
       <input
         ref={part1Ref}
         value={p1}
@@ -418,9 +415,9 @@ function EarTagInput({ value, onChange }) {
           build(v,p2);
           if(v.length===2) part2Ref.current?.focus();
         }}
-        style={{width:46,padding:"9px 8px",borderRadius:10,border:"1px solid rgba(212,175,55,.2)",fontSize:14,textAlign:"center",fontWeight:700,outline:"none",background:"#FFFFFF",color:"#1A1A2E"}}
+        style={{width:40,minWidth:0,padding:"9px 4px",borderRadius:10,border:"1.5px solid #DDD8EE",fontSize:14,textAlign:"center",fontWeight:700,outline:"none",background:"#FFFFFF",color:"#111827",boxSizing:"border-box",flexShrink:0}}
       />
-      <div style={{color:"#D1D5DB",fontWeight:700,fontSize:16}}>-</div>
+      <span style={{color:"#D1D5DB",fontWeight:700,flexShrink:0}}>-</span>
       <input
         ref={part2Ref}
         value={p2}
@@ -430,9 +427,9 @@ function EarTagInput({ value, onChange }) {
           const v=e.target.value.replace(/\D/g,"");
           build(p1,v);
         }}
-        style={{flex:1,padding:"9px 10px",borderRadius:10,border:"1px solid rgba(212,175,55,.2)",fontSize:14,fontWeight:700,outline:"none",letterSpacing:1,background:"#FFFFFF",color:"#1A1A2E"}}
+        style={{flex:1,minWidth:0,padding:"9px 8px",borderRadius:10,border:"1.5px solid #DDD8EE",fontSize:14,fontWeight:700,outline:"none",letterSpacing:1,background:"#FFFFFF",color:"#111827",boxSizing:"border-box"}}
       />
-      <MicBtn onResult={handleMic} style={{height:38}}/>
+      <MicBtn onResult={handleMic}/>
     </div>
   );
 }
@@ -494,20 +491,22 @@ function MicBtn({ onResult, style }) {
       onClick={toggle}
       title={listening ? "Dinleniyor... tıkla durdur" : "Sesli yaz"}
       style={{
-        background: listening ? "rgba(239,68,68,.15)" : "rgba(var(--primary-rgb),.08)",
-        border: `1.5px solid ${listening ? "rgba(190,59,49,.6)" : "rgba(var(--primary-rgb),.2)"}`,
+        background: listening ? "#FEE2E2" : "rgba(var(--primary-rgb),.08)",
+        border: listening ? "1.5px solid #FECACA" : "1.5px solid rgba(var(--primary-rgb),.2)",
         borderRadius: 10,
-        padding: "0 10px",
+        padding: "0",
         cursor: "pointer",
-        fontSize: 16,
+        fontSize: 18,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        minWidth: 38,
-        height: "100%",
+        width: 44,
+        height: 44,
+        flexShrink: 0,
+        flexGrow: 0,
         animation: listening ? "pulse 1s infinite" : "none",
-        transition: "all .2s",
-        ...style
+        WebkitAppearance: "none",
+        boxSizing: "border-box",
       }}>
       {listening ? "⏹" : "🎤"}
     </button>
@@ -518,27 +517,27 @@ function MicBtn({ onResult, style }) {
 function VoiceInput({ value, onChange, placeholder, style, multiline, rows }) {
   if (multiline) {
     return (
-      <div className="voice-wrap" style={{ alignItems: "flex-start" }}>
+      <div style={{display:"flex",flexDirection:"row",alignItems:"flex-start",gap:6,boxSizing:"border-box",width:"100%"}}>
         <textarea
           value={value}
           onChange={e => onChange(e.target.value)}
           rows={rows || 3}
           placeholder={placeholder}
-          style={{ ...S.input, resize: "none", lineHeight: 1.5, flex: 1, minWidth:0, ...style }}
+          style={{...S.input, resize:"none", lineHeight:1.5, flex:1, minWidth:0, boxSizing:"border-box", ...style}}
         />
-        <MicBtn onResult={t => onChange(value ? value + " " + t : t)} style={{ height: 38, marginTop: 2, flexShrink:0 }} />
+        <MicBtn onResult={t => onChange(value ? value + " " + t : t)} />
       </div>
     );
   }
   return (
-    <div style={{ display: "flex", gap: 6, alignItems: "center", width:"100%", overflow:"hidden" }}>
+    <div style={{display:"flex",flexDirection:"row",alignItems:"center",gap:6,boxSizing:"border-box",width:"100%"}}>
       <input
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        style={{ ...S.input, flex: 1, minWidth:0, ...style }}
+        style={{...S.input, flex:1, minWidth:0, boxSizing:"border-box", ...style}}
       />
-      <MicBtn onResult={t => onChange(t)} style={{ height: 38, flexShrink:0 }} />
+      <MicBtn onResult={t => onChange(t)} />
     </div>
   );
 }
@@ -909,7 +908,7 @@ function BulkEarTagInput({ tags, onTagsChange }) {
             <span style={{color:"var(--primary,#8B5CF6)"}}>{tags.filter(t=>t.p1&&t.p2).length} geçerli</span>
           </div>
           {tags.map((t,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"center",gap:3,marginBottom:6,background:"#FFFFFF",borderRadius:8,padding:"6px 6px",border:`1px solid ${t.p1&&t.p2?"#D4E8C2":"#F5C0BA"}`,overflow:"hidden"}}>
+            <div key={i} style={{display:"flex",flexDirection:"row",alignItems:"center",gap:3,marginBottom:6,background:"#FFFFFF",borderRadius:8,padding:"5px",border:`1px solid ${t.p1&&t.p2?"#D4E8C2":"#F5C0BA"}`,boxSizing:"border-box",width:"100%"}}>
               {/* Sıra no */}
               <span style={{fontSize:11,color:"#D1D5DB",fontWeight:700,minWidth:18,flexShrink:0}}>{i+1}.</span>
               {/* TR sabit — EarTagInput ile birebir aynı */}
@@ -1187,13 +1186,13 @@ function ModalWrap({title,onClose,children}){
   },[el]);
   return ReactDOM.createPortal(
     <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,overflowY:"auto",backgroundColor:"rgba(0,0,0,.65)",WebkitOverflowScrolling:"touch"}}>
-      <div style={{minHeight:"100%",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px 100px"}}>
+      <div style={{minHeight:"100%",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 10px 100px"}}>
         <div onClick={e=>e.stopPropagation()} style={{background:"#FFFFFF",borderRadius:16,width:"100%",maxWidth:456,marginTop:8}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 20px 14px",borderBottom:"1px solid rgba(212,175,55,.1)",position:"sticky",top:0,background:"#FFFFFF",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderRadius:"24px 24px 0 0",zIndex:1}}>
             <div style={{fontWeight:700,fontSize:15,color:"#111827",flex:1,paddingRight:10,letterSpacing:"-.2px"}}>{title}</div>
             <button onClick={onClose} style={{background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.1)",borderRadius:"50%",width:32,height:32,fontSize:14,cursor:"pointer",color:"#4B5563",flexShrink:0}}>✕</button>
           </div>
-          <div style={{padding:"14px 16px 20px",display:"flex",flexDirection:"column",gap:10,overflow:"hidden"}}>{children}</div>
+          <div style={{padding:"14px 16px 20px",display:"flex",flexDirection:"column",gap:10,boxSizing:"border-box",width:"100%",minWidth:0}}>{children}</div>
         </div>
       </div>
     </div>,
