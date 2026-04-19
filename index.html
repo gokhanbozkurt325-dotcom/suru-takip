@@ -137,6 +137,340 @@ function WeatherWidget() {
   );
 }
 
+
+
+function GameHub() {
+  const [activeGame, setActiveGame] = React.useState(null);
+  if(activeGame === "match") return (
+    <div>
+      <button onClick={function(){setActiveGame(null);}} style={{...S.btnSm,background:"rgba(var(--primary-rgb),.1)",color:"var(--primary,#8B5CF6)",marginBottom:12}}>← Oyunlar</button>
+      <GoatMatchGame/>
+    </div>
+  );
+  if(activeGame === "sling") return (
+    <div>
+      <button onClick={function(){setActiveGame(null);}} style={{...S.btnSm,background:"rgba(var(--primary-rgb),.1)",color:"var(--primary,#8B5CF6)",marginBottom:12}}>← Oyunlar</button>
+      <GoatSlingGame/>
+    </div>
+  );
+  return (
+    <div className="anim-fade">
+      <h2 style={{...S.title,marginBottom:4,fontSize:18}}>🎮 Oyunlar</h2>
+      <div style={{fontSize:12,color:"#9CA3AF",marginBottom:16}}>Bir oyun seç</div>
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        <button onClick={function(){setActiveGame("sling");}} style={{background:"linear-gradient(135deg,#FFF7ED,#FEF3C7)",border:"2px solid #F59E0B",borderRadius:18,padding:"18px 16px",textAlign:"left",cursor:"pointer",WebkitAppearance:"none",display:"flex",alignItems:"center",gap:14}}>
+          <span style={{fontSize:44}}>🐐</span>
+          <div>
+            <div style={{fontWeight:800,fontSize:16,color:"#92400E"}}>Keçi Fırlatma</div>
+            <div style={{fontSize:12,color:"#B45309",marginTop:3}}>Sapandan keçi fırlat, hedeflere vur!</div>
+            <div style={{fontSize:10,color:"#D97706",marginTop:4}}>🎯 Angry Birds tarzı</div>
+          </div>
+        </button>
+        <button onClick={function(){setActiveGame("match");}} style={{background:"linear-gradient(135deg,#F5F3FF,#EDE9FE)",border:"2px solid #8B5CF6",borderRadius:18,padding:"18px 16px",textAlign:"left",cursor:"pointer",WebkitAppearance:"none",display:"flex",alignItems:"center",gap:14}}>
+          <span style={{fontSize:44}}>🎴</span>
+          <div>
+            <div style={{fontWeight:800,fontSize:16,color:"#5B21B6"}}>Kart Eşleştirme</div>
+            <div style={{fontSize:12,color:"#6D28D9",marginTop:3}}>Aynı hayvanları eşleştir, 120 saniye!</div>
+            <div style={{fontSize:10,color:"#7C3AED",marginTop:4}}>🧠 Hafıza oyunu</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function GoatSlingGame() {
+  const canvasRef = React.useRef(null);
+  const stateRef = React.useRef({
+    goat: null, dragging: false, dragStart: null, launched: false,
+    vx: 0, vy: 0, score: 0, targets: [], particles: [], gameOver: false, won: false,
+    slingX: 90, slingY: 320, gravity: 0.4, bounce: 0
+  });
+  const animRef = React.useRef(null);
+  const [score, setScore] = React.useState(0);
+  const [msg, setMsg] = React.useState("");
+  const [gameOver, setGameOver] = React.useState(false);
+  const [won, setWon] = React.useState(false);
+
+  var W = 360, H = 420;
+
+  var makeTargets = function() {
+    return [
+      {x:260,y:300,w:36,h:36,hp:1,emoji:"🏠",hit:false},
+      {x:300,y:300,w:36,h:36,hp:1,emoji:"🌳",hit:false},
+      {x:280,y:264,w:36,h:36,hp:1,emoji:"🪨",hit:false},
+      {x:240,y:264,w:36,h:36,hp:1,emoji:"🏠",hit:false},
+      {x:320,y:264,w:36,h:36,hp:1,emoji:"🌳",hit:false},
+    ];
+  };
+
+  var init = function() {
+    var st = stateRef.current;
+    st.goat = {x: st.slingX, y: st.slingY, r: 18};
+    st.dragging = false; st.dragStart = null; st.launched = false;
+    st.vx = 0; st.vy = 0; st.particles = [];
+    st.gameOver = false; st.won = false; st.bounce = 0;
+    st.targets = makeTargets();
+    setScore(0); setMsg(""); setGameOver(false); setWon(false);
+  };
+
+  var makeParticles = function(x, y, color) {
+    var ps = [];
+    for(var i=0;i<8;i++) {
+      var angle = (Math.PI*2/8)*i;
+      ps.push({x:x,y:y,vx:Math.cos(angle)*3,vy:Math.sin(angle)*3-2,
+               life:1,color:color,r:5});
+    }
+    return ps;
+  };
+
+  var draw = function() {
+    var canvas = canvasRef.current;
+    if(!canvas) return;
+    var ctx = canvas.getContext("2d");
+    var st = stateRef.current;
+
+    // Arka plan
+    ctx.fillStyle = "#87CEEB";
+    ctx.fillRect(0,0,W,H);
+    // Bulutlar
+    ctx.fillStyle = "rgba(255,255,255,.8)";
+    [[60,60,40],[150,40,30],[280,70,35]].forEach(function(b){
+      ctx.beginPath(); ctx.arc(b[0],b[1],b[2],0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(b[0]+30,b[1]+5,b[2]-8,0,Math.PI*2); ctx.fill();
+    });
+    // Zemin
+    ctx.fillStyle = "#5D9B3C";
+    ctx.fillRect(0,H-60,W,60);
+    ctx.fillStyle = "#4A7C3F";
+    ctx.fillRect(0,H-62,W,4);
+
+    // Sapan çerçevesi
+    ctx.strokeStyle = "#8B4513"; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(st.slingX-12, st.slingY+10);
+    ctx.lineTo(st.slingX-12, st.slingY-40); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(st.slingX+12, st.slingY+10);
+    ctx.lineTo(st.slingX+12, st.slingY-40); ctx.stroke();
+
+    // Sapan lastikleri
+    if(st.dragging && st.dragStart) {
+      ctx.strokeStyle = "#D2691E"; ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(st.slingX-12, st.slingY-40);
+      ctx.lineTo(st.goat.x, st.goat.y); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(st.slingX+12, st.slingY-40);
+      ctx.lineTo(st.goat.x, st.goat.y); ctx.stroke();
+    } else if(!st.launched) {
+      ctx.strokeStyle = "#D2691E"; ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(st.slingX-12, st.slingY-40);
+      ctx.lineTo(st.slingX, st.slingY-28); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(st.slingX+12, st.slingY-40);
+      ctx.lineTo(st.slingX, st.slingY-28); ctx.stroke();
+    }
+
+    // Hedefler
+    st.targets.forEach(function(t) {
+      if(!t.hit) {
+        ctx.font = t.w+"px serif";
+        ctx.fillText(t.emoji, t.x, t.y+t.h);
+      }
+    });
+
+    // Partiküller
+    st.particles.forEach(function(p) {
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r*p.life, 0, Math.PI*2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // Keçi
+    if(st.goat && (!st.gameOver || st.bounce < 5)) {
+      ctx.font = (st.goat.r*2.2)+"px serif";
+      ctx.fillText("🐐", st.goat.x - st.goat.r, st.goat.y + st.goat.r*0.7);
+    }
+
+    // Skor
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 16px Poppins,sans-serif";
+    ctx.fillText("🏆 "+st.score, 10, 28);
+
+    // Yön çizgisi (fırlatılmadan)
+    if(!st.launched && st.dragging && st.dragStart) {
+      var dx = st.slingX - st.goat.x;
+      var dy = st.slingY - st.goat.y;
+      var power = 0.35;
+      var pvx = dx * power, pvy = dy * power;
+      ctx.strokeStyle = "rgba(255,255,0,.5)";
+      ctx.lineWidth = 2; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(st.goat.x, st.goat.y);
+      var tx = st.goat.x, ty = st.goat.y;
+      var tvx = pvx, tvy = pvy;
+      for(var i=0;i<20;i++) {
+        tx += tvx; ty += tvy; tvy += st.gravity;
+        ctx.lineTo(tx, ty);
+        if(ty > H-60) break;
+      }
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+  };
+
+  var loop = function() {
+    var st = stateRef.current;
+    if(st.launched && !st.gameOver && !st.won) {
+      st.goat.x += st.vx;
+      st.goat.y += st.vy;
+      st.vy += st.gravity;
+      st.vx *= 0.99;
+
+      // Zemin çarpışma
+      if(st.goat.y + st.goat.r > H - 60) {
+        st.goat.y = H - 60 - st.goat.r;
+        st.vy *= -0.4; st.vx *= 0.7;
+        st.bounce++;
+        if(st.bounce > 3 || Math.abs(st.vy) < 1) {
+          st.gameOver = true;
+          setGameOver(true);
+          if(st.score > 0) setMsg("Harika! "+st.score+" puan!");
+          else setMsg("Kaçırdın! Tekrar dene 😅");
+        }
+      }
+
+      // Ekran dışı
+      if(st.goat.x > W + 50) {
+        st.gameOver = true; setGameOver(true);
+        setMsg("Kaçırdın! 😅");
+      }
+
+      // Hedef çarpışmaları
+      st.targets.forEach(function(t) {
+        if(t.hit) return;
+        if(st.goat.x+st.goat.r > t.x && st.goat.x-st.goat.r < t.x+t.w &&
+           st.goat.y+st.goat.r > t.y && st.goat.y-st.goat.r < t.y+t.h) {
+          t.hit = true;
+          st.score += 100;
+          setScore(st.score);
+          var ps = makeParticles(t.x+t.w/2, t.y+t.h/2, "#FFD700");
+          st.particles = st.particles.concat(ps);
+          st.vx *= 0.7; st.vy *= 0.7;
+        }
+      });
+
+      // Partikülleri güncelle
+      st.particles = st.particles.filter(function(p){ return p.life > 0; });
+      st.particles.forEach(function(p){
+        p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.life -= 0.04;
+      });
+
+      // Hepsini vurdu
+      if(st.targets.every(function(t){ return t.hit; })) {
+        st.won = true; setWon(true); setMsg("🎉 Tüm hedefleri vurdun! "+st.score+" puan!");
+      }
+    }
+    draw();
+    animRef.current = requestAnimationFrame(loop);
+  };
+
+  React.useEffect(function(){
+    init();
+    animRef.current = requestAnimationFrame(loop);
+    return function(){ cancelAnimationFrame(animRef.current); };
+  }, []);
+
+  var getPos = function(e, canvas) {
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = W / rect.width;
+    var scaleY = H / rect.height;
+    var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
+    };
+  };
+
+  var onDown = function(e) {
+    e.preventDefault();
+    var st = stateRef.current;
+    if(st.launched || st.gameOver || st.won) return;
+    var pos = getPos(e, canvasRef.current);
+    var dx = pos.x - st.goat.x, dy = pos.y - st.goat.y;
+    if(Math.sqrt(dx*dx+dy*dy) < 40) {
+      st.dragging = true;
+      st.dragStart = {x: st.slingX, y: st.slingY};
+    }
+  };
+
+  var onMove = function(e) {
+    e.preventDefault();
+    var st = stateRef.current;
+    if(!st.dragging) return;
+    var pos = getPos(e, canvasRef.current);
+    var maxDist = 70;
+    var dx = pos.x - st.slingX, dy = pos.y - st.slingY;
+    var dist = Math.sqrt(dx*dx+dy*dy);
+    if(dist > maxDist) {
+      dx = dx/dist*maxDist; dy = dy/dist*maxDist;
+    }
+    st.goat.x = st.slingX + dx;
+    st.goat.y = st.slingY + dy;
+  };
+
+  var onUp = function(e) {
+    e.preventDefault();
+    var st = stateRef.current;
+    if(!st.dragging) return;
+    st.dragging = false;
+    var dx = st.slingX - st.goat.x;
+    var dy = st.slingY - st.goat.y;
+    var power = 0.35;
+    st.vx = dx * power;
+    st.vy = dy * power;
+    st.launched = true;
+    st.bounce = 0;
+  };
+
+  var restart = function() {
+    cancelAnimationFrame(animRef.current);
+    init();
+    animRef.current = requestAnimationFrame(loop);
+  };
+
+  return (
+    <div className="anim-fade">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+        <h2 style={{margin:0,fontSize:17,fontWeight:800,color:"#111827"}}>🐐 Keçi Fırlatma</h2>
+        <button onClick={restart} style={{background:"rgba(var(--primary-rgb),.1)",color:"var(--primary,#8B5CF6)",border:"none",borderRadius:10,padding:"6px 12px",fontWeight:600,fontSize:12,cursor:"pointer"}}>🔄 Yeniden</button>
+      </div>
+
+      <div style={{fontSize:11,color:"#9CA3AF",marginBottom:8,textAlign:"center"}}>
+        🐐 Keçiye bas, geri çek ve bırak! Hedeflere vur 🎯
+      </div>
+
+      <div style={{position:"relative",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,.15)"}}>
+        <canvas ref={canvasRef} width={W} height={H}
+          style={{width:"100%",display:"block",touchAction:"none"}}
+          onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp}
+          onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
+        />
+        {(gameOver || won) && (
+          <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.6)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+            <div style={{fontSize:44,marginBottom:8}}>{won?"🎉":"😅"}</div>
+            <div style={{color:"#fff",fontWeight:800,fontSize:18,marginBottom:6,textAlign:"center",padding:"0 20px"}}>{msg}</div>
+            <div style={{color:"#FFD700",fontWeight:700,fontSize:15,marginBottom:16}}>🏆 {score} puan</div>
+            <button onClick={restart} style={{background:"linear-gradient(135deg,#8B5CF6,#7C3AED)",color:"#fff",border:"none",borderRadius:14,padding:"12px 28px",fontWeight:700,fontSize:15,cursor:"pointer"}}>🔄 Tekrar Oyna</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function GoatMatchGame() {
   const PAIRS = [
     {id:"a",emoji:"🐐",name:"Keçi"},{id:"b",emoji:"🐑",name:"Koyun"},
@@ -4588,7 +4922,7 @@ function App(){
         {/* GAME */}
         {page==="game" && (
           <div style={{padding:"0 2px"}} className="anim-fade">
-            <GoatMatchGame/>
+            <GameHub/>
           </div>
         )}
 
