@@ -3980,8 +3980,7 @@ function App(){
             <span style={{color:theme.primary}}>İŞ YURTLARI HAYVANCILIK</span>
           </h1>
           <div style={{display:"flex",gap:8,justifyContent:"center",marginTop:6}}>
-            <span style={{background:"rgba(var(--primary-rgb),.12)",color:theme.primary,fontSize:10,fontWeight:600,padding:"3px 10px",borderRadius:20,border:"1px solid rgba(212,175,55,.25)"}}>🤖 Yapay Zeka</span>
-            <span style={{background:"rgba(var(--primary-rgb),.12)",color:theme.primary,fontSize:10,fontWeight:600,padding:"3px 10px",borderRadius:20,border:"1px solid rgba(212,175,55,.25)"}}>☁️ Bulut</span>
+            <span style={{background:"rgba(var(--primary-rgb),.12)",color:theme.primary,fontSize:10,fontWeight:600,padding:"3px 10px",borderRadius:20}}>🤖 Yapay Zeka</span>
           </div>
         </div>
 
@@ -3999,12 +3998,6 @@ function App(){
           </div>
           <div style={{color:"#D1D5DB",fontSize:10,textAlign:"center",marginTop:6}}>Duyuru eklemek için giriş yapın</div>
         </div>
-
-        {/* ACİL */}
-        <button onClick={function(){setShowAcil(true);}} style={{width:"100%",marginBottom:16,padding:"14px",background:"linear-gradient(135deg,#DC2626,#EF4444)",color:"#fff",border:"none",borderRadius:16,fontSize:16,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 20px rgba(220,38,38,.4)",display:"flex",alignItems:"center",justifyContent:"center",gap:8,WebkitAppearance:"none"}}>
-          🚨 ACİL YARDIM
-        </button>
-        <AcilModal show={showAcil} onClose={function(){setShowAcil(false);}} nums={["905426321183","905386430705","905412633285"]}/>
 
         {/* Giriş kutusu */}
         <div style={{background:"#FFFFFF",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:24,padding:22,boxShadow:"0 24px 80px rgba(0,0,0,.8)",border:"1px solid rgba(212,175,55,.18)"}}>
@@ -4131,6 +4124,7 @@ function App(){
 
   return (
     <div style={{...S.app,"--primary":theme.primary,"--primary-rgb":theme.primaryRgb||"139,92,246",background:theme.bg||"#F5F0FF",color:theme.textColor||"#1A1A2E"}}>
+      <AcilModal show={showAcil} onClose={function(){setShowAcil(false);}}/>
       {/* Fotoğraf üstü hafif overlay — içerik okunabilsin */}
       {theme.photo&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:theme.overlay||"rgba(0,0,0,.5)",zIndex:0,pointerEvents:"none"}}/>}
       <style>{":root{--primary:"+theme.primary+";--primary-rgb:"+(theme.primaryRgb||"139,92,246")+";}body{background-color:"+(theme.bg||"#F5F0FF")+";color:"+(theme.textColor||"#1A1A2E")+";"+( theme.photo?"background-image:url("+theme.photo+");background-size:cover;background-position:center top;background-repeat:no-repeat;":"")+"}"}</style>
@@ -4278,9 +4272,7 @@ function App(){
                   <div style={{fontSize:9,color:"rgba(var(--primary-rgb),.45)",fontWeight:700,letterSpacing:"2px",textTransform:"uppercase",marginBottom:3}}>BURDUR AÇIK CEZAEVİ</div>
                   <div style={{fontSize:15,fontWeight:800,color:"#1A1A2E",letterSpacing:"-.3px",lineHeight:1.3}}>İş Yurtları <span style={{color:theme.primary}}>Hayvancılık</span></div>
                   <div style={{display:"flex",gap:5,marginTop:7}}>
-                    <span style={{background:"rgba(0,0,0,.06)",color:"rgba(var(--primary-rgb),.45)",fontSize:8,fontWeight:700,padding:"2px 7px",borderRadius:8,border:"1px solid rgba(212,175,55,.12)"}}>🤖 Yapay Zeka</span>
-                    <span style={{background:"rgba(0,0,0,.06)",color:"rgba(var(--primary-rgb),.45)",fontSize:8,fontWeight:700,padding:"2px 7px",borderRadius:8,border:"1px solid rgba(212,175,55,.12)"}}>☁️ Bulut</span>
-                    <span style={{background:"#D1FAE5",color:"#059669",fontSize:9,fontWeight:600,padding:"3px 10px",borderRadius:20}}>● Canlı</span>
+                    <button onClick={function(){setShowAcil(true);}} style={{background:"linear-gradient(135deg,#DC2626,#EF4444)",color:"#fff",fontSize:13,fontWeight:800,padding:"8px 18px",borderRadius:12,border:"none",cursor:"pointer",WebkitAppearance:"none",animation:"pulse 1.5s infinite",letterSpacing:".5px",boxShadow:"0 3px 12px rgba(220,38,38,.4)",display:"flex",alignItems:"center",gap:6}}>🚨 ACİL YARDIM</button>
                     <button onClick={function(){navigate("game");}} style={{background:"rgba(var(--primary-rgb),.12)",color:"var(--primary,#8B5CF6)",fontSize:9,fontWeight:700,padding:"3px 10px",borderRadius:20,border:"none",cursor:"pointer",WebkitAppearance:"none"}}>🎮 Oyun</button>
                   </div>
                 </div>
