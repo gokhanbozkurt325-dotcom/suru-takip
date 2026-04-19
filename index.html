@@ -187,143 +187,157 @@ function WeatherWidget() {
 
 // ── Keçi Eşleştirme Oyunu ──
 function GoatMatchGame() {
-  const GOAT_EMOJIS = ["🐐","🐑","🦙","🐏","🐮","🐷","🐔","🦆","🐇","🦊","🐺","🦁"];
-  const GOAT_NAMES  = ["Keçi","Koyun","Lama","Koç","İnek","Domuz","Tavuk","Ördek","Tavşan","Tilki","Kurt","Aslan"];
+  const BREEDS_GAME = [
+    { id:"saanen",  name:"Saanen Keçisi",    img:"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Saanen_goat_kid.jpg/240px-Saanen_goat_kid.jpg" },
+    { id:"angora",  name:"Ankara Keçisi",     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Angora_Goat_and_kid.jpg/240px-Angora_Goat_and_kid.jpg" },
+    { id:"boer",    name:"Boer Keçisi",       img:"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Boer_goat_buck_profie.jpg/240px-Boer_goat_buck_profie.jpg" },
+    { id:"kiko",    name:"Kiko Keçisi",       img:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Baby_Goat.jpg/240px-Baby_Goat.jpg" },
+    { id:"nigerian",name:"Nijerya Cüce",      img:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Domestic_goat_kid_in_capeweed.jpg/240px-Domestic_goat_kid_in_capeweed.jpg" },
+    { id:"nubian",  name:"Nubya Keçisi",      img:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Flock_of_goats_in_Atacama.jpg/240px-Flock_of_goats_in_Atacama.jpg" },
+    { id:"alpine",  name:"Alp Keçisi",        img:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Mountain_goat_white.jpg/240px-Mountain_goat_white.jpg" },
+    { id:"pygmy",   name:"Cüce Keçi",         img:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Large_bonnet.jpg/240px-Large_bonnet.jpg" },
+  ];
+  const TIME_LIMIT = 120;
 
   const initCards = () => {
-    const pairs = GOAT_EMOJIS.slice(0,8).map((e,i) => ({emoji:e,name:GOAT_NAMES[i]}));
-    const deck = [...pairs,...pairs].map((c,i) => ({...c,id:i,flipped:false,matched:false}));
+    const deck = [...BREEDS_GAME,...BREEDS_GAME].map((b,i)=>({...b,uid:i,flipped:false,matched:false}));
     return deck.sort(()=>Math.random()-.5);
   };
 
-  const [cards, setCards] = React.useState(initCards);
+  const [cards,   setCards]   = React.useState(initCards);
   const [flipped, setFlipped] = React.useState([]);
-  const [moves, setMoves] = React.useState(0);
-  const [won, setWon] = React.useState(false);
-  const [time, setTime] = React.useState(0);
+  const [moves,   setMoves]   = React.useState(0);
+  const [won,     setWon]     = React.useState(false);
+  const [lost,    setLost]    = React.useState(false);
+  const [time,    setTime]    = React.useState(0);
   const [running, setRunning] = React.useState(false);
   const timerRef = React.useRef(null);
 
-  React.useEffect(() => {
-    if(running) {
-      timerRef.current = setInterval(() => setTime(t => t+1), 1000);
-    } else {
-      clearInterval(timerRef.current);
-    }
-    return () => clearInterval(timerRef.current);
-  }, [running]);
+  React.useEffect(()=>{
+    if(running&&!won&&!lost){
+      timerRef.current=setInterval(()=>{
+        setTime(t=>{
+          if(t+1>=TIME_LIMIT){setRunning(false);setLost(true);return TIME_LIMIT;}
+          return t+1;
+        });
+      },1000);
+    } else { clearInterval(timerRef.current); }
+    return ()=>clearInterval(timerRef.current);
+  },[running,won,lost]);
 
-  const reset = () => {
-    setCards(initCards());
-    setFlipped([]);
-    setMoves(0);
-    setWon(false);
-    setTime(0);
-    setRunning(false);
+  const reset=()=>{
+    clearInterval(timerRef.current);
+    setCards(initCards());setFlipped([]);setMoves(0);
+    setWon(false);setLost(false);setTime(0);setRunning(false);
   };
 
-  const flip = (card) => {
-    if(card.flipped || card.matched || flipped.length===2) return;
+  const flip=(card)=>{
+    if(card.flipped||card.matched||flipped.length===2||lost||won) return;
     if(!running) setRunning(true);
-    const newCards = cards.map(c => c.id===card.id ? {...c,flipped:true} : c);
-    const newFlipped = [...flipped, card];
-    setCards(newCards);
-    setFlipped(newFlipped);
-
-    if(newFlipped.length===2) {
-      setMoves(m => m+1);
-      if(newFlipped[0].emoji===newFlipped[1].emoji) {
-        // Eşleşti!
-        setTimeout(() => {
-          const matched = newCards.map(c =>
-            c.emoji===newFlipped[0].emoji ? {...c,matched:true} : c
-          );
-          setCards(matched);
-          setFlipped([]);
-          if(matched.every(c => c.matched)) {
-            setWon(true);
-            setRunning(false);
-          }
-        }, 400);
+    const nc=cards.map(c=>c.uid===card.uid?{...c,flipped:true}:c);
+    const nf=[...flipped,card];
+    setCards(nc);setFlipped(nf);
+    if(nf.length===2){
+      setMoves(m=>m+1);
+      if(nf[0].id===nf[1].id){
+        setTimeout(()=>{
+          const mc=nc.map(c=>c.id===nf[0].id?{...c,matched:true}:c);
+          setCards(mc);setFlipped([]);
+          if(mc.every(c=>c.matched)){setWon(true);setRunning(false);}
+        },400);
       } else {
-        // Eşleşmedi — kapat
-        setTimeout(() => {
-          setCards(prev => prev.map(c =>
-            newFlipped.some(f => f.id===c.id) ? {...c,flipped:false} : c
-          ));
+        setTimeout(()=>{
+          setCards(p=>p.map(c=>nf.some(f=>f.uid===c.uid)?{...c,flipped:false}:c));
           setFlipped([]);
-        }, 900);
+        },900);
       }
     }
   };
 
-  const fmtTime = s => `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+  const remaining=TIME_LIMIT-time;
+  const tc=remaining<=20?"#EF4444":remaining<=60?"#D97706":"#059669";
+  const fmt=s=>`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+  const matched=cards.filter(c=>c.matched).length/2;
 
   return (
     <div className="anim-fade">
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-        <h2 style={{...S.title,fontSize:17}}>🐐 Keçi Eşleştirme</h2>
-        <button onClick={reset} style={{...S.btnSm,background:"rgba(var(--primary-rgb),.1)",color:"var(--primary,#8B5CF6)",padding:"6px 14px"}}>🔄 Yeniden</button>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+        <h2 style={{...S.title,fontSize:17}}>🐐 Keçi Irkları Oyunu</h2>
+        <button onClick={reset} style={{...S.btnSm,background:"rgba(var(--primary-rgb),.1)",color:"var(--primary,#8B5CF6)",padding:"6px 12px"}}>🔄 Yeniden</button>
       </div>
 
-      {/* Skor */}
-      <div style={{display:"flex",gap:8,marginBottom:12}}>
-        <div style={{flex:1,background:"#FFFFFF",borderRadius:12,padding:"10px",textAlign:"center",border:"1px solid rgba(0,0,0,.06)",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-          <div style={{fontSize:18,fontWeight:800,color:"var(--primary,#8B5CF6)"}}>{moves}</div>
-          <div style={{fontSize:10,color:"#9CA3AF",fontWeight:600}}>HAREKETte</div>
-        </div>
-        <div style={{flex:1,background:"#FFFFFF",borderRadius:12,padding:"10px",textAlign:"center",border:"1px solid rgba(0,0,0,.06)",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-          <div style={{fontSize:18,fontWeight:800,color:"#059669"}}>{fmtTime(time)}</div>
-          <div style={{fontSize:10,color:"#9CA3AF",fontWeight:600}}>SÜRE</div>
-        </div>
-        <div style={{flex:1,background:"#FFFFFF",borderRadius:12,padding:"10px",textAlign:"center",border:"1px solid rgba(0,0,0,.06)",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
-          <div style={{fontSize:18,fontWeight:800,color:"#D97706"}}>{cards.filter(c=>c.matched).length/2}/8</div>
-          <div style={{fontSize:10,color:"#9CA3AF",fontWeight:600}}>EŞLEŞTİ</div>
-        </div>
+      {/* Skor satırı */}
+      <div style={{display:"flex",gap:8,marginBottom:8}}>
+        {[{v:moves,l:"HAMLE",c:"var(--primary,#8B5CF6)"},{v:fmt(remaining),l:"SÜRE",c:tc},{v:`${matched}/8`,l:"EŞLEŞTİ",c:"#D97706"}].map(({v,l,c})=>(
+          <div key={l} style={{flex:1,background:"#FFFFFF",borderRadius:12,padding:"8px 6px",textAlign:"center",border:`1.5px solid ${c}22`}}>
+            <div style={{fontSize:17,fontWeight:800,color:c}}>{v}</div>
+            <div style={{fontSize:9,color:"#9CA3AF",fontWeight:600}}>{l}</div>
+          </div>
+        ))}
       </div>
 
-      {/* Kart ızgarası */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-        {cards.map(card => (
-          <button
-            key={card.id}
-            onClick={() => flip(card)}
-            style={{
-              aspectRatio:"1",
-              borderRadius:14,
-              border: card.matched ? "2px solid #10B981" : card.flipped ? "2px solid var(--primary,#8B5CF6)" : "2px solid #E5E7EB",
-              background: card.matched ? "#ECFDF5" : card.flipped ? "rgba(var(--primary-rgb),.08)" : "#F9FAFB",
-              cursor: card.matched||card.flipped ? "default" : "pointer",
-              display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-              transition:"all .2s",
-              transform: card.flipped||card.matched ? "scale(1.02)" : "scale(1)",
-              boxShadow: card.matched ? "0 2px 8px rgba(16,185,129,.2)" : "0 1px 4px rgba(0,0,0,.06)",
-              WebkitAppearance:"none",
-              padding:0
-            }}
-          >
-            {card.flipped || card.matched ? (
-              <div style={{textAlign:"center"}}>
-                <div style={{fontSize:28}}>{card.emoji}</div>
-                <div style={{fontSize:8,color:card.matched?"#059669":"var(--primary,#8B5CF6)",fontWeight:700,marginTop:2}}>{card.name}</div>
+      {/* Süre çubuğu */}
+      <div style={{height:5,background:"#F3F4F6",borderRadius:10,marginBottom:10,overflow:"hidden"}}>
+        <div style={{height:"100%",width:`${(remaining/TIME_LIMIT)*100}%`,background:tc,borderRadius:10,transition:"width 1s linear"}}/>
+      </div>
+
+      {/* Kartlar */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5}}>
+        {cards.map(card=>(
+          <button key={card.uid} onClick={()=>flip(card)} style={{
+            aspectRatio:"1",borderRadius:10,padding:0,overflow:"hidden",
+            border:card.matched?"2.5px solid #10B981":card.flipped?"2.5px solid var(--primary,#8B5CF6)":"2px solid #E5E7EB",
+            cursor:card.matched||card.flipped||lost?"default":"pointer",
+            background:card.matched?"#ECFDF5":card.flipped?"rgba(var(--primary-rgb),.06)":"#F9FAFB",
+            transition:"all .2s",transform:card.flipped||card.matched?"scale(1.03)":"scale(1)",
+            boxShadow:card.matched?"0 2px 8px rgba(16,185,129,.2)":"0 1px 4px rgba(0,0,0,.05)",
+            WebkitAppearance:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+            opacity:lost&&!card.matched?0.45:1
+          }}>
+            {card.flipped||card.matched ? (
+              <div style={{width:"100%",height:"100%",display:"flex",flexDirection:"column"}}>
+                <img src={card.img} alt={card.name}
+                  style={{width:"100%",flex:1,objectFit:"cover",minHeight:0}}
+                  onError={e=>{e.target.parentNode.innerHTML='<div style="font-size:28px;text-align:center;padding:8px">🐐</div><div style="font-size:7px;text-align:center;padding:2px;color:#6B7280">'+ card.name +'</div>';}}
+                />
+                <div style={{fontSize:7,fontWeight:700,padding:"2px 3px",textAlign:"center",
+                  color:card.matched?"#059669":"var(--primary,#8B5CF6)",
+                  background:card.matched?"#ECFDF5":"rgba(var(--primary-rgb),.08)",
+                  whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                  {card.name}
+                </div>
               </div>
             ) : (
-              <div style={{fontSize:24}}>🎴</div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:24,opacity:.6}}>🐐</div>
+                <div style={{fontSize:8,color:"#D1D5DB"}}>?</div>
+              </div>
             )}
           </button>
         ))}
       </div>
 
-      {/* Kazandı ekranı */}
-      {won && (
-        <div style={{marginTop:16,background:"linear-gradient(135deg,#ECFDF5,#D1FAE5)",borderRadius:18,padding:20,textAlign:"center",border:"1px solid #A7F3D0"}}>
-          <div style={{fontSize:48,marginBottom:8}}>🎉</div>
-          <div style={{fontWeight:800,fontSize:20,color:"#065F46",marginBottom:4}}>Tebrikler!</div>
-          <div style={{fontSize:14,color:"#059669",marginBottom:4}}>Tüm keçileri eşleştirdin!</div>
-          <div style={{fontSize:13,color:"#6B7280",marginBottom:12}}>{moves} hamle · {fmtTime(time)}</div>
-          <button onClick={reset} style={{...S.btnPrimary,background:"#10B981",boxShadow:"0 4px 14px rgba(16,185,129,.4)"}}>🔄 Tekrar Oyna</button>
-        </div>
-      )}
+      {/* Kazandı */}
+      {won&&<div style={{marginTop:14,background:"linear-gradient(135deg,#ECFDF5,#D1FAE5)",borderRadius:16,padding:18,textAlign:"center",border:"1px solid #A7F3D0"}}>
+        <div style={{fontSize:40,marginBottom:6}}>🎉</div>
+        <div style={{fontWeight:800,fontSize:19,color:"#065F46",marginBottom:3}}>Tebrikler!</div>
+        <div style={{fontSize:13,color:"#059669",marginBottom:3}}>Tüm keçi ırklarını tanıdın!</div>
+        <div style={{fontSize:11,color:"#6B7280",marginBottom:12}}>{moves} hamle · {fmt(time)} sürede</div>
+        <button onClick={reset} style={{...S.btnPrimary,background:"#10B981",boxShadow:"0 4px 14px rgba(16,185,129,.35)"}}>🔄 Tekrar Oyna</button>
+      </div>}
+
+      {/* Kaybetti */}
+      {lost&&<div style={{marginTop:14,background:"linear-gradient(135deg,#FEF2F2,#FEE2E2)",borderRadius:16,padding:18,textAlign:"center",border:"1px solid #FECACA"}}>
+        <div style={{fontSize:40,marginBottom:6}}>⏰</div>
+        <div style={{fontWeight:800,fontSize:19,color:"#991B1B",marginBottom:3}}>Süre Doldu!</div>
+        <div style={{fontSize:13,color:"#DC2626",marginBottom:3}}>{matched}/8 ırk eşleştirildi</div>
+        <div style={{fontSize:11,color:"#6B7280",marginBottom:12}}>{moves} hamle yapıldı</div>
+        <button onClick={reset} style={{...S.btnPrimary,background:"#EF4444",boxShadow:"0 4px 14px rgba(239,68,68,.35)"}}>🔄 Tekrar Dene</button>
+      </div>}
+
+      {!running&&!won&&!lost&&<div style={{marginTop:10,textAlign:"center",fontSize:11,color:"#9CA3AF"}}>
+        Kartları çevirerek aynı keçi ırklarını eşleştir · {TIME_LIMIT} saniye süren var
+      </div>}
     </div>
   );
 }
@@ -1829,12 +1843,26 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
                 <div style={{fontSize:12,color:"#EF4444",marginTop:2,fontWeight:600}}>☠️ {d.cause}</div>
                 {d.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {d.notes}</div>}
                 <div style={{fontSize:10,color:"#D1D5DB",marginTop:4}}>Ekleyen: {d.createdBy}</div>
-                {deathPhotos[d.id]?.length>0&&(
-                  <button onClick={()=>setViewPhotos({deathId:d.id,urls:deathPhotos[d.id]})}
-                    style={{...S.btnSm,background:"rgba(40,115,168,.2)",color:"#42A5F5",fontSize:10,padding:"3px 8px",marginTop:6}}>
-                    📷 {deathPhotos[d.id].length} Fotoğraf
-                  </button>
-                )}
+                <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:6}}>
+                  {deathPhotos[d.id]?.length>0&&(
+                    <button onClick={()=>setViewPhotos({deathId:d.id,urls:deathPhotos[d.id]})}
+                      style={{...S.btnSm,background:"rgba(14,165,233,.1)",color:"#0EA5E9",fontSize:10,padding:"3px 8px"}}>
+                      📷 {deathPhotos[d.id].length} Fotoğraf
+                    </button>
+                  )}
+                  {currentUser!=="Misafir"&&(
+                    <label style={{...S.btnSm,background:"rgba(16,185,129,.1)",color:"#059669",fontSize:10,padding:"3px 8px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:3}}>
+                      📎 Fotoğraf Ekle
+                      <input type="file" accept="image/*" multiple style={{display:"none"}}
+                        onChange={async e=>{
+                          const files=Array.from(e.target.files);
+                          if(!files.length) return;
+                          await uploadPhotos(d.id,files);
+                          e.target.value="";
+                        }}/>
+                    </label>
+                  )}
+                </div>
               </div>
               <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
                 <span style={{background:"rgba(239,68,68,.1)",color:"#EF4444",fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:8}}>Öldü</span>
@@ -4108,6 +4136,7 @@ function App(){
                     <span style={{background:"rgba(0,0,0,.06)",color:"rgba(var(--primary-rgb),.45)",fontSize:8,fontWeight:700,padding:"2px 7px",borderRadius:8,border:"1px solid rgba(212,175,55,.12)"}}>🤖 Yapay Zeka</span>
                     <span style={{background:"rgba(0,0,0,.06)",color:"rgba(var(--primary-rgb),.45)",fontSize:8,fontWeight:700,padding:"2px 7px",borderRadius:8,border:"1px solid rgba(212,175,55,.12)"}}>☁️ Bulut</span>
                     <span style={{background:"#D1FAE5",color:"#059669",fontSize:9,fontWeight:600,padding:"3px 10px",borderRadius:20}}>● Canlı</span>
+                    <button onClick={()=>navigate("game")} style={{background:"rgba(var(--primary-rgb),.12)",color:"var(--primary,#8B5CF6)",fontSize:9,fontWeight:700,padding:"3px 10px",borderRadius:20,border:"none",cursor:"pointer",WebkitAppearance:"none"}}>🎮 Oyun</button>
                   </div>
                 </div>
                 <div style={{textAlign:"right",flexShrink:0}}>
