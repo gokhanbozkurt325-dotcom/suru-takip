@@ -3639,6 +3639,12 @@ function App(){
   const activeGoats=goats.filter(g=>!g.archived);
 
   const [announcements, setAnnouncements] = useState([]);
+  const [showAcil, setShowAcil] = useState(false);
+  const [acilDurum, setAcilDurum] = useState("");
+  const [acilKonum, setAcilKonum] = useState("");
+  const [acilFoto, setAcilFoto] = useState(null);
+  const [acilFotoUrl, setAcilFotoUrl] = useState("");
+  const [acilSending, setAcilSending] = useState(false);
   const [selUser, setSelUser] = useState(null);
   const [selPerson, setSelPerson] = useState(null); // kişi seçimi (vardiya üyesi veya Vet/Şef)
   const [pinInput, setPinInput] = useState("");
@@ -3773,6 +3779,109 @@ function App(){
           </div>
           <div style={{color:"#D1D5DB",fontSize:10,textAlign:"center",marginTop:6}}>Duyuru eklemek için giriş yapın</div>
         </div>
+
+        {/* ACİL BUTONU */}
+        <button onClick={()=>setShowAcil(true)} style={{
+          width:"100%",marginBottom:16,padding:"14px",
+          background:"linear-gradient(135deg,#DC2626,#EF4444)",
+          color:"#fff",border:"none",borderRadius:16,
+          fontSize:16,fontWeight:800,cursor:"pointer",
+          boxShadow:"0 4px 20px rgba(220,38,38,.4)",
+          display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+          WebkitAppearance:"none",letterSpacing:".5px",
+          animation:"pulse 2s infinite"
+        }}>
+          🚨 ACİL YARDIM
+        </button>
+
+        {/* ACİL MODAL */}
+        {showAcil && (
+          <div onClick={()=>setShowAcil(false)} style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.7)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+            <div onClick={e=>e.stopPropagation()} style={{background:"#FFFFFF",borderRadius:22,padding:22,width:"100%",maxWidth:360,boxShadow:"0 8px 40px rgba(0,0,0,.3)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+                <div style={{fontSize:32}}>🚨</div>
+                <div>
+                  <div style={{fontWeight:800,fontSize:17,color:"#DC2626"}}>ACİL DURUM</div>
+                  <div style={{fontSize:11,color:"#9CA3AF"}}>Mesaj 3 kişiye gönderilecek</div>
+                </div>
+              </div>
+
+              <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:5,textTransform:"uppercase",letterSpacing:".3px"}}>Durum Açıklaması *</div>
+              <textarea
+                value={acilDurum}
+                onChange={e=>setAcilDurum(e.target.value)}
+                placeholder="Ne oldu? Kısaca açıklayın..."
+                rows={3}
+                style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #E5E7EB",fontSize:13,resize:"none",boxSizing:"border-box",fontFamily:"inherit",outline:"none",color:"#111827"}}
+              />
+
+              <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:5,marginTop:10,textTransform:"uppercase",letterSpacing:".3px"}}>Konum (isteğe bağlı)</div>
+              <input
+                value={acilKonum}
+                onChange={e=>setAcilKonum(e.target.value)}
+                placeholder="Örn: Ahır 2, Mera alanı..."
+                style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #E5E7EB",fontSize:13,boxSizing:"border-box",outline:"none",color:"#111827"}}
+              />
+
+              <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:5,marginTop:10,textTransform:"uppercase",letterSpacing:".3px"}}>Fotoğraf (isteğe bağlı)</div>
+              {acilFotoUrl ? (
+                <div style={{position:"relative",marginBottom:8}}>
+                  <img src={acilFotoUrl} style={{width:"100%",height:120,objectFit:"cover",borderRadius:10,border:"1px solid #E5E7EB"}}/>
+                  <button onClick={()=>{setAcilFoto(null);setAcilFotoUrl("");}} style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,.6)",border:"none",color:"#fff",borderRadius:"50%",width:22,height:22,fontSize:12,cursor:"pointer",padding:0}}>✕</button>
+                </div>
+              ) : (
+                <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px",border:"1.5px dashed #D1D5DB",borderRadius:10,cursor:"pointer",fontSize:13,color:"#9CA3AF",marginBottom:8}}>
+                  📷 Fotoğraf seç
+                  <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                    const f=e.target.files[0];
+                    if(f){setAcilFoto(f);setAcilFotoUrl(URL.createObjectURL(f));}
+                  }}/>
+                </label>
+              )}
+
+              <div style={{background:"#FEF2F2",borderRadius:10,padding:"8px 12px",marginBottom:14,fontSize:11,color:"#DC2626"}}>
+                📱 Mesaj şu numaralara gidecek:<br/>
+                <b>Bekir Zengin</b> · <b>Ali Özen</b> · <b>Nöbetçi</b>
+              </div>
+
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={()=>{setShowAcil(false);setAcilDurum("");setAcilKonum("");setAcilFoto(null);setAcilFotoUrl("");}} style={{flex:1,padding:"11px",borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:13,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>
+                  İptal
+                </button>
+                <button
+                  disabled={!acilDurum.trim()||acilSending}
+                  onClick={async()=>{
+                    if(!acilDurum.trim()) return;
+                    setAcilSending(true);
+                    const tarih = new Date().toLocaleString("tr-TR");
+                    const konum = acilKonum.trim() ? "%0AKonum%3A "+encodeURIComponent(acilKonum.trim()) : "";
+                    const msg = encodeURIComponent("🚨 ACİL DURUM - BURDUR AÇIK CEZAEVİ HAYVANCILIK") +
+                      "%0A%0A" + encodeURIComponent(acilDurum.trim()) +
+                      konum +
+                      "%0A%0A" + encodeURIComponent("📅 "+tarih);
+                    const nums = ["905426321183","905386430705","905412633285"];
+                    nums.forEach((n,i)=>{
+                      setTimeout(()=>{ window.open("https://wa.me/"+n+"?text="+msg,"_blank"); }, i*800);
+                    });
+                    setTimeout(()=>{
+                      setAcilSending(false);
+                      setShowAcil(false);
+                      setAcilDurum("");setAcilKonum("");setAcilFoto(null);setAcilFotoUrl("");
+                      alert("✅ WhatsApp mesajları açıldı! Lütfen her birini gönderin.");
+                    }, 3000);
+                  }}
+                  style={{flex:2,padding:"11px",borderRadius:12,border:"none",
+                    background:!acilDurum.trim()||acilSending?"#F3F4F6":"linear-gradient(135deg,#DC2626,#EF4444)",
+                    color:!acilDurum.trim()||acilSending?"#9CA3AF":"#fff",
+                    fontWeight:700,fontSize:13,cursor:!acilDurum.trim()||acilSending?"not-allowed":"pointer",
+                    WebkitAppearance:"none"
+                  }}>
+                  {acilSending ? "⏳ Açılıyor..." : "🚨 ACİL MESAJ GÖNDER"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Giriş kutusu */}
         <div style={{background:"#FFFFFF",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:24,padding:22,boxShadow:"0 24px 80px rgba(0,0,0,.8)",border:"1px solid rgba(212,175,55,.18)"}}>
