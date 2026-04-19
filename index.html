@@ -279,7 +279,7 @@ function AcilModal(props) {
     satirlar.push("", "Tarih: "+tarih);
     var mesaj = encodeURIComponent(satirlar.join("\n"));
     nums.forEach(function(n,i){
-      setTimeout(function(){ window.open("https://wa.me/"+n+"?text="+mesaj,"_blank"); }, i*900);
+      setTimeout(function(){ window.open("https://api.whatsapp.com/send?phone="+n+"&text="+mesaj,"_blank"); }, i*900);
     });
     setTimeout(function(){ setSending(false); kapat(); }, 3200);
   };
