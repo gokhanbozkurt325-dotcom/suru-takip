@@ -260,79 +260,126 @@ function AcilModal(props) {
   var show = props.show;
   var onClose = props.onClose;
   var nums = props.nums;
+  var numAdlar = ["Bekir Zengin","Ali Özen","Nöbetçi"];
   const [durum,  setDurum]  = React.useState("");
   const [konum,  setKonum]  = React.useState("");
   const [fotoUrl,setFotoUrl]= React.useState("");
-  const [sending,setSending]= React.useState(false);
+  const [step,   setStep]   = React.useState("form"); // "form" | "send"
+  const [sentIdx,setSentIdx]= React.useState(-1);
 
   var kapat = function(){
     onClose();
-    setDurum(""); setKonum(""); setFotoUrl(""); setSending(false);
+    setDurum(""); setKonum(""); setFotoUrl("");
+    setStep("form"); setSentIdx(-1);
   };
 
-  var gonder = function(){
-    if(!durum.trim()) return;
-    setSending(true);
+  var mesajOlustur = function(){
     var tarih = new Date().toLocaleString("tr-TR");
     var satirlar = ["🚨 ACİL - BURDUR CEZAEVİ HAYVANCILIK", "", durum.trim()];
     if(konum.trim()) satirlar.push("Konum: "+konum.trim());
     satirlar.push("", "Tarih: "+tarih);
-    var mesaj = encodeURIComponent(satirlar.join("\n"));
-    nums.forEach(function(n,i){
-      setTimeout(function(){ window.open("https://api.whatsapp.com/send?phone="+n+"&text="+mesaj,"_blank"); }, i*900);
-    });
-    setTimeout(function(){ setSending(false); kapat(); }, 3200);
+    return encodeURIComponent(satirlar.join("\n"));
+  };
+
+  var gonderBir = function(n, idx){
+    var mesaj = mesajOlustur();
+    window.open("https://api.whatsapp.com/send?phone="+n+"&text="+mesaj, "_blank");
+    setSentIdx(idx);
   };
 
   if(!show) return null;
   return (
-    <div onClick={kapat} style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.7)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+    <div onClick={kapat} style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.75)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
       <div onClick={function(e){e.stopPropagation();}} style={{background:"#FFFFFF",borderRadius:22,padding:22,width:"100%",maxWidth:360,boxShadow:"0 8px 40px rgba(0,0,0,.3)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-          <div style={{fontSize:32}}>🚨</div>
+        
+        {step === "form" ? (
           <div>
-            <div style={{fontWeight:800,fontSize:17,color:"#DC2626"}}>ACİL DURUM</div>
-            <div style={{fontSize:11,color:"#9CA3AF"}}>3 kişiye WhatsApp mesajı gidecek</div>
-          </div>
-        </div>
-        <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:5,textTransform:"uppercase"}}>Durum *</div>
-        <textarea value={durum} onChange={function(e){setDurum(e.target.value);}}
-          placeholder="Ne oldu? Açıklayın..." rows={3}
-          style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #E5E7EB",fontSize:13,resize:"none",boxSizing:"border-box",outline:"none",color:"#111827",display:"block",fontFamily:"inherit"}}
-        />
-        <div style={{fontSize:11,fontWeight:700,color:"#374151",margin:"10px 0 5px",textTransform:"uppercase"}}>Konum (isteğe bağlı)</div>
-        <input value={konum} onChange={function(e){setKonum(e.target.value);}}
-          placeholder="Örn: Ahır 2, Mera..."
-          style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #E5E7EB",fontSize:13,boxSizing:"border-box",outline:"none",color:"#111827",display:"block"}}
-        />
-        <div style={{fontSize:11,fontWeight:700,color:"#374151",margin:"10px 0 5px",textTransform:"uppercase"}}>Fotoğraf (isteğe bağlı)</div>
-        {fotoUrl ? (
-          <div style={{position:"relative",marginBottom:8}}>
-            <img src={fotoUrl} style={{width:"100%",height:100,objectFit:"cover",borderRadius:10,display:"block"}}/>
-            <button onClick={function(){setFotoUrl("");}} style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,.6)",border:"none",color:"#fff",borderRadius:"50%",width:22,height:22,fontSize:12,cursor:"pointer",padding:0}}>✕</button>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+              <div style={{fontSize:32}}>🚨</div>
+              <div>
+                <div style={{fontWeight:800,fontSize:17,color:"#DC2626"}}>ACİL DURUM</div>
+                <div style={{fontSize:11,color:"#9CA3AF"}}>{nums.length} kişiye WhatsApp mesajı</div>
+              </div>
+            </div>
+
+            <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:5,textTransform:"uppercase"}}>Durum *</div>
+            <textarea value={durum} onChange={function(e){setDurum(e.target.value);}}
+              placeholder="Ne oldu? Açıklayın..." rows={3}
+              style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #E5E7EB",fontSize:13,resize:"none",boxSizing:"border-box",outline:"none",color:"#111827",display:"block",fontFamily:"inherit"}}
+            />
+            <div style={{fontSize:11,fontWeight:700,color:"#374151",margin:"10px 0 5px",textTransform:"uppercase"}}>Konum (isteğe bağlı)</div>
+            <input value={konum} onChange={function(e){setKonum(e.target.value);}}
+              placeholder="Örn: Ahır 2, Mera..."
+              style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #E5E7EB",fontSize:13,boxSizing:"border-box",outline:"none",color:"#111827",display:"block"}}
+            />
+            <div style={{fontSize:11,fontWeight:700,color:"#374151",margin:"10px 0 5px",textTransform:"uppercase"}}>Fotoğraf (isteğe bağlı)</div>
+            {fotoUrl ? (
+              <div style={{position:"relative",marginBottom:8}}>
+                <img src={fotoUrl} style={{width:"100%",height:100,objectFit:"cover",borderRadius:10,display:"block"}}/>
+                <button onClick={function(){setFotoUrl("");}} style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,.6)",border:"none",color:"#fff",borderRadius:"50%",width:22,height:22,fontSize:12,cursor:"pointer",padding:0}}>✕</button>
+              </div>
+            ) : (
+              <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px",border:"1.5px dashed #D1D5DB",borderRadius:10,cursor:"pointer",fontSize:13,color:"#9CA3AF",marginBottom:8}}>
+                📷 Fotoğraf seç
+                <input type="file" accept="image/*" style={{display:"none"}} onChange={function(e){
+                  var f=e.target.files[0];
+                  if(f) setFotoUrl(URL.createObjectURL(f));
+                }}/>
+              </label>
+            )}
+            <div style={{display:"flex",gap:8,marginTop:12}}>
+              <button onClick={kapat} style={{flex:1,padding:"11px",borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:13,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>İptal</button>
+              <button onClick={function(){if(durum.trim()) setStep("send");}} disabled={!durum.trim()}
+                style={{flex:2,padding:"11px",borderRadius:12,border:"none",
+                  background:durum.trim()?"linear-gradient(135deg,#DC2626,#EF4444)":"#F3F4F6",
+                  color:durum.trim()?"#fff":"#9CA3AF",
+                  fontWeight:700,fontSize:13,cursor:durum.trim()?"pointer":"not-allowed",WebkitAppearance:"none"}}>
+                İleri →
+              </button>
+            </div>
           </div>
         ) : (
-          <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px",border:"1.5px dashed #D1D5DB",borderRadius:10,cursor:"pointer",fontSize:13,color:"#9CA3AF",marginBottom:8}}>
-            📷 Fotoğraf seç
-            <input type="file" accept="image/*" style={{display:"none"}} onChange={function(e){
-              var f=e.target.files[0];
-              if(f) setFotoUrl(URL.createObjectURL(f));
-            }}/>
-          </label>
+          <div>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+              <div style={{fontSize:32}}>📱</div>
+              <div>
+                <div style={{fontWeight:800,fontSize:16,color:"#DC2626"}}>Mesajları Gönder</div>
+                <div style={{fontSize:11,color:"#9CA3AF"}}>Her butona sırayla tıklayın</div>
+              </div>
+            </div>
+
+            <div style={{background:"#FEF2F2",borderRadius:10,padding:"8px 12px",marginBottom:12,fontSize:12,color:"#DC2626"}}>
+              📋 Mesaj: <b>{durum.trim().slice(0,50)}{durum.length>50?"...":""}</b>
+              {konum.trim() ? <span> · 📍 {konum.trim()}</span> : null}
+            </div>
+
+            {nums.map(function(n, i){
+              var gonderildi = sentIdx >= i;
+              return (
+                <button key={n} onClick={function(){gonderBir(n, i);}}
+                  style={{
+                    width:"100%",padding:"13px 16px",marginBottom:8,borderRadius:12,border:"none",
+                    background:gonderildi?"#ECFDF5":"linear-gradient(135deg,#25D366,#128C7E)",
+                    color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",
+                    display:"flex",alignItems:"center",justifyContent:"space-between",
+                    WebkitAppearance:"none",opacity:gonderildi?0.7:1
+                  }}>
+                  <span>{gonderildi?"✅":"📲"} {numAdlar[i] || ("Kişi "+(i+1))}</span>
+                  <span style={{fontSize:12,opacity:.8}}>{gonderildi?"Gönderildi":"WhatsApp'ta Aç →"}</span>
+                </button>
+              );
+            })}
+
+            <div style={{fontSize:11,color:"#9CA3AF",textAlign:"center",marginBottom:12,marginTop:4}}>
+              Her butona tıklayınca WhatsApp açılır → Gönder'e basın
+            </div>
+
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={function(){setStep("form");setSentIdx(-1);}} style={{flex:1,padding:"10px",borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:12,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>← Geri</button>
+              <button onClick={kapat} style={{flex:2,padding:"10px",borderRadius:12,border:"none",background:"#374151",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",WebkitAppearance:"none"}}>✅ Tamamlandı</button>
+            </div>
+          </div>
         )}
-        <div style={{background:"#FEF2F2",borderRadius:10,padding:"8px 12px",marginBottom:14,fontSize:11,color:"#DC2626"}}>
-          📱 <b>Bekir Zengin · Ali Özen · Nöbetçi</b> numaralarına gidecek
-        </div>
-        <div style={{display:"flex",gap:8}}>
-          <button onClick={kapat} style={{flex:1,padding:"11px",borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:13,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>İptal</button>
-          <button onClick={gonder} disabled={!durum.trim()||sending}
-            style={{flex:2,padding:"11px",borderRadius:12,border:"none",
-              background:durum.trim()&&!sending?"linear-gradient(135deg,#DC2626,#EF4444)":"#F3F4F6",
-              color:durum.trim()&&!sending?"#fff":"#9CA3AF",
-              fontWeight:700,fontSize:13,cursor:durum.trim()&&!sending?"pointer":"not-allowed",WebkitAppearance:"none"}}>
-            {sending?"⏳ Açılıyor...":"🚨 MESAJ GÖNDER"}
-          </button>
-        </div>
       </div>
     </div>
   );
