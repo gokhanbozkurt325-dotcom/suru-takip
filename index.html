@@ -180,290 +180,385 @@ function GameHub() {
 }
 
 function GoatSlingGame() {
+  /* ── Sabitler ── */
+  var GRAVITY = 0.38;
+  var GOAT_TYPES = [
+    {id:"white",  emoji:"🐐", name:"Beyaz",     mass:1.0, speed:1.0, radius:18, color:"#fff"},
+    {id:"brown",  emoji:"🦬", name:"Kahverengi", mass:1.6, speed:0.7, radius:22, color:"#8B4513"},
+    {id:"black",  emoji:"🐏", name:"Siyah",      mass:0.7, speed:1.4, radius:15, color:"#222"},
+  ];
+
+  var LEVELS = [
+    // Level 1
+    {targets:[{x:260,y:310,emoji:"👮",hp:1},{x:300,y:310,emoji:"👮",hp:1},{x:280,y:274,emoji:"🪵",hp:1}], blocks:[{x:255,y:274,w:70,h:36,emoji:"🧱"}], goats:[0,0]},
+    // Level 2
+    {targets:[{x:240,y:310,emoji:"👮",hp:1},{x:290,y:310,emoji:"👮",hp:1},{x:330,y:310,emoji:"👮",hp:1},{x:310,y:270,emoji:"🔒",hp:1}], blocks:[{x:235,y:274,w:40,h:36,emoji:"🧱"},{x:285,y:274,w:55,h:36,emoji:"🧱"}], goats:[0,0,1]},
+    // Level 3
+    {targets:[{x:220,y:310,emoji:"👮",hp:1},{x:270,y:310,emoji:"👮",hp:1},{x:320,y:310,emoji:"👮",hp:1},{x:245,y:270,emoji:"👮",hp:1},{x:295,y:270,emoji:"🔒",hp:1}], blocks:[{x:215,y:274,w:50,h:36,emoji:"🧱"},{x:265,y:274,w:65,h:36,emoji:"⛓️"}], goats:[0,1,0,2]},
+    // Level 4
+    {targets:[{x:230,y:310,emoji:"👮",hp:2},{x:290,y:310,emoji:"👮",hp:2},{x:340,y:310,emoji:"🗼",hp:1},{x:260,y:266,emoji:"🔒",hp:1}], blocks:[{x:225,y:270,w:75,h:40,emoji:"🧱"},{x:335,y:274,w:36,h:36,emoji:"🪵"}], goats:[0,1,2,1]},
+    // Level 5
+    {targets:[{x:210,y:310,emoji:"👮",hp:1},{x:260,y:310,emoji:"👮",hp:2},{x:310,y:310,emoji:"👮",hp:1},{x:350,y:310,emoji:"🗼",hp:2},{x:235,y:266,emoji:"👮",hp:1},{x:285,y:266,emoji:"🔒",hp:1}], blocks:[{x:205,y:270,w:50,h:40,emoji:"⛓️"},{x:305,y:270,w:55,h:40,emoji:"🧱"},{x:345,y:274,w:36,h:36,emoji:"🪵"}], goats:[2,1,0,2,1]},
+    // Level 6
+    {targets:[{x:220,y:310,emoji:"👮",hp:2},{x:270,y:310,emoji:"👮",hp:2},{x:320,y:310,emoji:"👮",hp:2},{x:245,y:270,emoji:"🔒",hp:2},{x:295,y:270,emoji:"🗼",hp:1},{x:270,y:230,emoji:"👮",hp:1}], blocks:[{x:215,y:230,w:120,h:40,emoji:"🧱"},{x:235,y:192,w:80,h:38,emoji:"⛓️"}], goats:[1,2,0,1,2,0]},
+    // Level 7
+    {targets:[{x:200,y:310,emoji:"👮",hp:2},{x:250,y:310,emoji:"👮",hp:2},{x:300,y:310,emoji:"👮",hp:2},{x:350,y:310,emoji:"🗼",hp:3},{x:225,y:265,emoji:"🔒",hp:2},{x:275,y:265,emoji:"👮",hp:1},{x:325,y:265,emoji:"👮",hp:2}], blocks:[{x:195,y:270,w:50,h:40,emoji:"🧱"},{x:245,y:270,w:65,h:40,emoji:"🧱"},{x:320,y:270,w:40,h:40,emoji:"⛓️"}], goats:[2,1,2,0,1,2]},
+    // Level 8
+    {targets:[{x:210,y:310,emoji:"👮",hp:2},{x:260,y:310,emoji:"👮",hp:2},{x:310,y:310,emoji:"👮",hp:2},{x:355,y:310,emoji:"🗼",hp:3},{x:235,y:265,emoji:"🔒",hp:2},{x:285,y:265,emoji:"🔒",hp:2},{x:260,y:220,emoji:"🗼",hp:2}], blocks:[{x:205,y:225,w:165,h:40,emoji:"🧱"},{x:225,y:186,w:75,h:38,emoji:"⛓️"}], goats:[1,2,1,2,0,1]},
+    // Level 9
+    {targets:[{x:195,y:310,emoji:"👮",hp:3},{x:245,y:310,emoji:"👮",hp:3},{x:295,y:310,emoji:"👮",hp:2},{x:345,y:310,emoji:"🗼",hp:3},{x:220,y:262,emoji:"🔒",hp:2},{x:270,y:262,emoji:"👮",hp:2},{x:320,y:262,emoji:"🔒",hp:2},{x:245,y:215,emoji:"🗼",hp:2}], blocks:[{x:190,y:265,w:55,h:45,emoji:"⛓️"},{x:265,y:265,w:65,h:45,emoji:"🧱"},{x:240,y:220,w:50,h:42,emoji:"🪵"}], goats:[2,2,1,2,1,2]},
+    // Level 10
+    {targets:[{x:190,y:310,emoji:"👮",hp:3},{x:240,y:310,emoji:"👮",hp:3},{x:290,y:310,emoji:"👮",hp:3},{x:340,y:310,emoji:"🗼",hp:4},{x:215,y:260,emoji:"🔒",hp:3},{x:265,y:260,emoji:"🔒",hp:3},{x:315,y:260,emoji:"🗼",hp:3},{x:240,y:210,emoji:"👮",hp:2},{x:290,y:210,emoji:"👮",hp:2},{x:265,y:162,emoji:"🗼",hp:2}], blocks:[{x:185,y:262,w:60,h:48,emoji:"🧱"},{x:260,y:262,w:65,h:48,emoji:"⛓️"},{x:232,y:212,w:100,h:46,emoji:"🧱"},{x:255,y:166,w:40,h:44,emoji:"⛓️"}], goats:[2,2,1,2,1,2,0,2]},
+  ];
+
+  var W = 360, H = 430;
+  var SLING_X = 80, SLING_Y = 310;
+
+  /* ── State ── */
   const canvasRef = React.useRef(null);
-  const stateRef = React.useRef({
-    goat: null, dragging: false, dragStart: null, launched: false,
-    vx: 0, vy: 0, score: 0, targets: [], particles: [], gameOver: false, won: false,
-    slingX: 90, slingY: 320, gravity: 0.4, bounce: 0
-  });
+  const st = React.useRef(null);
   const animRef = React.useRef(null);
-  const [score, setScore] = React.useState(0);
-  const [msg, setMsg] = React.useState("");
-  const [gameOver, setGameOver] = React.useState(false);
-  const [won, setWon] = React.useState(false);
+  const [ui, setUi] = React.useState({score:0,goatsLeft:0,levelDone:false,levelFail:false,goatIdx:0});
+  const [screen, setScreen] = React.useState("levelsel"); // levelsel | game | gameover
+  const [curLevel, setCurLevel] = React.useState(0);
+  const [savedLevel, setSavedLevel] = React.useState(0);
+  const [selGoatType, setSelGoatType] = React.useState(0);
 
-  var W = 360, H = 420;
+  /* ── LocalStorage bölüm kaydı ── */
+  React.useEffect(function(){
+    try {
+      var saved = localStorage.getItem("goat_sling_level");
+      if(saved) setSavedLevel(parseInt(saved)||0);
+    } catch(e){}
+  },[]);
 
-  var makeTargets = function() {
-    return [
-      {x:260,y:300,w:36,h:36,hp:1,emoji:"🏠",hit:false},
-      {x:300,y:300,w:36,h:36,hp:1,emoji:"🌳",hit:false},
-      {x:280,y:264,w:36,h:36,hp:1,emoji:"🪨",hit:false},
-      {x:240,y:264,w:36,h:36,hp:1,emoji:"🏠",hit:false},
-      {x:320,y:264,w:36,h:36,hp:1,emoji:"🌳",hit:false},
-    ];
+  var saveProgress = function(lvl) {
+    try { localStorage.setItem("goat_sling_level", String(lvl)); } catch(e){}
+    setSavedLevel(lvl);
   };
 
-  var init = function() {
-    var st = stateRef.current;
-    st.goat = {x: st.slingX, y: st.slingY, r: 18};
-    st.dragging = false; st.dragStart = null; st.launched = false;
-    st.vx = 0; st.vy = 0; st.particles = [];
-    st.gameOver = false; st.won = false; st.bounce = 0;
-    st.targets = makeTargets();
-    setScore(0); setMsg(""); setGameOver(false); setWon(false);
+  /* ── Fizik Başlat ── */
+  var initLevel = function(lvlIdx) {
+    var lvl = LEVELS[lvlIdx];
+    var goatQueue = lvl.goats.slice();
+    var gt = GOAT_TYPES[goatQueue[0]||0];
+    st.current = {
+      goat: {x:SLING_X, y:SLING_Y, r:gt.radius, vx:0, vy:0, active:false, launched:false, bounce:0},
+      goatQueue: goatQueue,
+      goatQueueIdx: 0,
+      gt: gt,
+      targets: lvl.targets.map(function(t,i){return Object.assign({},t,{id:i,w:34,h:34,curHp:t.hp});}),
+      blocks: (lvl.blocks||[]).map(function(b){return Object.assign({},b,{alive:true});}),
+      particles: [],
+      score: 0,
+      dragging: false,
+      dragPos: null,
+      launched: false,
+      done: false,
+      fail: false,
+      ground: H - 55,
+    };
+    setUi({score:0, goatsLeft:goatQueue.length, levelDone:false, levelFail:false, goatIdx:0});
   };
 
-  var makeParticles = function(x, y, color) {
-    var ps = [];
-    for(var i=0;i<8;i++) {
-      var angle = (Math.PI*2/8)*i;
-      ps.push({x:x,y:y,vx:Math.cos(angle)*3,vy:Math.sin(angle)*3-2,
-               life:1,color:color,r:5});
+  var nextGoat = function(s) {
+    s.goatQueueIdx++;
+    if(s.goatQueueIdx >= s.goatQueue.length) {
+      s.fail = true; return;
     }
-    return ps;
+    var gt = GOAT_TYPES[s.goatQueue[s.goatQueueIdx]||0];
+    s.gt = gt;
+    s.goat = {x:SLING_X, y:SLING_Y, r:gt.radius, vx:0, vy:0, active:false, launched:false, bounce:0};
+    s.launched = false; s.dragging = false; s.dragPos = null;
   };
 
-  var draw = function() {
+  /* ── Canvas Loop ── */
+  var loop = function() {
     var canvas = canvasRef.current;
     if(!canvas) return;
     var ctx = canvas.getContext("2d");
-    var st = stateRef.current;
+    var s = st.current;
+    if(!s) { animRef.current = requestAnimationFrame(loop); return; }
 
-    // Arka plan
-    ctx.fillStyle = "#87CEEB";
-    ctx.fillRect(0,0,W,H);
-    // Bulutlar
-    ctx.fillStyle = "rgba(255,255,255,.8)";
-    [[60,60,40],[150,40,30],[280,70,35]].forEach(function(b){
-      ctx.beginPath(); ctx.arc(b[0],b[1],b[2],0,Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(b[0]+30,b[1]+5,b[2]-8,0,Math.PI*2); ctx.fill();
-    });
-    // Zemin
-    ctx.fillStyle = "#5D9B3C";
-    ctx.fillRect(0,H-60,W,60);
-    ctx.fillStyle = "#4A7C3F";
-    ctx.fillRect(0,H-62,W,4);
+    /* Fizik */
+    if(s.launched && !s.done && !s.fail) {
+      var g = s.goat;
+      g.x += g.vx; g.y += g.vy; g.vy += GRAVITY; g.vx *= 0.995;
 
-    // Sapan çerçevesi
-    ctx.strokeStyle = "#8B4513"; ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.moveTo(st.slingX-12, st.slingY+10);
-    ctx.lineTo(st.slingX-12, st.slingY-40); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(st.slingX+12, st.slingY+10);
-    ctx.lineTo(st.slingX+12, st.slingY-40); ctx.stroke();
+      /* Zemin */
+      if(g.y + g.r > s.ground) {
+        g.y = s.ground - g.r; g.vy *= -0.35; g.vx *= 0.6; g.bounce++;
+        if(g.bounce > 2 || Math.abs(g.vy)<0.8) { nextGoat(s); }
+      }
+      /* Ekran dışı */
+      if(g.x > W+60 || g.x < -60) { nextGoat(s); }
 
-    // Sapan lastikleri
-    if(st.dragging && st.dragStart) {
-      ctx.strokeStyle = "#D2691E"; ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(st.slingX-12, st.slingY-40);
-      ctx.lineTo(st.goat.x, st.goat.y); ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(st.slingX+12, st.slingY-40);
-      ctx.lineTo(st.goat.x, st.goat.y); ctx.stroke();
-    } else if(!st.launched) {
-      ctx.strokeStyle = "#D2691E"; ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(st.slingX-12, st.slingY-40);
-      ctx.lineTo(st.slingX, st.slingY-28); ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(st.slingX+12, st.slingY-40);
-      ctx.lineTo(st.slingX, st.slingY-28); ctx.stroke();
+      /* Hedef çarpışma */
+      s.targets.forEach(function(t){
+        if(t.curHp<=0) return;
+        if(g.x+g.r>t.x && g.x-g.r<t.x+t.w && g.y+g.r>t.y && g.y-g.r<t.y+t.h){
+          t.curHp -= s.gt.mass;
+          var pts = Math.ceil(50 * s.gt.mass);
+          s.score += pts;
+          if(t.curHp<=0){
+            s.score += 100;
+            for(var i=0;i<10;i++){
+              var a=Math.random()*Math.PI*2;
+              s.particles.push({x:t.x+t.w/2,y:t.y+t.h/2,vx:Math.cos(a)*4,vy:Math.sin(a)*4-2,life:1,r:6,c:"#FFD700"});
+            }
+          }
+          g.vx *= (0.5/s.gt.mass); g.vy *= (0.5/s.gt.mass);
+          setUi(function(u){return Object.assign({},u,{score:s.score});});
+        }
+      });
+
+      /* Blok çarpışma */
+      s.blocks.forEach(function(b){
+        if(!b.alive) return;
+        if(g.x+g.r>b.x && g.x-g.r<b.x+b.w && g.y+g.r>b.y && g.y-g.r<b.y+b.h){
+          g.vx *= (0.4/s.gt.mass); g.vy *= (0.4/s.gt.mass);
+        }
+      });
+
+      /* Partiküller */
+      s.particles = s.particles.filter(function(p){return p.life>0;});
+      s.particles.forEach(function(p){p.x+=p.vx;p.y+=p.vy;p.vy+=0.15;p.life-=0.035;});
+
+      /* Kazandı mı? */
+      var allDead = s.targets.every(function(t){return t.curHp<=0;});
+      if(allDead && !s.done){ s.done=true; setUi(function(u){return Object.assign({},u,{levelDone:true,score:s.score});}); }
+      if(s.fail && !s.done){ setUi(function(u){return Object.assign({},u,{levelFail:true});}); }
     }
 
+    /* Çiz */
+    // Gökyüzü
+    var grd = ctx.createLinearGradient(0,0,0,H);
+    grd.addColorStop(0,"#87CEEB"); grd.addColorStop(1,"#C8E6C9");
+    ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+    // Bulutlar
+    ctx.fillStyle="rgba(255,255,255,.75)";
+    [[55,55,38],[160,38,26],[290,65,32]].forEach(function(b){
+      ctx.beginPath();ctx.arc(b[0],b[1],b[2],0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(b[0]+25,b[1]+6,b[2]-10,0,Math.PI*2);ctx.fill();
+    });
+    // Arka plan - çiftlik
+    ctx.fillStyle="#2D5A1B"; ctx.fillRect(0,H-55,W,55);
+    ctx.fillStyle="#3D7A2B"; ctx.fillRect(0,H-57,W,4);
+    // Cezaevi çitleri arka planda
+    ctx.strokeStyle="rgba(100,60,20,.3)"; ctx.lineWidth=2;
+    for(var fx=160;fx<W;fx+=18){
+      ctx.beginPath();ctx.moveTo(fx,H-55);ctx.lineTo(fx,H-75);ctx.stroke();
+    }
+    ctx.beginPath();ctx.moveTo(160,H-68);ctx.lineTo(W,H-68);ctx.stroke();
+
+    // Sapan
+    ctx.strokeStyle="#6B3A1F"; ctx.lineWidth=6;
+    ctx.beginPath();ctx.moveTo(SLING_X-14,SLING_Y+12);ctx.lineTo(SLING_X-14,SLING_Y-44);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(SLING_X+14,SLING_Y+12);ctx.lineTo(SLING_X+14,SLING_Y-44);ctx.stroke();
+    // Sapan lastiği
+    var gx=s.goat.x, gy=s.goat.y;
+    ctx.strokeStyle="#C0824A"; ctx.lineWidth=3;
+    if(!s.launched){
+      ctx.beginPath();ctx.moveTo(SLING_X-14,SLING_Y-44);ctx.lineTo(gx,gy);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(SLING_X+14,SLING_Y-44);ctx.lineTo(gx,gy);ctx.stroke();
+    }
+
+    // Bloklar
+    s.blocks.forEach(function(b){
+      if(!b.alive) return;
+      ctx.font=b.h+"px serif";
+      ctx.fillText(b.emoji,b.x,b.y+b.h-4);
+    });
+
     // Hedefler
-    st.targets.forEach(function(t) {
-      if(!t.hit) {
-        ctx.font = t.w+"px serif";
-        ctx.fillText(t.emoji, t.x, t.y+t.h);
+    s.targets.forEach(function(t){
+      if(t.curHp<=0) return;
+      ctx.font=t.h+"px serif";
+      ctx.fillText(t.emoji,t.x,t.y+t.h-2);
+      // HP bar
+      if(t.hp>1){
+        ctx.fillStyle="rgba(0,0,0,.3)";ctx.fillRect(t.x,t.y-8,t.w,5);
+        ctx.fillStyle="#EF4444";ctx.fillRect(t.x,t.y-8,t.w*(t.curHp/t.hp),5);
       }
     });
 
     // Partiküller
-    st.particles.forEach(function(p) {
-      ctx.globalAlpha = p.life;
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r*p.life, 0, Math.PI*2);
-      ctx.fill();
-    });
-    ctx.globalAlpha = 1;
+    s.particles.forEach(function(p){
+      ctx.globalAlpha=p.life; ctx.fillStyle=p.c;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2);ctx.fill();
+    }); ctx.globalAlpha=1;
+
+    // Yön çizgisi
+    if(s.dragging && !s.launched){
+      var dx=SLING_X-gx, dy=SLING_Y-gy;
+      var pvx=dx*0.3*s.gt.speed, pvy=dy*0.3*s.gt.speed;
+      ctx.strokeStyle="rgba(255,220,0,.55)"; ctx.lineWidth=2; ctx.setLineDash([5,5]);
+      ctx.beginPath(); ctx.moveTo(gx,gy);
+      var tx=gx,ty=gy,tvx=pvx,tvy=pvy;
+      for(var i=0;i<25;i++){tx+=tvx;ty+=tvy;tvy+=GRAVITY;ctx.lineTo(tx,ty);if(ty>s.ground)break;}
+      ctx.stroke(); ctx.setLineDash([]);
+    }
 
     // Keçi
-    if(st.goat && (!st.gameOver || st.bounce < 5)) {
-      ctx.font = (st.goat.r*2.2)+"px serif";
-      ctx.fillText("🐐", st.goat.x - st.goat.r, st.goat.y + st.goat.r*0.7);
+    if(!s.fail || s.goat.bounce<3){
+      ctx.font=(s.goat.r*2.4)+"px serif";
+      ctx.fillText(s.gt.emoji, gx-s.goat.r, gy+s.goat.r*0.8);
     }
 
     // Skor
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 16px Poppins,sans-serif";
-    ctx.fillText("🏆 "+st.score, 10, 28);
+    ctx.fillStyle="rgba(0,0,0,.45)"; ctx.fillRect(4,4,110,28); ctx.fillStyle="#fff";
+    ctx.font="bold 13px Poppins,sans-serif";
+    ctx.fillText("🏆 "+s.score, 10, 22);
 
-    // Yön çizgisi (fırlatılmadan)
-    if(!st.launched && st.dragging && st.dragStart) {
-      var dx = st.slingX - st.goat.x;
-      var dy = st.slingY - st.goat.y;
-      var power = 0.35;
-      var pvx = dx * power, pvy = dy * power;
-      ctx.strokeStyle = "rgba(255,255,0,.5)";
-      ctx.lineWidth = 2; ctx.setLineDash([4,4]);
-      ctx.beginPath(); ctx.moveTo(st.goat.x, st.goat.y);
-      var tx = st.goat.x, ty = st.goat.y;
-      var tvx = pvx, tvy = pvy;
-      for(var i=0;i<20;i++) {
-        tx += tvx; ty += tvy; tvy += st.gravity;
-        ctx.lineTo(tx, ty);
-        if(ty > H-60) break;
-      }
-      ctx.stroke(); ctx.setLineDash([]);
-    }
-  };
+    // Kalan keçi
+    var rem = s.goatQueue.length - s.goatQueueIdx;
+    ctx.fillStyle="rgba(0,0,0,.45)"; ctx.fillRect(W-80,4,76,28); ctx.fillStyle="#fff";
+    ctx.font="13px serif";
+    var goatIcons="";
+    for(var gi=0;gi<Math.min(rem,5);gi++) goatIcons+=GOAT_TYPES[s.goatQueue[s.goatQueueIdx+gi]||0].emoji;
+    ctx.fillText(goatIcons, W-76, 22);
 
-  var loop = function() {
-    var st = stateRef.current;
-    if(st.launched && !st.gameOver && !st.won) {
-      st.goat.x += st.vx;
-      st.goat.y += st.vy;
-      st.vy += st.gravity;
-      st.vx *= 0.99;
-
-      // Zemin çarpışma
-      if(st.goat.y + st.goat.r > H - 60) {
-        st.goat.y = H - 60 - st.goat.r;
-        st.vy *= -0.4; st.vx *= 0.7;
-        st.bounce++;
-        if(st.bounce > 3 || Math.abs(st.vy) < 1) {
-          st.gameOver = true;
-          setGameOver(true);
-          if(st.score > 0) setMsg("Harika! "+st.score+" puan!");
-          else setMsg("Kaçırdın! Tekrar dene 😅");
-        }
-      }
-
-      // Ekran dışı
-      if(st.goat.x > W + 50) {
-        st.gameOver = true; setGameOver(true);
-        setMsg("Kaçırdın! 😅");
-      }
-
-      // Hedef çarpışmaları
-      st.targets.forEach(function(t) {
-        if(t.hit) return;
-        if(st.goat.x+st.goat.r > t.x && st.goat.x-st.goat.r < t.x+t.w &&
-           st.goat.y+st.goat.r > t.y && st.goat.y-st.goat.r < t.y+t.h) {
-          t.hit = true;
-          st.score += 100;
-          setScore(st.score);
-          var ps = makeParticles(t.x+t.w/2, t.y+t.h/2, "#FFD700");
-          st.particles = st.particles.concat(ps);
-          st.vx *= 0.7; st.vy *= 0.7;
-        }
-      });
-
-      // Partikülleri güncelle
-      st.particles = st.particles.filter(function(p){ return p.life > 0; });
-      st.particles.forEach(function(p){
-        p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.life -= 0.04;
-      });
-
-      // Hepsini vurdu
-      if(st.targets.every(function(t){ return t.hit; })) {
-        st.won = true; setWon(true); setMsg("🎉 Tüm hedefleri vurdun! "+st.score+" puan!");
-      }
-    }
-    draw();
     animRef.current = requestAnimationFrame(loop);
   };
+
+  /* ── Touch/Mouse ── */
+  var getPos = function(e){
+    var canvas=canvasRef.current; var rect=canvas.getBoundingClientRect();
+    var sx=W/rect.width, sy=H/rect.height;
+    var cx=e.touches?e.touches[0].clientX:e.clientX;
+    var cy=e.touches?e.touches[0].clientY:e.clientY;
+    return {x:(cx-rect.left)*sx, y:(cy-rect.top)*sy};
+  };
+  var onDown=function(e){
+    e.preventDefault(); var s=st.current; if(!s||s.launched||s.done||s.fail) return;
+    var p=getPos(e); var dx=p.x-s.goat.x,dy=p.y-s.goat.y;
+    if(Math.sqrt(dx*dx+dy*dy)<50){s.dragging=true;}
+  };
+  var onMove=function(e){
+    e.preventDefault(); var s=st.current; if(!s||!s.dragging) return;
+    var p=getPos(e); var MAX=72;
+    var dx=p.x-SLING_X,dy=p.y-SLING_Y,dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist>MAX){dx=dx/dist*MAX;dy=dy/dist*MAX;}
+    s.goat.x=SLING_X+dx; s.goat.y=SLING_Y+dy;
+  };
+  var onUp=function(e){
+    e.preventDefault(); var s=st.current; if(!s||!s.dragging) return;
+    s.dragging=false;
+    var dx=SLING_X-s.goat.x,dy=SLING_Y-s.goat.y;
+    var spd=0.3*s.gt.speed;
+    s.goat.vx=dx*spd; s.goat.vy=dy*spd;
+    s.launched=true;
+  };
+
+  /* ── Ekran Geçişleri ── */
+  var startLevel = function(idx){
+    setCurLevel(idx); initLevel(idx); setScreen("game");
+    cancelAnimationFrame(animRef.current);
+    animRef.current = requestAnimationFrame(loop);
+  };
+  var onLevelDone = function(){
+    var next = curLevel+1;
+    if(next > savedLevel) saveProgress(next);
+    if(next >= LEVELS.length){ setScreen("gameover"); return; }
+    startLevel(next);
+  };
+  var onRetry = function(){ startLevel(curLevel); };
 
   React.useEffect(function(){
-    init();
-    animRef.current = requestAnimationFrame(loop);
-    return function(){ cancelAnimationFrame(animRef.current); };
-  }, []);
+    return function(){cancelAnimationFrame(animRef.current);};
+  },[]);
 
-  var getPos = function(e, canvas) {
-    var rect = canvas.getBoundingClientRect();
-    var scaleX = W / rect.width;
-    var scaleY = H / rect.height;
-    var clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    var clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY
-    };
-  };
+  /* ── Bölüm Seçimi Ekranı ── */
+  if(screen==="levelsel") return (
+    <div className="anim-fade">
+      <h2 style={{margin:"0 0 4px",fontSize:17,fontWeight:800,color:"#111827"}}>🐐 Keçi Fırlatma</h2>
+      <div style={{fontSize:11,color:"#9CA3AF",marginBottom:14}}>Bölüm seç · {savedLevel+1}/{LEVELS.length} açık</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,marginBottom:16}}>
+        {LEVELS.map(function(lv,i){
+          var unlocked = i<=savedLevel;
+          return (
+            <button key={i} onClick={function(){if(unlocked) startLevel(i);}}
+              style={{aspectRatio:"1",borderRadius:12,border:"none",
+                background:i<savedLevel?"#D1FAE5":i===savedLevel?"linear-gradient(135deg,#8B5CF6,#7C3AED)":"#F3F4F6",
+                color:i<=savedLevel?"#111":"#D1D5DB",fontWeight:800,fontSize:15,cursor:unlocked?"pointer":"not-allowed",
+                boxShadow:i===savedLevel?"0 2px 8px rgba(139,92,246,.4)":"none",WebkitAppearance:"none"}}>
+              {unlocked ? (i+1) : "🔒"}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{background:"#F5F3FF",borderRadius:14,padding:"12px 14px",marginBottom:12}}>
+        <div style={{fontWeight:700,fontSize:13,color:"#5B21B6",marginBottom:8}}>🐐 Keçi Türleri</div>
+        {GOAT_TYPES.map(function(gt,i){return (
+          <div key={gt.id} style={{display:"flex",alignItems:"center",gap:10,marginBottom:6,background:"#fff",borderRadius:10,padding:"8px 10px"}}>
+            <span style={{fontSize:24}}>{gt.emoji}</span>
+            <div>
+              <div style={{fontWeight:700,fontSize:13,color:"#111"}}>{gt.name} Keçi</div>
+              <div style={{fontSize:10,color:"#9CA3AF"}}>Güç:{Math.round(gt.mass*10)} · Hız:{Math.round(gt.speed*10)} · R:{gt.radius}</div>
+            </div>
+          </div>
+        );})}
+      </div>
+    </div>
+  );
 
-  var onDown = function(e) {
-    e.preventDefault();
-    var st = stateRef.current;
-    if(st.launched || st.gameOver || st.won) return;
-    var pos = getPos(e, canvasRef.current);
-    var dx = pos.x - st.goat.x, dy = pos.y - st.goat.y;
-    if(Math.sqrt(dx*dx+dy*dy) < 40) {
-      st.dragging = true;
-      st.dragStart = {x: st.slingX, y: st.slingY};
-    }
-  };
+  /* ── Oyun Bitti Ekranı ── */
+  if(screen==="gameover") return (
+    <div className="anim-fade" style={{textAlign:"center",paddingTop:40}}>
+      <div style={{fontSize:60,marginBottom:12}}>🏆</div>
+      <div style={{fontWeight:800,fontSize:22,color:"#111827",marginBottom:8}}>Tebrikler!</div>
+      <div style={{fontSize:14,color:"#6B7280",marginBottom:20}}>Tüm bölümleri tamamladın!</div>
+      <button onClick={function(){saveProgress(0);setSavedLevel(0);setScreen("levelsel");}}
+        style={{background:"linear-gradient(135deg,#8B5CF6,#7C3AED)",color:"#fff",border:"none",borderRadius:14,padding:"12px 28px",fontWeight:700,fontSize:15,cursor:"pointer"}}>
+        🔄 Baştan Başla
+      </button>
+    </div>
+  );
 
-  var onMove = function(e) {
-    e.preventDefault();
-    var st = stateRef.current;
-    if(!st.dragging) return;
-    var pos = getPos(e, canvasRef.current);
-    var maxDist = 70;
-    var dx = pos.x - st.slingX, dy = pos.y - st.slingY;
-    var dist = Math.sqrt(dx*dx+dy*dy);
-    if(dist > maxDist) {
-      dx = dx/dist*maxDist; dy = dy/dist*maxDist;
-    }
-    st.goat.x = st.slingX + dx;
-    st.goat.y = st.slingY + dy;
-  };
-
-  var onUp = function(e) {
-    e.preventDefault();
-    var st = stateRef.current;
-    if(!st.dragging) return;
-    st.dragging = false;
-    var dx = st.slingX - st.goat.x;
-    var dy = st.slingY - st.goat.y;
-    var power = 0.35;
-    st.vx = dx * power;
-    st.vy = dy * power;
-    st.launched = true;
-    st.bounce = 0;
-  };
-
-  var restart = function() {
-    cancelAnimationFrame(animRef.current);
-    init();
-    animRef.current = requestAnimationFrame(loop);
-  };
-
+  /* ── Oyun Ekranı ── */
   return (
     <div className="anim-fade">
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-        <h2 style={{margin:0,fontSize:17,fontWeight:800,color:"#111827"}}>🐐 Keçi Fırlatma</h2>
-        <button onClick={restart} style={{background:"rgba(var(--primary-rgb),.1)",color:"var(--primary,#8B5CF6)",border:"none",borderRadius:10,padding:"6px 12px",fontWeight:600,fontSize:12,cursor:"pointer"}}>🔄 Yeniden</button>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <button onClick={function(){cancelAnimationFrame(animRef.current);setScreen("levelsel");}}
+            style={{background:"rgba(var(--primary-rgb),.1)",color:"var(--primary,#8B5CF6)",border:"none",borderRadius:8,padding:"5px 10px",fontWeight:600,fontSize:11,cursor:"pointer"}}>← Geri</button>
+          <span style={{fontWeight:700,fontSize:14,color:"#111"}}>Bölüm {curLevel+1}</span>
+        </div>
+        <button onClick={onRetry}
+          style={{background:"rgba(239,68,68,.1)",color:"#EF4444",border:"none",borderRadius:8,padding:"5px 10px",fontWeight:600,fontSize:11,cursor:"pointer"}}>🔄 Tekrar</button>
       </div>
-
-      <div style={{fontSize:11,color:"#9CA3AF",marginBottom:8,textAlign:"center"}}>
-        🐐 Keçiye bas, geri çek ve bırak! Hedeflere vur 🎯
+      <div style={{fontSize:10,color:"#9CA3AF",marginBottom:6,textAlign:"center"}}>
+        🐐 Keçiye bas, geri çek, bırak! Tüm 👮 figürlerini yık
       </div>
-
       <div style={{position:"relative",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,.15)"}}>
         <canvas ref={canvasRef} width={W} height={H}
           style={{width:"100%",display:"block",touchAction:"none"}}
           onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp}
-          onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
-        />
-        {(gameOver || won) && (
-          <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.6)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-            <div style={{fontSize:44,marginBottom:8}}>{won?"🎉":"😅"}</div>
-            <div style={{color:"#fff",fontWeight:800,fontSize:18,marginBottom:6,textAlign:"center",padding:"0 20px"}}>{msg}</div>
-            <div style={{color:"#FFD700",fontWeight:700,fontSize:15,marginBottom:16}}>🏆 {score} puan</div>
-            <button onClick={restart} style={{background:"linear-gradient(135deg,#8B5CF6,#7C3AED)",color:"#fff",border:"none",borderRadius:14,padding:"12px 28px",fontWeight:700,fontSize:15,cursor:"pointer"}}>🔄 Tekrar Oyna</button>
+          onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}/>
+        {ui.levelDone && (
+          <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.65)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+            <div style={{fontSize:50,marginBottom:8}}>🎉</div>
+            <div style={{color:"#fff",fontWeight:800,fontSize:20,marginBottom:4}}>Bölüm Tamamlandı!</div>
+            <div style={{color:"#FFD700",fontWeight:700,fontSize:16,marginBottom:18}}>🏆 {ui.score} puan</div>
+            <button onClick={onLevelDone}
+              style={{background:"linear-gradient(135deg,#10B981,#059669)",color:"#fff",border:"none",borderRadius:14,padding:"12px 28px",fontWeight:700,fontSize:15,cursor:"pointer",marginBottom:8}}>
+              ➡️ Sonraki Bölüm
+            </button>
+            <button onClick={onRetry}
+              style={{background:"rgba(255,255,255,.2)",color:"#fff",border:"none",borderRadius:12,padding:"8px 20px",fontWeight:600,fontSize:13,cursor:"pointer"}}>
+              🔄 Tekrar Oyna
+            </button>
+          </div>
+        )}
+        {ui.levelFail && !ui.levelDone && (
+          <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.65)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+            <div style={{fontSize:50,marginBottom:8}}>😅</div>
+            <div style={{color:"#fff",fontWeight:800,fontSize:20,marginBottom:4}}>Keçiler Bitti!</div>
+            <div style={{color:"#FCA5A5",fontSize:13,marginBottom:18}}>Hedeflerin bir kısmı kaldı</div>
+            <button onClick={onRetry}
+              style={{background:"linear-gradient(135deg,#EF4444,#DC2626)",color:"#fff",border:"none",borderRadius:14,padding:"12px 28px",fontWeight:700,fontSize:15,cursor:"pointer"}}>
+              🔄 Tekrar Dene
+            </button>
           </div>
         )}
       </div>
