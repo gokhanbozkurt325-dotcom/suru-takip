@@ -259,19 +259,35 @@ function GoatMatchGame() {
 function AcilModal(props) {
   var show = props.show;
   var onClose = props.onClose;
-  var nums = props.nums;
-  var numAdlar = ["Bekir Zengin","Ali Özen","Nöbetçi"];
-  const [durum,  setDurum]  = React.useState("");
-  const [konum,  setKonum]  = React.useState("");
-  const [fotoUrl,setFotoUrl]= React.useState("");
-  const [step,   setStep]   = React.useState("form"); // "form" | "send"
-  const [sentIdx,setSentIdx]= React.useState(-1);
+
+  var KISILER = [
+    {isim:"Danışman",   tel:"905426321183"},
+    {isim:"Şef",        tel:"905386430705"},
+    {isim:"Şef Yardımcısı", tel:"905412633285"},
+  ];
+
+  const [durum,   setDurum]   = React.useState("");
+  const [konum,   setKonum]   = React.useState("");
+  const [fotoUrl, setFotoUrl] = React.useState("");
+  const [secili,  setSecili]  = React.useState({});
+  const [step,    setStep]    = React.useState("form");
+  const [gonderildi, setGonderildi] = React.useState({});
 
   var kapat = function(){
     onClose();
     setDurum(""); setKonum(""); setFotoUrl("");
-    setStep("form"); setSentIdx(-1);
+    setSecili({}); setStep("form"); setGonderildi({});
   };
+
+  var toggleSecili = function(tel){
+    setSecili(function(prev){
+      var yeni = Object.assign({}, prev);
+      yeni[tel] = !yeni[tel];
+      return yeni;
+    });
+  };
+
+  var seciliSayisi = KISILER.filter(function(k){ return secili[k.tel]; }).length;
 
   var mesajOlustur = function(){
     var tarih = new Date().toLocaleString("tr-TR");
@@ -281,24 +297,24 @@ function AcilModal(props) {
     return encodeURIComponent(satirlar.join("\n"));
   };
 
-  var gonderBir = function(n, idx){
+  var gonderBir = function(tel){
     var mesaj = mesajOlustur();
-    window.open("https://api.whatsapp.com/send?phone="+n+"&text="+mesaj, "_blank");
-    setSentIdx(idx);
+    window.open("https://api.whatsapp.com/send?phone="+tel+"&text="+mesaj, "_blank");
+    setGonderildi(function(prev){ var y=Object.assign({},prev); y[tel]=true; return y; });
   };
 
   if(!show) return null;
   return (
     <div onClick={kapat} style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.75)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
       <div onClick={function(e){e.stopPropagation();}} style={{background:"#FFFFFF",borderRadius:22,padding:22,width:"100%",maxWidth:360,boxShadow:"0 8px 40px rgba(0,0,0,.3)"}}>
-        
+
         {step === "form" ? (
           <div>
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
               <div style={{fontSize:32}}>🚨</div>
               <div>
                 <div style={{fontWeight:800,fontSize:17,color:"#DC2626"}}>ACİL DURUM</div>
-                <div style={{fontSize:11,color:"#9CA3AF"}}>{nums.length} kişiye WhatsApp mesajı</div>
+                <div style={{fontSize:11,color:"#9CA3AF"}}>Kişi seçin ve mesaj gönderin</div>
               </div>
             </div>
 
@@ -307,34 +323,50 @@ function AcilModal(props) {
               placeholder="Ne oldu? Açıklayın..." rows={3}
               style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #E5E7EB",fontSize:13,resize:"none",boxSizing:"border-box",outline:"none",color:"#111827",display:"block",fontFamily:"inherit"}}
             />
+
             <div style={{fontSize:11,fontWeight:700,color:"#374151",margin:"10px 0 5px",textTransform:"uppercase"}}>Konum (isteğe bağlı)</div>
             <input value={konum} onChange={function(e){setKonum(e.target.value);}}
               placeholder="Örn: Ahır 2, Mera..."
               style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #E5E7EB",fontSize:13,boxSizing:"border-box",outline:"none",color:"#111827",display:"block"}}
             />
-            <div style={{fontSize:11,fontWeight:700,color:"#374151",margin:"10px 0 5px",textTransform:"uppercase"}}>Fotoğraf (isteğe bağlı)</div>
-            {fotoUrl ? (
-              <div style={{position:"relative",marginBottom:8}}>
-                <img src={fotoUrl} style={{width:"100%",height:100,objectFit:"cover",borderRadius:10,display:"block"}}/>
-                <button onClick={function(){setFotoUrl("");}} style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,.6)",border:"none",color:"#fff",borderRadius:"50%",width:22,height:22,fontSize:12,cursor:"pointer",padding:0}}>✕</button>
-              </div>
-            ) : (
-              <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px",border:"1.5px dashed #D1D5DB",borderRadius:10,cursor:"pointer",fontSize:13,color:"#9CA3AF",marginBottom:8}}>
-                📷 Fotoğraf seç
-                <input type="file" accept="image/*" style={{display:"none"}} onChange={function(e){
-                  var f=e.target.files[0];
-                  if(f) setFotoUrl(URL.createObjectURL(f));
-                }}/>
-              </label>
-            )}
+
+            <div style={{fontSize:11,fontWeight:700,color:"#374151",margin:"10px 0 8px",textTransform:"uppercase"}}>Kime gönderilsin? *</div>
+            {KISILER.map(function(k){
+              var sec = !!secili[k.tel];
+              return (
+                <button key={k.tel} onClick={function(){toggleSecili(k.tel);}}
+                  style={{
+                    width:"100%",padding:"11px 14px",marginBottom:6,borderRadius:12,
+                    border:"2px solid "+(sec?"#DC2626":"#E5E7EB"),
+                    background:sec?"#FEF2F2":"#FAFAFA",
+                    display:"flex",alignItems:"center",justifyContent:"space-between",
+                    cursor:"pointer",WebkitAppearance:"none",
+                    transition:"all .15s"
+                  }}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{width:22,height:22,borderRadius:6,border:"2px solid "+(sec?"#DC2626":"#D1D5DB"),background:sec?"#DC2626":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      {sec && <span style={{color:"#fff",fontSize:14,fontWeight:700,lineHeight:1}}>✓</span>}
+                    </div>
+                    <div style={{textAlign:"left"}}>
+                      <div style={{fontWeight:700,fontSize:14,color:sec?"#DC2626":"#111827"}}>{k.isim}</div>
+                      <div style={{fontSize:11,color:"#9CA3AF"}}>{k.tel.replace("90","0").replace(/(\d{4})(\d{3})(\d{2})(\d{2})$/,"$1 $2 $3 $4")}</div>
+                    </div>
+                  </div>
+                  <span style={{fontSize:20}}>{sec?"🔴":"⚪"}</span>
+                </button>
+              );
+            })}
+
             <div style={{display:"flex",gap:8,marginTop:12}}>
               <button onClick={kapat} style={{flex:1,padding:"11px",borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:13,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>İptal</button>
-              <button onClick={function(){if(durum.trim()) setStep("send");}} disabled={!durum.trim()}
+              <button onClick={function(){if(durum.trim()&&seciliSayisi>0) setStep("send");}}
+                disabled={!durum.trim()||seciliSayisi===0}
                 style={{flex:2,padding:"11px",borderRadius:12,border:"none",
-                  background:durum.trim()?"linear-gradient(135deg,#DC2626,#EF4444)":"#F3F4F6",
-                  color:durum.trim()?"#fff":"#9CA3AF",
-                  fontWeight:700,fontSize:13,cursor:durum.trim()?"pointer":"not-allowed",WebkitAppearance:"none"}}>
-                İleri →
+                  background:(durum.trim()&&seciliSayisi>0)?"linear-gradient(135deg,#DC2626,#EF4444)":"#F3F4F6",
+                  color:(durum.trim()&&seciliSayisi>0)?"#fff":"#9CA3AF",
+                  fontWeight:700,fontSize:13,cursor:(durum.trim()&&seciliSayisi>0)?"pointer":"not-allowed",
+                  WebkitAppearance:"none"}}>
+                {seciliSayisi>0?"İleri → ("+seciliSayisi+" kişi)":"Kişi seçin"}
               </button>
             </div>
           </div>
@@ -344,38 +376,38 @@ function AcilModal(props) {
               <div style={{fontSize:32}}>📱</div>
               <div>
                 <div style={{fontWeight:800,fontSize:16,color:"#DC2626"}}>Mesajları Gönder</div>
-                <div style={{fontSize:11,color:"#9CA3AF"}}>Her butona sırayla tıklayın</div>
+                <div style={{fontSize:11,color:"#9CA3AF"}}>Her butona tıklayın → WhatsApp'ta Gönder'e basın</div>
               </div>
             </div>
 
             <div style={{background:"#FEF2F2",borderRadius:10,padding:"8px 12px",marginBottom:12,fontSize:12,color:"#DC2626"}}>
-              📋 Mesaj: <b>{durum.trim().slice(0,50)}{durum.length>50?"...":""}</b>
-              {konum.trim() ? <span> · 📍 {konum.trim()}</span> : null}
+              📋 <b>{durum.trim().slice(0,60)}{durum.length>60?"...":""}</b>
+              {konum.trim()?<span style={{color:"#6B7280"}}> · 📍{konum.trim()}</span>:null}
             </div>
 
-            {nums.map(function(n, i){
-              var gonderildi = sentIdx >= i;
+            {KISILER.filter(function(k){return secili[k.tel];}).map(function(k){
+              var gnd = !!gonderildi[k.tel];
               return (
-                <button key={n} onClick={function(){gonderBir(n, i);}}
+                <button key={k.tel} onClick={function(){gonderBir(k.tel);}}
                   style={{
                     width:"100%",padding:"13px 16px",marginBottom:8,borderRadius:12,border:"none",
-                    background:gonderildi?"#ECFDF5":"linear-gradient(135deg,#25D366,#128C7E)",
-                    color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",
+                    background:gnd?"#ECFDF5":"linear-gradient(135deg,#25D366,#128C7E)",
+                    color:gnd?"#059669":"#fff",fontWeight:700,fontSize:14,cursor:"pointer",
                     display:"flex",alignItems:"center",justifyContent:"space-between",
-                    WebkitAppearance:"none",opacity:gonderildi?0.7:1
+                    WebkitAppearance:"none",
+                    border:gnd?"2px solid #A7F3D0":"none"
                   }}>
-                  <span>{gonderildi?"✅":"📲"} {numAdlar[i] || ("Kişi "+(i+1))}</span>
-                  <span style={{fontSize:12,opacity:.8}}>{gonderildi?"Gönderildi":"WhatsApp'ta Aç →"}</span>
+                  <span>{gnd?"✅":"📲"} {k.isim}</span>
+                  <span style={{fontSize:12,opacity:.85}}>{gnd?"Gönderildi":"WhatsApp'ta Aç →"}</span>
                 </button>
               );
             })}
 
-            <div style={{fontSize:11,color:"#9CA3AF",textAlign:"center",marginBottom:12,marginTop:4}}>
-              Her butona tıklayınca WhatsApp açılır → Gönder'e basın
+            <div style={{fontSize:11,color:"#9CA3AF",textAlign:"center",marginBottom:12}}>
+              Butona tıkla → WhatsApp açılır → Gönder tuşuna bas
             </div>
-
             <div style={{display:"flex",gap:8}}>
-              <button onClick={function(){setStep("form");setSentIdx(-1);}} style={{flex:1,padding:"10px",borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:12,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>← Geri</button>
+              <button onClick={function(){setStep("form");setGonderildi({});}} style={{flex:1,padding:"10px",borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:12,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>← Geri</button>
               <button onClick={kapat} style={{flex:2,padding:"10px",borderRadius:12,border:"none",background:"#374151",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",WebkitAppearance:"none"}}>✅ Tamamlandı</button>
             </div>
           </div>
