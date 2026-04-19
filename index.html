@@ -187,20 +187,15 @@ function WeatherWidget() {
 
 // ── Keçi Eşleştirme Oyunu ──
 function GoatMatchGame() {
-  const BREEDS_GAME = [
-    { id:"saanen",  name:"Saanen Keçisi",    img:"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Saanen_goat_kid.jpg/240px-Saanen_goat_kid.jpg" },
-    { id:"angora",  name:"Ankara Keçisi",     img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Angora_Goat_and_kid.jpg/240px-Angora_Goat_and_kid.jpg" },
-    { id:"boer",    name:"Boer Keçisi",       img:"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Boer_goat_buck_profie.jpg/240px-Boer_goat_buck_profie.jpg" },
-    { id:"kiko",    name:"Kiko Keçisi",       img:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Baby_Goat.jpg/240px-Baby_Goat.jpg" },
-    { id:"nigerian",name:"Nijerya Cüce",      img:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Domestic_goat_kid_in_capeweed.jpg/240px-Domestic_goat_kid_in_capeweed.jpg" },
-    { id:"nubian",  name:"Nubya Keçisi",      img:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Flock_of_goats_in_Atacama.jpg/240px-Flock_of_goats_in_Atacama.jpg" },
-    { id:"alpine",  name:"Alp Keçisi",        img:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Mountain_goat_white.jpg/240px-Mountain_goat_white.jpg" },
-    { id:"pygmy",   name:"Cüce Keçi",         img:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Large_bonnet.jpg/240px-Large_bonnet.jpg" },
+  const GOAT_PAIRS = [
+    {emoji:"🐐",name:"Keçi"},{emoji:"🐑",name:"Koyun"},{emoji:"🦙",name:"Lama"},
+    {emoji:"🐏",name:"Koç"},{emoji:"🐮",name:"İnek"},{emoji:"🐷",name:"Domuz"},
+    {emoji:"🐔",name:"Tavuk"},{emoji:"🦆",name:"Ördek"},
   ];
   const TIME_LIMIT = 120;
 
   const initCards = () => {
-    const deck = [...BREEDS_GAME,...BREEDS_GAME].map((b,i)=>({...b,uid:i,flipped:false,matched:false}));
+    const deck = [...GOAT_PAIRS,...GOAT_PAIRS].map((b,i)=>({...b,uid:i,flipped:false,matched:false}));
     return deck.sort(()=>Math.random()-.5);
   };
 
@@ -239,9 +234,9 @@ function GoatMatchGame() {
     setCards(nc);setFlipped(nf);
     if(nf.length===2){
       setMoves(m=>m+1);
-      if(nf[0].id===nf[1].id){
+      if(nf[0].emoji===nf[1].emoji){
         setTimeout(()=>{
-          const mc=nc.map(c=>c.id===nf[0].id?{...c,matched:true}:c);
+          const mc=nc.map(c=>c.emoji===nf[0].emoji?{...c,matched:true}:c);
           setCards(mc);setFlipped([]);
           if(mc.every(c=>c.matched)){setWon(true);setRunning(false);}
         },400);
@@ -262,151 +257,69 @@ function GoatMatchGame() {
   return (
     <div className="anim-fade">
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-        <h2 style={{...S.title,fontSize:17}}>🐐 Keçi Irkları Oyunu</h2>
+        <h2 style={{...S.title,fontSize:17}}>🐐 Keçi Eşleştirme</h2>
         <button onClick={reset} style={{...S.btnSm,background:"rgba(var(--primary-rgb),.1)",color:"var(--primary,#8B5CF6)",padding:"6px 12px"}}>🔄 Yeniden</button>
       </div>
 
-      {/* Skor satırı */}
       <div style={{display:"flex",gap:8,marginBottom:8}}>
-        {[{v:moves,l:"HAMLE",c:"var(--primary,#8B5CF6)"},{v:fmt(remaining),l:"SÜRE",c:tc},{v:`${matched}/8`,l:"EŞLEŞTİ",c:"#D97706"}].map(({v,l,c})=>(
-          <div key={l} style={{flex:1,background:"#FFFFFF",borderRadius:12,padding:"8px 6px",textAlign:"center",border:`1.5px solid ${c}22`}}>
-            <div style={{fontSize:17,fontWeight:800,color:c}}>{v}</div>
+        {[{v:moves,l:"HAMLE",col:"var(--primary,#8B5CF6)"},{v:fmt(remaining),l:"SÜRE",col:tc},{v:`${matched}/8`,l:"EŞLEŞTİ",col:"#D97706"}].map(({v,l,col})=>(
+          <div key={l} style={{flex:1,background:"#FFFFFF",borderRadius:12,padding:"8px 6px",textAlign:"center",border:`1.5px solid ${col}22`}}>
+            <div style={{fontSize:17,fontWeight:800,color:col}}>{v}</div>
             <div style={{fontSize:9,color:"#9CA3AF",fontWeight:600}}>{l}</div>
           </div>
         ))}
       </div>
 
-      {/* Süre çubuğu */}
       <div style={{height:5,background:"#F3F4F6",borderRadius:10,marginBottom:10,overflow:"hidden"}}>
         <div style={{height:"100%",width:`${(remaining/TIME_LIMIT)*100}%`,background:tc,borderRadius:10,transition:"width 1s linear"}}/>
       </div>
 
-      {/* Kartlar */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
         {cards.map(card=>(
           <button key={card.uid} onClick={()=>flip(card)} style={{
-            aspectRatio:"1",borderRadius:10,padding:0,overflow:"hidden",
-            border:card.matched?"2.5px solid #10B981":card.flipped?"2.5px solid var(--primary,#8B5CF6)":"2px solid #E5E7EB",
+            aspectRatio:"1",borderRadius:14,padding:0,
+            border:card.matched?"2px solid #10B981":card.flipped?"2px solid var(--primary,#8B5CF6)":"2px solid #E5E7EB",
+            background:card.matched?"#ECFDF5":card.flipped?"rgba(var(--primary-rgb),.08)":"#F9FAFB",
             cursor:card.matched||card.flipped||lost?"default":"pointer",
-            background:card.matched?"#ECFDF5":card.flipped?"rgba(var(--primary-rgb),.06)":"#F9FAFB",
-            transition:"all .2s",transform:card.flipped||card.matched?"scale(1.03)":"scale(1)",
-            boxShadow:card.matched?"0 2px 8px rgba(16,185,129,.2)":"0 1px 4px rgba(0,0,0,.05)",
-            WebkitAppearance:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-            opacity:lost&&!card.matched?0.45:1
+            display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+            transition:"all .2s",transform:card.flipped||card.matched?"scale(1.02)":"scale(1)",
+            boxShadow:card.matched?"0 2px 8px rgba(16,185,129,.2)":"0 1px 4px rgba(0,0,0,.06)",
+            WebkitAppearance:"none",opacity:lost&&!card.matched?0.45:1
           }}>
             {card.flipped||card.matched ? (
-              <div style={{width:"100%",height:"100%",display:"flex",flexDirection:"column"}}>
-                <img src={card.img} alt={card.name}
-                  style={{width:"100%",flex:1,objectFit:"cover",minHeight:0}}
-                  onError={e=>{e.target.parentNode.innerHTML='<div style="font-size:28px;text-align:center;padding:8px">🐐</div><div style="font-size:7px;text-align:center;padding:2px;color:#6B7280">'+ card.name +'</div>';}}
-                />
-                <div style={{fontSize:7,fontWeight:700,padding:"2px 3px",textAlign:"center",
-                  color:card.matched?"#059669":"var(--primary,#8B5CF6)",
-                  background:card.matched?"#ECFDF5":"rgba(var(--primary-rgb),.08)",
-                  whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                  {card.name}
-                </div>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:28}}>{card.emoji}</div>
+                <div style={{fontSize:8,color:card.matched?"#059669":"var(--primary,#8B5CF6)",fontWeight:700,marginTop:2}}>{card.name}</div>
               </div>
             ) : (
               <div style={{textAlign:"center"}}>
-                <div style={{fontSize:24,opacity:.6}}>🐐</div>
-                <div style={{fontSize:8,color:"#D1D5DB"}}>?</div>
+                <div style={{fontSize:26,opacity:.5}}>🎴</div>
               </div>
             )}
           </button>
         ))}
       </div>
 
-      {/* Kazandı */}
       {won&&<div style={{marginTop:14,background:"linear-gradient(135deg,#ECFDF5,#D1FAE5)",borderRadius:16,padding:18,textAlign:"center",border:"1px solid #A7F3D0"}}>
         <div style={{fontSize:40,marginBottom:6}}>🎉</div>
         <div style={{fontWeight:800,fontSize:19,color:"#065F46",marginBottom:3}}>Tebrikler!</div>
-        <div style={{fontSize:13,color:"#059669",marginBottom:3}}>Tüm keçi ırklarını tanıdın!</div>
-        <div style={{fontSize:11,color:"#6B7280",marginBottom:12}}>{moves} hamle · {fmt(time)} sürede</div>
-        <button onClick={reset} style={{...S.btnPrimary,background:"#10B981",boxShadow:"0 4px 14px rgba(16,185,129,.35)"}}>🔄 Tekrar Oyna</button>
+        <div style={{fontSize:13,color:"#059669",marginBottom:12}}>{moves} hamle · {fmt(time)} sürede</div>
+        <button onClick={reset} style={{...S.btnPrimary,background:"#10B981"}}>🔄 Tekrar Oyna</button>
       </div>}
 
-      {/* Kaybetti */}
       {lost&&<div style={{marginTop:14,background:"linear-gradient(135deg,#FEF2F2,#FEE2E2)",borderRadius:16,padding:18,textAlign:"center",border:"1px solid #FECACA"}}>
         <div style={{fontSize:40,marginBottom:6}}>⏰</div>
         <div style={{fontWeight:800,fontSize:19,color:"#991B1B",marginBottom:3}}>Süre Doldu!</div>
-        <div style={{fontSize:13,color:"#DC2626",marginBottom:3}}>{matched}/8 ırk eşleştirildi</div>
-        <div style={{fontSize:11,color:"#6B7280",marginBottom:12}}>{moves} hamle yapıldı</div>
-        <button onClick={reset} style={{...S.btnPrimary,background:"#EF4444",boxShadow:"0 4px 14px rgba(239,68,68,.35)"}}>🔄 Tekrar Dene</button>
+        <div style={{fontSize:13,color:"#DC2626",marginBottom:12}}>{matched}/8 eşleştirildi · {moves} hamle</div>
+        <button onClick={reset} style={{...S.btnPrimary,background:"#EF4444"}}>🔄 Tekrar Dene</button>
       </div>}
 
       {!running&&!won&&!lost&&<div style={{marginTop:10,textAlign:"center",fontSize:11,color:"#9CA3AF"}}>
-        Kartları çevirerek aynı keçi ırklarını eşleştir · {TIME_LIMIT} saniye süren var
+        Kartları çevir, aynı hayvanları eşleştir · {TIME_LIMIT} saniye
       </div>}
     </div>
   );
 }
-
-const BREEDS = [
-  { id:"saanen",  name:"Saanen",  emoji:"🤍", color:"var(--primary,#8B5CF6)", bg:"#E3F0DC", bgCard:"#F5FAF0", desc:"Süt verimi yüksek, beyaz tüylü" },
-  { id:"honamli", name:"Honamlı", emoji:"🖤", color:"#7B4B94", bg:"#F0E6F6", bgCard:"#F9F3FC", desc:"Yerli ırk, dayanıklı, uzun tüylü" },
-  { id:"halep",   name:"Halep",   emoji:"🤎", color:"#B8602A", bg:"#FFF0E6", bgCard:"#FFF8F2", desc:"Kırmızımsı kahve, uzun kulaklı" },
-];
-
-const VACCINE_DEFS = [
-  { id:"enterotoksemi", name:"Enterotoksemi",  intervalDays:180, color:"var(--primary,#8B5CF6)" },
-  { id:"brusella",      name:"Brusella",       intervalDays:365, color:"#7B4B94" },
-  { id:"ppr",           name:"PPR (Veba)",     intervalDays:365, color:"#B8602A" },
-  { id:"agiz_tirnak",   name:"Ağız ve Tırnak", intervalDays:180, color:"#0EA5E9" },
-  { id:"cice",          name:"Çiçek",          intervalDays:365, color:"#D4850A" },
-  { id:"parazit",       name:"İç/Dış Parazit", intervalDays:120, color:"#E8975A" },
-  { id:"mastitis",      name:"Mastitis",       intervalDays:365, color:"#EF4444" },
-];
-
-const CONDITION_OPTIONS = ["Mastitis","Topallık","İshal","Parazit","Abort","Pnömoni","Eklem İltihabı","Göz Enfeksiyonu","Yaralanma","Diğer"];
-const CLOSE_REASONS = ["İyileşti","Tedavi Tamamlandı","Kronik Hastalık","Hayvan Öldü","Başka Tesise Nakil","Diğer"];
-
-const DEMO_USERS = [
-  { id:"u1", name:"Veteriner Hekim", role:"veteriner", emoji:"👨‍⚕️", members:[], pin:"" },
-  { id:"u2", name:"Şef",              role:"sef",       emoji:"👤",    members:["Bekir Zengin","Ali Özen"], pin:"" },
-  { id:"u3", name:"Vardiya 1",       role:"vardiya",   emoji:"👷",    members:["Uğur","Erdem","Hakan"] },
-  { id:"u4", name:"Vardiya 2",       role:"vardiya",   emoji:"👷",    members:["Mehmet","Zafer","Turan"] },
-  { id:"u5", name:"Vardiya 3",       role:"vardiya",   emoji:"👷",    members:["İsmail","Süleyman","Ramazan"] },
-  { id:"u6", name:"Vardiya 4",       role:"vardiya",   emoji:"👷",    members:["M. Ali","Mustafa","Hüseyin"] },
-  { id:"u7", name:"Misafir",         role:"misafir",   emoji:"👁",    members:[], pin:"" },
-];
-
-// Supabase dönüşümleri
-const toGoat    = r => ({ id:r.id, name:r.name, earTag:r.ear_tag, gender:r.gender, breed:r.breed, category:r.category, birthDate:r.birth_date||"", weight:r.weight||"", color:r.color||"", motherTag:r.mother_tag||"", fatherTag:r.father_tag||"", abortHistory:r.abort_history||"hayır", reproductionStatus:r.reproduction_status||"", lastBirthDate:r.last_birth_date||"", kidCount:r.kid_count||"0", notes:r.notes||"", abortDetails:r.abort_details||"", archived:r.archived||false, archiveReason:r.archive_reason||"" });
-const fromGoat  = g => ({ id:g.id, name:g.name, ear_tag:g.earTag, gender:g.gender, breed:g.breed, category:g.category, birth_date:g.birthDate||null, weight:g.weight||null, color:g.color||null, mother_tag:g.motherTag||null, father_tag:g.fatherTag||null, abort_history:g.abortHistory||"hayır", reproduction_status:g.reproductionStatus||null, last_birth_date:g.lastBirthDate||null, kid_count:g.kidCount||"0", notes:g.notes||null, abort_details:g.abortDetails||null, archived:false });
-const toHealth  = r => ({ id:r.id, goatId:r.goat_id, goatEarTag:r.goat_ear_tag||"", breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false, category:r.category||"anac" });
-const fromHealth= h => ({ id:h.id, goat_id:h.goatId, goat_ear_tag:h.goatEarTag||null, breed:h.breed, category:h.category||"anac", date:h.date, condition:h.condition, treatment:h.treatment||null, status:h.status, veterinarian:h.veterinarian||null, cost:h.cost||null, created_by_name:h.createdByName||null, notes:h.notes||null, closed:false });
-const toVaccine = r => ({ id:r.id, goatId:r.goat_id, breed:r.breed, date:r.date, vaccineType:r.vaccine_type, batchNo:r.batch_no||"", createdByName:r.created_by_name||"" });
-const fromVaccine=v => ({ id:v.id, goat_id:v.goatId, breed:v.breed, date:v.date, vaccine_type:v.vaccineType, batch_no:v.batchNo||null, created_by_name:v.createdByName||null });
-const toReport  = r => ({ id:r.id, goatId:r.goat_id, goatName:r.goat_name, goatEarTag:r.goat_ear_tag||"", breed:r.breed, dateStarted:r.date_started, dateClosed:r.date_closed, condition:r.condition, treatment:r.treatment||"", closeReason:r.close_reason, closeNote:r.close_note||"", veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"" });
-const fromReport= r => ({ id:r.id, goat_id:r.goatId, goat_name:r.goatName, goat_ear_tag:r.goatEarTag||null, breed:r.breed, date_started:r.dateStarted, date_closed:r.dateClosed, condition:r.condition, treatment:r.treatment||null, close_reason:r.closeReason, close_note:r.closeNote||null, veterinarian:r.veterinarian||null, cost:r.cost||null, created_by_name:r.createdByName||null, notes:r.notes||null });
-const toLog     = r => ({ id:r.id, healthRecordId:r.health_record_id, goatId:r.goat_id, breed:r.breed, action:r.action, actionDetail:r.action_detail||"", userName:r.user_name||"", createdAt:r.created_at });
-
-const fmt       = d => d ? new Date(d).toLocaleDateString("tr-TR") : "—";
-const fmtDT     = d => d ? new Date(d).toLocaleString("tr-TR", {day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—";
-const todayISO  = () => new Date().toISOString().split("T")[0];
-const daysUntil = d => d ? Math.ceil((new Date(d)-new Date())/86400000) : Infinity;
-const getAge    = bd => {
-  if (!bd) return "—";
-  const d = Math.floor((new Date()-new Date(bd))/86400000);
-  if (d>365) return `${Math.floor(d/365)}y ${Math.floor((d%365)/30)}a`;
-  if (d>30)  return `${Math.floor(d/30)} ay`;
-  return `${d} gün`;
-};
-const nextVaccineDate = (goatId, vaccineTypeId, vaccines) => {
-  const vt = VACCINE_DEFS.find(v=>v.id===vaccineTypeId);
-  const last = vaccines.filter(v=>v.goatId===goatId&&v.vaccineType===vaccineTypeId).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
-  if (!last||!vt) return null;
-  const d = new Date(last.date); d.setDate(d.getDate()+vt.intervalDays);
-  return d.toISOString().split("T")[0];
-};
-
-// Log kaydet
-const addLog = async (healthRecordId, goatId, breed, action, actionDetail, userName) => {
-  const log = { id:"l"+Date.now()+Math.random().toString(36).slice(2), health_record_id:healthRecordId, goat_id:goatId, breed, action, action_detail:actionDetail, user_name:userName };
-  await sb.from("health_logs").insert(log);
-};
-
 function Loading(){
   return <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"#F5F0FF",fontFamily:"'Poppins',sans-serif"}}>
     <div style={{position:"relative",marginBottom:24}}>
