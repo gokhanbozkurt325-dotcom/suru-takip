@@ -5085,7 +5085,7 @@ function App(){
                 </div>
               </div>
             )}
-            {currentUser==="Veteriner Hekim"||currentUser==="Bekir Zengin"||currentUser==="Ali Özen" && (
+            {(currentUser==="Veteriner Hekim"||currentUser==="Bekir Zengin"||currentUser==="Ali Özen") && (
               <div style={{...S.card,marginBottom:10,border:`1.5px solid ${guestAccess.isOpen?"#4A7C3F":"#E5E7EB"}`}}>
                 <div style={{fontWeight:800,fontSize:14,color:"#1A1A2E",marginBottom:8}}>👁 Misafir Erişimi</div>
                 {guestAccess.isOpen ? (
