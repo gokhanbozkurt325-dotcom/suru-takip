@@ -16,22 +16,17 @@
   <title>BURDUR Açık Cezaevi Hayvancılık 🐐</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
-    html,body{overflow-x:hidden;}
     body{
-      background:#F5F0FF;
+      background:#0A0A0F;
       font-family:'Poppins',system-ui,-apple-system,sans-serif;
-      color:#111827;
+      overflow-x:hidden;
+      color:#F0ECD8;
     }
-    #root{max-width:480px;margin:0 auto;min-height:100vh;overflow-x:hidden;}
-    input,select,textarea,button{
-      font-family:'Poppins',system-ui,-apple-system,sans-serif;
-      box-sizing:border-box;
-    }
-    input,select,textarea{color:#111827!important;}
-    input::placeholder,textarea::placeholder{color:#A0AEC0;}
-    ::-webkit-scrollbar{width:0;height:0;}
-    /* Mikrofon butonu asla taşmaz */
-    button[type="button"]{flex-shrink:0;}
+    #root{max-width:480px;margin:0 auto;min-height:100vh;}
+    input,select,textarea,button{font-family:'Poppins',system-ui,-apple-system,sans-serif;}
+    input::placeholder,textarea::placeholder{color:rgba(240,236,216,.35);}
+    ::-webkit-scrollbar{width:0;}
+    ::-webkit-input-placeholder{color:rgba(240,236,216,.35);}
   </style>
 </head>
 <body>
@@ -74,138 +69,212 @@ const COLOR_THEMES = [
 ];
 const DEFAULT_THEME = COLOR_THEMES[0];
 
-// ── Hava Durumu Widget ──
+
 function WeatherWidget() {
   const [weather, setWeather] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(false);
 
-  React.useEffect(() => {
-    // Open-Meteo API — ücretsiz, key gerektirmez
-    // Burdur koordinatları: 37.7167° N, 30.2833° E
-    const url = "https://api.open-meteo.com/v1/forecast?latitude=37.7167&longitude=30.2833&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,apparent_temperature&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=Europe%2FIstanbul&forecast_days=4";
-    fetch(url)
-      .then(r => r.json())
-      .then(data => {
-        const cur = data.current;
-        const daily = data.daily;
-        const wcode = cur.weather_code;
-        const getIcon = (code) => {
-          if(code===0) return "☀️";
-          if(code<=2) return "🌤️";
-          if(code<=3) return "☁️";
-          if(code<=48) return "🌫️";
-          if(code<=57) return "🌧️";
-          if(code<=67) return "🌧️";
-          if(code<=77) return "❄️";
-          if(code<=82) return "🌦️";
-          if(code<=86) return "🌨️";
-          if(code<=99) return "⛈️";
-          return "🌡️";
-        };
-        const getDesc = (code) => {
-          if(code===0) return "Açık";
-          if(code<=2) return "Az bulutlu";
-          if(code<=3) return "Bulutlu";
-          if(code<=48) return "Sisli";
-          if(code<=57) return "Çisenti";
-          if(code<=67) return "Yağmurlu";
-          if(code<=77) return "Karlı";
-          if(code<=82) return "Sağanak";
-          if(code<=86) return "Kar fırtınası";
-          if(code<=99) return "Gök gürültülü";
-          return "Değişken";
-        };
-        const days = ["Paz","Pzt","Sal","Çar","Per","Cum","Cmt"];
-        const forecast = daily.time.slice(1,4).map((date,i) => ({
-          day: days[new Date(date).getDay()],
-          max: Math.round(daily.temperature_2m_max[i+1]),
-          min: Math.round(daily.temperature_2m_min[i+1]),
-          icon: getIcon(daily.weather_code[i+1])
-        }));
+  React.useEffect(()=>{
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=37.7167&longitude=30.2833&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,apparent_temperature&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=Europe%2FIstanbul&forecast_days=4")
+      .then(r=>r.json())
+      .then(data=>{
+        const cur=data.current;
+        const daily=data.daily;
+        const ic=(code)=>code===0?"☀️":code<=2?"🌤️":code<=3?"☁️":code<=48?"🌫️":code<=67?"🌧️":code<=77?"❄️":code<=82?"🌦️":"⛈️";
+        const dc=(code)=>code===0?"Açık":code<=2?"Az bulutlu":code<=3?"Bulutlu":code<=48?"Sisli":code<=67?"Yağmurlu":code<=77?"Karlı":code<=82?"Sağanak":"Fırtınalı";
+        const days=["Paz","Pzt","Sal","Çar","Per","Cum","Cmt"];
         setWeather({
-          temp: Math.round(cur.temperature_2m),
-          feels: Math.round(cur.apparent_temperature),
-          humidity: cur.relative_humidity_2m,
-          wind: Math.round(cur.wind_speed_10m),
-          icon: getIcon(wcode),
-          desc: getDesc(wcode),
-          forecast
+          temp:Math.round(cur.temperature_2m),
+          feels:Math.round(cur.apparent_temperature),
+          humidity:cur.relative_humidity_2m,
+          wind:Math.round(cur.wind_speed_10m),
+          icon:ic(cur.weather_code),
+          desc:dc(cur.weather_code),
+          forecast:daily.time.slice(1,4).map((date,i)=>({
+            day:days[new Date(date).getDay()],
+            max:Math.round(daily.temperature_2m_max[i+1]),
+            min:Math.round(daily.temperature_2m_min[i+1]),
+            icon:ic(daily.weather_code[i+1])
+          }))
         });
         setLoading(false);
       })
-      .catch(() => { setError(true); setLoading(false); });
-  }, []);
+      .catch(()=>setLoading(false));
+  },[]);
 
-  if(loading) return (
-    <div style={{background:"#FFFFFF",borderRadius:18,padding:"16px",marginBottom:12,border:"1px solid rgba(0,0,0,.06)",boxShadow:"0 2px 12px rgba(0,0,0,.05)"}}>
-      <div style={{display:"flex",alignItems:"center",gap:10}}>
-        <div style={{fontSize:32}}>🌤️</div>
-        <div>
-          <div style={{fontWeight:700,fontSize:14,color:"#111827"}}>Burdur Hava Durumu</div>
-          <div style={{fontSize:12,color:"#9CA3AF"}}>Yükleniyor...</div>
-        </div>
-      </div>
-    </div>
-  );
-
-  if(error || !weather) return null;
-
+  if(!weather) return null;
   return (
-    <div style={{background:"linear-gradient(135deg,#EEF2FF 0%,#FFFFFF 100%)",borderRadius:18,padding:"16px",marginBottom:12,border:"1px solid rgba(99,102,241,.12)",boxShadow:"0 2px 12px rgba(0,0,0,.05)"}}>
-      {/* Üst kısım */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+    <div style={{background:"linear-gradient(135deg,#EEF2FF,#FFFFFF)",borderRadius:18,padding:16,marginBottom:12,border:"1px solid rgba(99,102,241,.12)",boxShadow:"0 2px 12px rgba(0,0,0,.05)"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{fontSize:40,lineHeight:1}}>{weather.icon}</div>
+          <div style={{fontSize:38,lineHeight:1}}>{weather.icon}</div>
           <div>
-            <div style={{fontSize:11,color:"#9CA3AF",fontWeight:600,letterSpacing:".5px",textTransform:"uppercase"}}>📍 Burdur</div>
-            <div style={{fontSize:28,fontWeight:800,color:"#111827",lineHeight:1}}>{weather.temp}°<span style={{fontSize:14,fontWeight:500,color:"#6B7280"}}>C</span></div>
-            <div style={{fontSize:12,color:"#6B7280",marginTop:1}}>{weather.desc}</div>
+            <div style={{fontSize:10,color:"#9CA3AF",fontWeight:600,textTransform:"uppercase",letterSpacing:".5px"}}>📍 Burdur</div>
+            <div style={{fontSize:26,fontWeight:800,color:"#111827",lineHeight:1}}>{weather.temp}°<span style={{fontSize:13,color:"#6B7280"}}>C</span></div>
+            <div style={{fontSize:11,color:"#6B7280"}}>{weather.desc}</div>
           </div>
         </div>
         <div style={{textAlign:"right"}}>
           <div style={{fontSize:11,color:"#9CA3AF"}}>Hissedilen</div>
-          <div style={{fontSize:16,fontWeight:700,color:"#374151"}}>{weather.feels}°C</div>
-          <div style={{fontSize:11,color:"#9CA3AF",marginTop:4}}>💧 {weather.humidity}%</div>
-          <div style={{fontSize:11,color:"#9CA3AF"}}>💨 {weather.wind} km/s</div>
+          <div style={{fontSize:15,fontWeight:700,color:"#374151"}}>{weather.feels}°C</div>
+          <div style={{fontSize:11,color:"#9CA3AF",marginTop:3}}>💧{weather.humidity}% · 💨{weather.wind}km/s</div>
         </div>
       </div>
-      {/* 3 günlük tahmin */}
-      <div style={{display:"flex",gap:6,borderTop:"1px solid rgba(0,0,0,.06)",paddingTop:10}}>
-        {weather.forecast.map((f,i) => (
-          <div key={i} style={{flex:1,textAlign:"center",background:"rgba(99,102,241,.06)",borderRadius:10,padding:"8px 4px"}}>
+      <div style={{display:"flex",gap:6,borderTop:"1px solid rgba(0,0,0,.06)",paddingTop:8}}>
+        {weather.forecast.map(function(f,i){return (
+          <div key={i} style={{flex:1,textAlign:"center",background:"rgba(99,102,241,.06)",borderRadius:10,padding:"6px 4px"}}>
             <div style={{fontSize:10,color:"#9CA3AF",fontWeight:600}}>{f.day}</div>
-            <div style={{fontSize:18,margin:"4px 0"}}>{f.icon}</div>
+            <div style={{fontSize:16,margin:"3px 0"}}>{f.icon}</div>
             <div style={{fontSize:11,fontWeight:700,color:"#374151"}}>{f.max}°</div>
             <div style={{fontSize:10,color:"#9CA3AF"}}>{f.min}°</div>
           </div>
-        ))}
+        );})}
       </div>
     </div>
   );
 }
 
-// ── Keçi Eşleştirme Oyunu ──
-function AcilModal({show, onClose, nums}) {
-  const [durum, setDurum] = React.useState("");
-  const [konum, setKonum] = React.useState("");
-  const [foto, setFoto]   = React.useState(null);
-  const [fotoUrl, setFotoUrl] = React.useState("");
-  const [sending, setSending] = React.useState(false);
+function GoatMatchGame() {
+  const PAIRS = [
+    {id:"a",emoji:"🐐",name:"Keçi"},{id:"b",emoji:"🐑",name:"Koyun"},
+    {id:"c",emoji:"🦙",name:"Lama"},{id:"d",emoji:"🐏",name:"Koç"},
+    {id:"e",emoji:"🐮",name:"İnek"},{id:"f",emoji:"🐷",name:"Domuz"},
+    {id:"g",emoji:"🐔",name:"Tavuk"},{id:"h",emoji:"🦆",name:"Ördek"},
+  ];
+  const LIMIT = 120;
+  const init = function() {
+    var deck = PAIRS.concat(PAIRS).map(function(b,i){return Object.assign({},b,{uid:i,flipped:false,matched:false});});
+    return deck.sort(function(){return Math.random()-.5;});
+  };
+  const [cards,setCards] = React.useState(init);
+  const [flipped,setFlipped] = React.useState([]);
+  const [moves,setMoves] = React.useState(0);
+  const [won,setWon] = React.useState(false);
+  const [lost,setLost] = React.useState(false);
+  const [time,setTime] = React.useState(0);
+  const [running,setRunning] = React.useState(false);
+  const timer = React.useRef(null);
 
-  const kapat = () => {
-    onClose();
-    setDurum(""); setKonum(""); setFoto(null); setFotoUrl(""); setSending(false);
+  React.useEffect(function(){
+    if(running&&!won&&!lost){
+      timer.current=setInterval(function(){
+        setTime(function(t){
+          if(t+1>=LIMIT){setRunning(false);setLost(true);return LIMIT;}
+          return t+1;
+        });
+      },1000);
+    } else { clearInterval(timer.current); }
+    return function(){clearInterval(timer.current);};
+  },[running,won,lost]);
+
+  var doReset = function(){
+    clearInterval(timer.current);
+    setCards(init());setFlipped([]);setMoves(0);
+    setWon(false);setLost(false);setTime(0);setRunning(false);
   };
 
-  const gonder = () => {
+  var doFlip = function(card){
+    if(card.flipped||card.matched||flipped.length===2||lost||won) return;
+    if(!running) setRunning(true);
+    var nc=cards.map(function(x){return x.uid===card.uid?Object.assign({},x,{flipped:true}):x;});
+    var nf=flipped.concat([card]);
+    setCards(nc);setFlipped(nf);
+    if(nf.length===2){
+      setMoves(function(m){return m+1;});
+      if(nf[0].id===nf[1].id){
+        setTimeout(function(){
+          var mc=nc.map(function(x){return x.id===nf[0].id?Object.assign({},x,{matched:true}):x;});
+          setCards(mc);setFlipped([]);
+          if(mc.every(function(x){return x.matched;})){setWon(true);setRunning(false);}
+        },400);
+      } else {
+        setTimeout(function(){
+          setCards(function(p){return p.map(function(x){return nf.some(function(f){return f.uid===x.uid;})?Object.assign({},x,{flipped:false}):x;});});
+          setFlipped([]);
+        },900);
+      }
+    }
+  };
+
+  var rem = LIMIT-time;
+  var tc = rem<=20?"#EF4444":rem<=60?"#D97706":"#059669";
+  var fmt = function(s){return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");};
+  var matched = cards.filter(function(x){return x.matched;}).length/2;
+
+  return (
+    <div className="anim-fade">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+        <h2 style={{margin:0,fontSize:17,fontWeight:800,color:"#111827"}}>🐐 Keçi Eşleştirme</h2>
+        <button onClick={doReset} style={{background:"rgba(var(--primary-rgb),.1)",color:"var(--primary,#8B5CF6)",border:"none",borderRadius:10,padding:"6px 12px",fontWeight:600,fontSize:12,cursor:"pointer"}}>🔄 Yeniden</button>
+      </div>
+      <div style={{display:"flex",gap:8,marginBottom:8}}>
+        {[{v:moves,l:"HAMLE",col:"var(--primary,#8B5CF6)"},{v:fmt(rem),l:"SÜRE",col:tc},{v:matched+"/8",l:"EŞLEŞTİ",col:"#D97706"}].map(function(x){return (
+          <div key={x.l} style={{flex:1,background:"#FFFFFF",borderRadius:12,padding:"8px 6px",textAlign:"center",border:"1.5px solid rgba(0,0,0,.05)"}}>
+            <div style={{fontSize:17,fontWeight:800,color:x.col}}>{x.v}</div>
+            <div style={{fontSize:9,color:"#9CA3AF",fontWeight:600}}>{x.l}</div>
+          </div>
+        );})}
+      </div>
+      <div style={{height:5,background:"#F3F4F6",borderRadius:10,marginBottom:10,overflow:"hidden"}}>
+        <div style={{height:"100%",width:(rem/LIMIT*100)+"%",background:tc,borderRadius:10,transition:"width 1s linear"}}/>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
+        {cards.map(function(card){return (
+          <button key={card.uid} onClick={function(){doFlip(card);}} style={{
+            aspectRatio:"1",borderRadius:14,padding:0,border:card.matched?"2px solid #10B981":card.flipped?"2px solid var(--primary,#8B5CF6)":"2px solid #E5E7EB",
+            background:card.matched?"#ECFDF5":card.flipped?"rgba(var(--primary-rgb),.08)":"#F9FAFB",
+            cursor:card.matched||card.flipped||lost?"default":"pointer",
+            display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+            transition:"all .2s",WebkitAppearance:"none",opacity:lost&&!card.matched?0.45:1
+          }}>
+            {card.flipped||card.matched ? (
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:26}}>{card.emoji}</div>
+                <div style={{fontSize:8,fontWeight:700,color:card.matched?"#059669":"var(--primary,#8B5CF6)",marginTop:2}}>{card.name}</div>
+              </div>
+            ) : <div style={{fontSize:24,opacity:.5}}>🎴</div>}
+          </button>
+        );})}
+      </div>
+      {won&&<div style={{marginTop:14,background:"linear-gradient(135deg,#ECFDF5,#D1FAE5)",borderRadius:16,padding:18,textAlign:"center",border:"1px solid #A7F3D0"}}>
+        <div style={{fontSize:40,marginBottom:6}}>🎉</div>
+        <div style={{fontWeight:800,fontSize:18,color:"#065F46",marginBottom:3}}>Tebrikler!</div>
+        <div style={{fontSize:12,color:"#6B7280",marginBottom:12}}>{moves} hamle · {fmt(time)}</div>
+        <button onClick={doReset} style={{background:"#10B981",color:"#fff",border:"none",borderRadius:12,padding:"10px 24px",fontWeight:700,fontSize:14,cursor:"pointer"}}>🔄 Tekrar</button>
+      </div>}
+      {lost&&<div style={{marginTop:14,background:"linear-gradient(135deg,#FEF2F2,#FEE2E2)",borderRadius:16,padding:18,textAlign:"center",border:"1px solid #FECACA"}}>
+        <div style={{fontSize:40,marginBottom:6}}>⏰</div>
+        <div style={{fontWeight:800,fontSize:18,color:"#991B1B",marginBottom:3}}>Süre Doldu!</div>
+        <div style={{fontSize:12,color:"#6B7280",marginBottom:12}}>{matched}/8 · {moves} hamle</div>
+        <button onClick={doReset} style={{background:"#EF4444",color:"#fff",border:"none",borderRadius:12,padding:"10px 24px",fontWeight:700,fontSize:14,cursor:"pointer"}}>🔄 Tekrar</button>
+      </div>}
+      {!running&&!won&&!lost&&<div style={{marginTop:10,textAlign:"center",fontSize:11,color:"#9CA3AF"}}>Kartları çevir · {LIMIT} saniye</div>}
+    </div>
+  );
+}
+
+function AcilModal(props) {
+  var show = props.show;
+  var onClose = props.onClose;
+  var nums = props.nums;
+  const [durum,  setDurum]  = React.useState("");
+  const [konum,  setKonum]  = React.useState("");
+  const [fotoUrl,setFotoUrl]= React.useState("");
+  const [sending,setSending]= React.useState(false);
+
+  var kapat = function(){
+    onClose();
+    setDurum(""); setKonum(""); setFotoUrl(""); setSending(false);
+  };
+
+  var gonder = function(){
     if(!durum.trim()) return;
     setSending(true);
-    const tarih = new Date().toLocaleString("tr-TR");
-    const parcalar = ["🚨 ACİL - BURDUR CEZAEVİ HAYVANCILIK", "", durum.trim()];
-    if(konum.trim()) parcalar.push("Konum: "+konum.trim());
-    parcalar.push("", "Tarih: "+tarih);
-    const mesaj = encodeURIComponent(parcalar.join("\n"));
+    var tarih = new Date().toLocaleString("tr-TR");
+    var satirlar = ["🚨 ACİL - BURDUR CEZAEVİ HAYVANCILIK", "", durum.trim()];
+    if(konum.trim()) satirlar.push("Konum: "+konum.trim());
+    satirlar.push("", "Tarih: "+tarih);
+    var mesaj = encodeURIComponent(satirlar.join("\n"));
     nums.forEach(function(n,i){
       setTimeout(function(){ window.open("https://wa.me/"+n+"?text="+mesaj,"_blank"); }, i*900);
     });
@@ -220,56 +289,45 @@ function AcilModal({show, onClose, nums}) {
           <div style={{fontSize:32}}>🚨</div>
           <div>
             <div style={{fontWeight:800,fontSize:17,color:"#DC2626"}}>ACİL DURUM</div>
-            <div style={{fontSize:11,color:"#9CA3AF"}}>Mesaj 3 kişiye gönderilecek</div>
+            <div style={{fontSize:11,color:"#9CA3AF"}}>3 kişiye WhatsApp mesajı gidecek</div>
           </div>
         </div>
-
-        <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:5,textTransform:"uppercase"}}>Durum Açıklaması *</div>
+        <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:5,textTransform:"uppercase"}}>Durum *</div>
         <textarea value={durum} onChange={function(e){setDurum(e.target.value);}}
-          placeholder="Ne oldu? Kısaca açıklayın..."
-          rows={3}
-          style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #E5E7EB",fontSize:13,resize:"none",boxSizing:"border-box",fontFamily:"Poppins,sans-serif",outline:"none",color:"#111827",display:"block"}}
+          placeholder="Ne oldu? Açıklayın..." rows={3}
+          style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #E5E7EB",fontSize:13,resize:"none",boxSizing:"border-box",outline:"none",color:"#111827",display:"block",fontFamily:"inherit"}}
         />
-
         <div style={{fontSize:11,fontWeight:700,color:"#374151",margin:"10px 0 5px",textTransform:"uppercase"}}>Konum (isteğe bağlı)</div>
         <input value={konum} onChange={function(e){setKonum(e.target.value);}}
-          placeholder="Örn: Ahır 2, Mera alanı..."
+          placeholder="Örn: Ahır 2, Mera..."
           style={{width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #E5E7EB",fontSize:13,boxSizing:"border-box",outline:"none",color:"#111827",display:"block"}}
         />
-
         <div style={{fontSize:11,fontWeight:700,color:"#374151",margin:"10px 0 5px",textTransform:"uppercase"}}>Fotoğraf (isteğe bağlı)</div>
         {fotoUrl ? (
           <div style={{position:"relative",marginBottom:8}}>
-            <img src={fotoUrl} style={{width:"100%",height:110,objectFit:"cover",borderRadius:10,border:"1px solid #E5E7EB",display:"block"}}/>
-            <button onClick={function(){setFoto(null);setFotoUrl("");}} style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,.6)",border:"none",color:"#fff",borderRadius:"50%",width:22,height:22,fontSize:12,cursor:"pointer",padding:0}}>✕</button>
+            <img src={fotoUrl} style={{width:"100%",height:100,objectFit:"cover",borderRadius:10,display:"block"}}/>
+            <button onClick={function(){setFotoUrl("");}} style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,.6)",border:"none",color:"#fff",borderRadius:"50%",width:22,height:22,fontSize:12,cursor:"pointer",padding:0}}>✕</button>
           </div>
         ) : (
           <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px",border:"1.5px dashed #D1D5DB",borderRadius:10,cursor:"pointer",fontSize:13,color:"#9CA3AF",marginBottom:8}}>
             📷 Fotoğraf seç
             <input type="file" accept="image/*" style={{display:"none"}} onChange={function(e){
-              const f=e.target.files[0];
-              if(f){setFoto(f);setFotoUrl(URL.createObjectURL(f));}
+              var f=e.target.files[0];
+              if(f) setFotoUrl(URL.createObjectURL(f));
             }}/>
           </label>
         )}
-
         <div style={{background:"#FEF2F2",borderRadius:10,padding:"8px 12px",marginBottom:14,fontSize:11,color:"#DC2626"}}>
-          📱 Mesaj şu kişilere gidecek:<br/>
-          <b>Bekir Zengin · Ali Özen · Nöbetçi</b>
+          📱 <b>Bekir Zengin · Ali Özen · Nöbetçi</b> numaralarına gidecek
         </div>
-
         <div style={{display:"flex",gap:8}}>
-          <button onClick={kapat} style={{flex:1,padding:"11px",borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:13,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>
-            İptal
-          </button>
+          <button onClick={kapat} style={{flex:1,padding:"11px",borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:13,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>İptal</button>
           <button onClick={gonder} disabled={!durum.trim()||sending}
             style={{flex:2,padding:"11px",borderRadius:12,border:"none",
               background:durum.trim()&&!sending?"linear-gradient(135deg,#DC2626,#EF4444)":"#F3F4F6",
               color:durum.trim()&&!sending?"#fff":"#9CA3AF",
-              fontWeight:700,fontSize:13,
-              cursor:durum.trim()&&!sending?"pointer":"not-allowed",
-              WebkitAppearance:"none"}}>
-            {sending ? "⏳ Açılıyor..." : "🚨 MESAJ GÖNDER"}
+              fontWeight:700,fontSize:13,cursor:durum.trim()&&!sending?"pointer":"not-allowed",WebkitAppearance:"none"}}>
+            {sending?"⏳ Açılıyor...":"🚨 MESAJ GÖNDER"}
           </button>
         </div>
       </div>
@@ -277,140 +335,71 @@ function AcilModal({show, onClose, nums}) {
   );
 }
 
-function GoatMatchGame() {
-  const GOAT_PAIRS = [
-    {emoji:"🐐",name:"Keçi"},{emoji:"🐑",name:"Koyun"},{emoji:"🦙",name:"Lama"},
-    {emoji:"🐏",name:"Koç"},{emoji:"🐮",name:"İnek"},{emoji:"🐷",name:"Domuz"},
-    {emoji:"🐔",name:"Tavuk"},{emoji:"🦆",name:"Ördek"},
-  ];
-  const TIME_LIMIT = 120;
+const BREEDS = [
+  { id:"saanen",  name:"Saanen",  emoji:"🤍", color:theme.primary, bg:"#E3F0DC", bgCard:"#F5FAF0", desc:"Süt verimi yüksek, beyaz tüylü" },
+  { id:"honamli", name:"Honamlı", emoji:"🖤", color:"#7B4B94", bg:"#F0E6F6", bgCard:"#F9F3FC", desc:"Yerli ırk, dayanıklı, uzun tüylü" },
+  { id:"halep",   name:"Halep",   emoji:"🤎", color:"#B8602A", bg:"#FFF0E6", bgCard:"#FFF8F2", desc:"Kırmızımsı kahve, uzun kulaklı" },
+];
 
-  const initCards = () => {
-    const deck = [...GOAT_PAIRS,...GOAT_PAIRS].map((b,i)=>({...b,uid:i,flipped:false,matched:false}));
-    return deck.sort(()=>Math.random()-.5);
-  };
+const VACCINE_DEFS = [
+  { id:"enterotoksemi", name:"Enterotoksemi",  intervalDays:180, color:theme.primary },
+  { id:"brusella",      name:"Brusella",       intervalDays:365, color:"#7B4B94" },
+  { id:"ppr",           name:"PPR (Veba)",     intervalDays:365, color:"#B8602A" },
+  { id:"agiz_tirnak",   name:"Ağız ve Tırnak", intervalDays:180, color:"#0EA5E9" },
+  { id:"cice",          name:"Çiçek",          intervalDays:365, color:"#D4850A" },
+  { id:"parazit",       name:"İç/Dış Parazit", intervalDays:120, color:"#E8975A" },
+  { id:"mastitis",      name:"Mastitis",       intervalDays:365, color:"#EF4444" },
+];
 
-  const [cards,   setCards]   = React.useState(initCards);
-  const [flipped, setFlipped] = React.useState([]);
-  const [moves,   setMoves]   = React.useState(0);
-  const [won,     setWon]     = React.useState(false);
-  const [lost,    setLost]    = React.useState(false);
-  const [time,    setTime]    = React.useState(0);
-  const [running, setRunning] = React.useState(false);
-  const timerRef = React.useRef(null);
+const CONDITION_OPTIONS = ["Mastitis","Topallık","İshal","Parazit","Abort","Pnömoni","Eklem İltihabı","Göz Enfeksiyonu","Yaralanma","Diğer"];
+const CLOSE_REASONS = ["İyileşti","Tedavi Tamamlandı","Kronik Hastalık","Hayvan Öldü","Başka Tesise Nakil","Diğer"];
 
-  React.useEffect(()=>{
-    if(running&&!won&&!lost){
-      timerRef.current=setInterval(()=>{
-        setTime(t=>{
-          if(t+1>=TIME_LIMIT){setRunning(false);setLost(true);return TIME_LIMIT;}
-          return t+1;
-        });
-      },1000);
-    } else { clearInterval(timerRef.current); }
-    return ()=>clearInterval(timerRef.current);
-  },[running,won,lost]);
+const DEMO_USERS = [
+  { id:"u1", name:"Veteriner Hekim", role:"veteriner", emoji:"👨‍⚕️", members:[], pin:"" },
+  { id:"u2", name:"Şef",              role:"sef",       emoji:"👤",    members:["Bekir Zengin","Ali Özen"], pin:"" },
+  { id:"u3", name:"Vardiya 1",       role:"vardiya",   emoji:"👷",    members:["Uğur","Erdem","Hakan"] },
+  { id:"u4", name:"Vardiya 2",       role:"vardiya",   emoji:"👷",    members:["Mehmet","Zafer","Turan"] },
+  { id:"u5", name:"Vardiya 3",       role:"vardiya",   emoji:"👷",    members:["İsmail","Süleyman","Ramazan"] },
+  { id:"u6", name:"Vardiya 4",       role:"vardiya",   emoji:"👷",    members:["M. Ali","Mustafa","Hüseyin"] },
+  { id:"u7", name:"Misafir",         role:"misafir",   emoji:"👁",    members:[], pin:"" },
+];
 
-  const reset=()=>{
-    clearInterval(timerRef.current);
-    setCards(initCards());setFlipped([]);setMoves(0);
-    setWon(false);setLost(false);setTime(0);setRunning(false);
-  };
+// Supabase dönüşümleri
+const toGoat    = r => ({ id:r.id, name:r.name, earTag:r.ear_tag, gender:r.gender, breed:r.breed, category:r.category, birthDate:r.birth_date||"", weight:r.weight||"", color:r.color||"", motherTag:r.mother_tag||"", fatherTag:r.father_tag||"", abortHistory:r.abort_history||"hayır", reproductionStatus:r.reproduction_status||"", lastBirthDate:r.last_birth_date||"", kidCount:r.kid_count||"0", notes:r.notes||"", abortDetails:r.abort_details||"", archived:r.archived||false, archiveReason:r.archive_reason||"" });
+const fromGoat  = g => ({ id:g.id, name:g.name, ear_tag:g.earTag, gender:g.gender, breed:g.breed, category:g.category, birth_date:g.birthDate||null, weight:g.weight||null, color:g.color||null, mother_tag:g.motherTag||null, father_tag:g.fatherTag||null, abort_history:g.abortHistory||"hayır", reproduction_status:g.reproductionStatus||null, last_birth_date:g.lastBirthDate||null, kid_count:g.kidCount||"0", notes:g.notes||null, abort_details:g.abortDetails||null, archived:false });
+const toHealth  = r => ({ id:r.id, goatId:r.goat_id, goatEarTag:r.goat_ear_tag||"", breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false, category:r.category||"anac" });
+const fromHealth= h => ({ id:h.id, goat_id:h.goatId, goat_ear_tag:h.goatEarTag||null, breed:h.breed, category:h.category||"anac", date:h.date, condition:h.condition, treatment:h.treatment||null, status:h.status, veterinarian:h.veterinarian||null, cost:h.cost||null, created_by_name:h.createdByName||null, notes:h.notes||null, closed:false });
+const toVaccine = r => ({ id:r.id, goatId:r.goat_id, breed:r.breed, date:r.date, vaccineType:r.vaccine_type, batchNo:r.batch_no||"", createdByName:r.created_by_name||"" });
+const fromVaccine=v => ({ id:v.id, goat_id:v.goatId, breed:v.breed, date:v.date, vaccine_type:v.vaccineType, batch_no:v.batchNo||null, created_by_name:v.createdByName||null });
+const toReport  = r => ({ id:r.id, goatId:r.goat_id, goatName:r.goat_name, goatEarTag:r.goat_ear_tag||"", breed:r.breed, dateStarted:r.date_started, dateClosed:r.date_closed, condition:r.condition, treatment:r.treatment||"", closeReason:r.close_reason, closeNote:r.close_note||"", veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"" });
+const fromReport= r => ({ id:r.id, goat_id:r.goatId, goat_name:r.goatName, goat_ear_tag:r.goatEarTag||null, breed:r.breed, date_started:r.dateStarted, date_closed:r.dateClosed, condition:r.condition, treatment:r.treatment||null, close_reason:r.closeReason, close_note:r.closeNote||null, veterinarian:r.veterinarian||null, cost:r.cost||null, created_by_name:r.createdByName||null, notes:r.notes||null });
+const toLog     = r => ({ id:r.id, healthRecordId:r.health_record_id, goatId:r.goat_id, breed:r.breed, action:r.action, actionDetail:r.action_detail||"", userName:r.user_name||"", createdAt:r.created_at });
 
-  const flip=(card)=>{
-    if(card.flipped||card.matched||flipped.length===2||lost||won) return;
-    if(!running) setRunning(true);
-    const nc=cards.map(c=>c.uid===card.uid?{...c,flipped:true}:c);
-    const nf=[...flipped,card];
-    setCards(nc);setFlipped(nf);
-    if(nf.length===2){
-      setMoves(m=>m+1);
-      if(nf[0].emoji===nf[1].emoji){
-        setTimeout(()=>{
-          const mc=nc.map(c=>c.emoji===nf[0].emoji?{...c,matched:true}:c);
-          setCards(mc);setFlipped([]);
-          if(mc.every(c=>c.matched)){setWon(true);setRunning(false);}
-        },400);
-      } else {
-        setTimeout(()=>{
-          setCards(p=>p.map(c=>nf.some(f=>f.uid===c.uid)?{...c,flipped:false}:c));
-          setFlipped([]);
-        },900);
-      }
-    }
-  };
+const fmt       = d => d ? new Date(d).toLocaleDateString("tr-TR") : "—";
+const fmtDT     = d => d ? new Date(d).toLocaleString("tr-TR", {day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—";
+const todayISO  = () => new Date().toISOString().split("T")[0];
+const daysUntil = d => d ? Math.ceil((new Date(d)-new Date())/86400000) : Infinity;
+const getAge    = bd => {
+  if (!bd) return "—";
+  const d = Math.floor((new Date()-new Date(bd))/86400000);
+  if (d>365) return `${Math.floor(d/365)}y ${Math.floor((d%365)/30)}a`;
+  if (d>30)  return `${Math.floor(d/30)} ay`;
+  return `${d} gün`;
+};
+const nextVaccineDate = (goatId, vaccineTypeId, vaccines) => {
+  const vt = VACCINE_DEFS.find(v=>v.id===vaccineTypeId);
+  const last = vaccines.filter(v=>v.goatId===goatId&&v.vaccineType===vaccineTypeId).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+  if (!last||!vt) return null;
+  const d = new Date(last.date); d.setDate(d.getDate()+vt.intervalDays);
+  return d.toISOString().split("T")[0];
+};
 
-  const remaining=TIME_LIMIT-time;
-  const tc=remaining<=20?"#EF4444":remaining<=60?"#D97706":"#059669";
-  const fmt=s=>`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
-  const matched=cards.filter(c=>c.matched).length/2;
+// Log kaydet
+const addLog = async (healthRecordId, goatId, breed, action, actionDetail, userName) => {
+  const log = { id:"l"+Date.now()+Math.random().toString(36).slice(2), health_record_id:healthRecordId, goat_id:goatId, breed, action, action_detail:actionDetail, user_name:userName };
+  await sb.from("health_logs").insert(log);
+};
 
-  return (
-    <div className="anim-fade">
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-        <h2 style={{...S.title,fontSize:17}}>🐐 Keçi Eşleştirme</h2>
-        <button onClick={reset} style={{...S.btnSm,background:"rgba(var(--primary-rgb),.1)",color:"var(--primary,#8B5CF6)",padding:"6px 12px"}}>🔄 Yeniden</button>
-      </div>
-
-      <div style={{display:"flex",gap:8,marginBottom:8}}>
-        {[{v:moves,l:"HAMLE",col:"var(--primary,#8B5CF6)"},{v:fmt(remaining),l:"SÜRE",col:tc},{v:`${matched}/8`,l:"EŞLEŞTİ",col:"#D97706"}].map(({v,l,col})=>(
-          <div key={l} style={{flex:1,background:"#FFFFFF",borderRadius:12,padding:"8px 6px",textAlign:"center",border:`1.5px solid ${col}22`}}>
-            <div style={{fontSize:17,fontWeight:800,color:col}}>{v}</div>
-            <div style={{fontSize:9,color:"#9CA3AF",fontWeight:600}}>{l}</div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{height:5,background:"#F3F4F6",borderRadius:10,marginBottom:10,overflow:"hidden"}}>
-        <div style={{height:"100%",width:`${(remaining/TIME_LIMIT)*100}%`,background:tc,borderRadius:10,transition:"width 1s linear"}}/>
-      </div>
-
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
-        {cards.map(card=>(
-          <button key={card.uid} onClick={()=>flip(card)} style={{
-            aspectRatio:"1",borderRadius:14,padding:0,
-            border:card.matched?"2px solid #10B981":card.flipped?"2px solid var(--primary,#8B5CF6)":"2px solid #E5E7EB",
-            background:card.matched?"#ECFDF5":card.flipped?"rgba(var(--primary-rgb),.08)":"#F9FAFB",
-            cursor:card.matched||card.flipped||lost?"default":"pointer",
-            display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-            transition:"all .2s",transform:card.flipped||card.matched?"scale(1.02)":"scale(1)",
-            boxShadow:card.matched?"0 2px 8px rgba(16,185,129,.2)":"0 1px 4px rgba(0,0,0,.06)",
-            WebkitAppearance:"none",opacity:lost&&!card.matched?0.45:1
-          }}>
-            {card.flipped||card.matched ? (
-              <div style={{textAlign:"center"}}>
-                <div style={{fontSize:28}}>{card.emoji}</div>
-                <div style={{fontSize:8,color:card.matched?"#059669":"var(--primary,#8B5CF6)",fontWeight:700,marginTop:2}}>{card.name}</div>
-              </div>
-            ) : (
-              <div style={{textAlign:"center"}}>
-                <div style={{fontSize:26,opacity:.5}}>🎴</div>
-              </div>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {won&&<div style={{marginTop:14,background:"linear-gradient(135deg,#ECFDF5,#D1FAE5)",borderRadius:16,padding:18,textAlign:"center",border:"1px solid #A7F3D0"}}>
-        <div style={{fontSize:40,marginBottom:6}}>🎉</div>
-        <div style={{fontWeight:800,fontSize:19,color:"#065F46",marginBottom:3}}>Tebrikler!</div>
-        <div style={{fontSize:13,color:"#059669",marginBottom:12}}>{moves} hamle · {fmt(time)} sürede</div>
-        <button onClick={reset} style={{...S.btnPrimary,background:"#10B981"}}>🔄 Tekrar Oyna</button>
-      </div>}
-
-      {lost&&<div style={{marginTop:14,background:"linear-gradient(135deg,#FEF2F2,#FEE2E2)",borderRadius:16,padding:18,textAlign:"center",border:"1px solid #FECACA"}}>
-        <div style={{fontSize:40,marginBottom:6}}>⏰</div>
-        <div style={{fontWeight:800,fontSize:19,color:"#991B1B",marginBottom:3}}>Süre Doldu!</div>
-        <div style={{fontSize:13,color:"#DC2626",marginBottom:12}}>{matched}/8 eşleştirildi · {moves} hamle</div>
-        <button onClick={reset} style={{...S.btnPrimary,background:"#EF4444"}}>🔄 Tekrar Dene</button>
-      </div>}
-
-      {!running&&!won&&!lost&&<div style={{marginTop:10,textAlign:"center",fontSize:11,color:"#9CA3AF"}}>
-        Kartları çevir, aynı hayvanları eşleştir · {TIME_LIMIT} saniye
-      </div>}
-    </div>
-  );
-}
 function Loading(){
   return <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"#F5F0FF",fontFamily:"'Poppins',sans-serif"}}>
     <div style={{position:"relative",marginBottom:24}}>
@@ -502,7 +491,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
   </ModalWrap>;
 
   return <ModalWrap title={`🩺 ${record.condition}`} onClose={onClose}>
-    <div style={{background:"#F8F8FC",borderRadius:10,padding:10,fontSize:12}}>
+    <div style={{background:"#F5F5F5",borderRadius:10,padding:10,fontSize:12}}>
       {goat ? <><b>{goat.name}</b> · 🏷 {goat.earTag}</> : <><b>🏷 {record.goatEarTag||"—"}</b></>} · Başlangıç: {fmt(record.date)}
     </div>
     <div style={{display:"flex",background:"rgba(20,20,36,.6)",borderRadius:8,overflow:"hidden",marginTop:4}}>
@@ -542,7 +531,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
           </div>
         )}
         {record.notes && (
-          <div style={{background:"#F8F8FC",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
+          <div style={{background:"#F5F5F5",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
             <div style={{fontSize:11,fontWeight:700,color:"#6B7280",marginBottom:2}}>📝 Not</div>
             <div style={{fontSize:12,color:"#6B7280"}}>{record.notes}</div>
           </div>
@@ -596,7 +585,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
           );
         })}
         {recDays.length>0 && (
-          <div style={{background:"#F8F8FC",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#6B7280",marginTop:4}}>
+          <div style={{background:"#F5F5F5",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#6B7280",marginTop:4}}>
             {recDays.filter(d=>d.done).length}/{recDays.length} gün tamamlandı
           </div>
         )}
@@ -614,7 +603,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
               <div style={{fontSize:12,fontWeight:700,color:"#1A1A2E"}}>{l.userName}</div>
               <div style={{fontSize:10,color:"#D1D5DB",textAlign:"right"}}>{fmtDT(l.createdAt)}</div>
             </div>
-            <div style={{fontSize:11,color:"#6B7280",marginTop:2,background:"#F8F8FC",padding:"4px 8px",borderRadius:6}}>{l.actionDetail}</div>
+            <div style={{fontSize:11,color:"#6B7280",marginTop:2,background:"#F5F5F5",padding:"4px 8px",borderRadius:6}}>{l.actionDetail}</div>
           </div>
         </div>
       ))}
@@ -641,42 +630,20 @@ function EarTagInput({ value, onChange }) {
 
   // Türkçe kelimeden rakama
   const txtToNums = (txt) => {
-    // Önce Türkçe kelimeleri rakama çevir, boşlukları koru
+    const direct = txt.replace(/[^0-9]/g,"");
+    if(direct) return direct;
     let s = txt.toLowerCase()
       .replace(/on\s*dokuz/g,"19").replace(/on\s*sekiz/g,"18").replace(/on\s*yedi/g,"17")
       .replace(/on\s*altı/g,"16").replace(/on\s*beş/g,"15").replace(/on\s*dört/g,"14")
       .replace(/on\s*üç/g,"13").replace(/on\s*iki/g,"12").replace(/on\s*bir/g,"11")
-      .replace(/\bon\s*(\d)\b/g,(m,d)=>"1"+d).replace(/\bon\b/g,"10").replace(/yirmi\s*dokuz/g,"29").replace(/yirmi\s*sekiz/g,"28")
+      .replace(/\bon\b/g,"10").replace(/yirmi\s*dokuz/g,"29").replace(/yirmi\s*sekiz/g,"28")
       .replace(/yirmi\s*yedi/g,"27").replace(/yirmi\s*altı/g,"26").replace(/yirmi\s*beş/g,"25")
       .replace(/yirmi\s*dört/g,"24").replace(/yirmi\s*üç/g,"23").replace(/yirmi\s*iki/g,"22")
-      .replace(/yirmi\s*bir/g,"21").replace(/\byirmi\s*(\d)\b/g,(m,d)=>"2"+d).replace(/\byirmi\b/g,"20")
-      .replace(/otuz\s*dokuz/g,"39").replace(/otuz\s*sekiz/g,"38").replace(/otuz\s*yedi/g,"37")
-      .replace(/otuz\s*altı/g,"36").replace(/otuz\s*beş/g,"35").replace(/otuz\s*dört/g,"34")
-      .replace(/otuz\s*üç/g,"33").replace(/otuz\s*iki/g,"32").replace(/otuz\s*bir/g,"31")
-      .replace(/\botuz\s*(\d)\b/g,(m,d)=>"3"+d).replace(/\botuz\b/g,"30").replace(/kırk\s*dokuz/g,"49").replace(/kırk\s*sekiz/g,"48")
-      .replace(/kırk\s*yedi/g,"47").replace(/kırk\s*altı/g,"46").replace(/kırk\s*beş/g,"45")
-      .replace(/kırk\s*dört/g,"44").replace(/kırk\s*üç/g,"43").replace(/kırk\s*iki/g,"42")
-      .replace(/kırk\s*bir/g,"41").replace(/\bkırk\s*(\d)\b/g,(m,d)=>"4"+d).replace(/\bkırk\b/g,"40")
-      .replace(/elli\s*dokuz/g,"59").replace(/elli\s*sekiz/g,"58").replace(/elli\s*yedi/g,"57")
-      .replace(/elli\s*altı/g,"56").replace(/elli\s*beş/g,"55").replace(/elli\s*dört/g,"54")
-      .replace(/elli\s*üç/g,"53").replace(/elli\s*iki/g,"52").replace(/elli\s*bir/g,"51")
-      .replace(/\belli\s*(\d)\b/g,(m,d)=>"5"+d).replace(/\belli\b/g,"50")
-      .replace(/sıfır/g,"0").replace(/\bbir\b/g,"1").replace(/\biki\b/g,"2").replace(/\büç\b/g,"3")
-      .replace(/\bdört\b/g,"4").replace(/\bbeş\b/g,"5").replace(/\baltı\b/g,"6")
-      .replace(/\byedi\b/g,"7").replace(/\bsekiz\b/g,"8").replace(/\bdokuz\b/g,"9");
-    // Boşlukla ayrılmış rakam gruplarını (10 5 → 15 değil, 10 + 5 = ayrı)
-    // Ama "10" + "5" yan yana gelince "105" olmamalı
-    // Sadece rakamları al — boşlukları koru, sonra birleştir
-    // "10 5","20 3" gibi onluk+tek rakam → birleştir ("on 5" telefon karışık gönderir)
-    s = s.replace(/\b(10|20|30|40|50|60|70|80|90) ([0-9])\b/g, function(m,t,o){return String(parseInt(t)+parseInt(o));});
-    const parts = s.match(/\d+/g);
-    if(!parts) return "";
-    // Eğer tek parça → direkt
-    if(parts.length === 1) return parts[0];
-    // Birden fazla parça: her biri kendi başına anlamlı rakam
-    // "10" + "5" → "105" DEĞİL, kullanıcı "on beş" demişse zaten "15" gelir
-    // "10" + "5" ayrı geliyorsa bunlar ayrı rakamlar → birleştir
-    return parts.join("");
+      .replace(/yirmi\s*bir/g,"21").replace(/\byirmi\b/g,"20")
+      .replace(/sıfır/g,"0").replace(/bir/g,"1").replace(/iki/g,"2").replace(/üç/g,"3")
+      .replace(/dört/g,"4").replace(/beş/g,"5").replace(/altı/g,"6")
+      .replace(/yedi/g,"7").replace(/sekiz/g,"8").replace(/dokuz/g,"9");
+    return s.replace(/[^0-9]/g,"");
   };
 
   const handleMic = (txt) => {
@@ -695,9 +662,9 @@ function EarTagInput({ value, onChange }) {
   };
 
   return (
-    <div style={{display:"flex",flexDirection:"row",alignItems:"center",gap:3,boxSizing:"border-box",width:"100%"}}>
-      <div style={{background:"rgba(var(--primary-rgb),.1)",borderRadius:8,padding:"9px 7px",fontWeight:700,fontSize:13,color:"var(--primary,#8B5CF6)",flexShrink:0,boxSizing:"border-box"}}>TR</div>
-      <span style={{color:"#D1D5DB",fontWeight:700,flexShrink:0,fontSize:14}}>-</span>
+    <div style={{display:"flex",alignItems:"center",gap:4}}>
+      <div style={{background:"rgba(var(--primary-rgb),.08)",borderRadius:10,padding:"9px 10px",fontWeight:700,fontSize:14,color:theme.primary,border:"1px solid rgba(212,175,55,.25)",flexShrink:0,letterSpacing:1}}>TR</div>
+      <div style={{color:"#D1D5DB",fontWeight:700,fontSize:16}}>-</div>
       <input
         ref={part1Ref}
         value={p1}
@@ -709,9 +676,9 @@ function EarTagInput({ value, onChange }) {
           build(v,p2);
           if(v.length===2) part2Ref.current?.focus();
         }}
-        style={{width:38,flexShrink:0,padding:"9px 2px",borderRadius:8,border:"1.5px solid #DDD8EE",fontSize:14,textAlign:"center",fontWeight:700,outline:"none",background:"#FFFFFF",color:"#111827",boxSizing:"border-box"}}
+        style={{width:46,padding:"9px 8px",borderRadius:10,border:"1px solid rgba(212,175,55,.2)",fontSize:14,textAlign:"center",fontWeight:700,outline:"none",background:"#FFFFFF",color:"#1A1A2E"}}
       />
-      <span style={{color:"#D1D5DB",fontWeight:700,flexShrink:0,fontSize:14}}>-</span>
+      <div style={{color:"#D1D5DB",fontWeight:700,fontSize:16}}>-</div>
       <input
         ref={part2Ref}
         value={p2}
@@ -721,9 +688,9 @@ function EarTagInput({ value, onChange }) {
           const v=e.target.value.replace(/\D/g,"");
           build(p1,v);
         }}
-        style={{flex:1,minWidth:0,padding:"9px 6px",borderRadius:8,border:"1.5px solid #DDD8EE",fontSize:14,fontWeight:700,outline:"none",letterSpacing:1,background:"#FFFFFF",color:"#111827",boxSizing:"border-box"}}
+        style={{flex:1,padding:"9px 10px",borderRadius:10,border:"1px solid rgba(212,175,55,.2)",fontSize:14,fontWeight:700,outline:"none",letterSpacing:1,background:"#FFFFFF",color:"#1A1A2E"}}
       />
-      <MicBtn onResult={handleMic} style={{flexShrink:0,width:40,height:40}}/>
+      <MicBtn onResult={handleMic} style={{height:38}}/>
     </div>
   );
 }
@@ -785,20 +752,19 @@ function MicBtn({ onResult, style }) {
       onClick={toggle}
       title={listening ? "Dinleniyor... tıkla durdur" : "Sesli yaz"}
       style={{
-        background: listening ? "#FEE2E2" : "rgba(var(--primary-rgb),.08)",
-        border: listening ? "1.5px solid #FECACA" : "1.5px solid rgba(var(--primary-rgb),.2)",
+        background: listening ? "rgba(239,68,68,.15)" : "rgba(var(--primary-rgb),.08)",
+        border: `1.5px solid ${listening ? "rgba(190,59,49,.6)" : "rgba(var(--primary-rgb),.2)"}`,
         borderRadius: 10,
-        padding: 0,
+        padding: "0 10px",
         cursor: "pointer",
-        fontSize: 18,
+        fontSize: 16,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        width: 38,
-        height: 38,
-        WebkitAppearance: "none",
-        boxSizing: "border-box",
+        minWidth: 38,
+        height: "100%",
         animation: listening ? "pulse 1s infinite" : "none",
+        transition: "all .2s",
         ...style
       }}>
       {listening ? "⏹" : "🎤"}
@@ -810,29 +776,27 @@ function MicBtn({ onResult, style }) {
 function VoiceInput({ value, onChange, placeholder, style, multiline, rows }) {
   if (multiline) {
     return (
-      <div style={{display:"flex",flexDirection:"row",alignItems:"flex-start",gap:6,width:"100%",boxSizing:"border-box"}}>
+      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
         <textarea
           value={value}
           onChange={e => onChange(e.target.value)}
           rows={rows || 3}
           placeholder={placeholder}
-          style={{...S.input, resize:"none", lineHeight:1.5, flex:1, minWidth:0, boxSizing:"border-box", ...style}}
+          style={{ ...S.input, resize: "vertical", lineHeight: 1.5, flex: 1, ...style }}
         />
-        <MicBtn onResult={t => onChange(value ? value + " " + t : t)}
-          style={{flexShrink:0,width:40,height:40,marginTop:2}} />
+        <MicBtn onResult={t => onChange(value ? value + " " + t : t)} style={{ height: 38, marginTop: 2 }} />
       </div>
     );
   }
   return (
-    <div style={{display:"flex",flexDirection:"row",alignItems:"center",gap:6,width:"100%",boxSizing:"border-box"}}>
+    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
       <input
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        style={{...S.input, flex:1, minWidth:0, boxSizing:"border-box", ...style}}
+        style={{ ...S.input, flex: 1, ...style }}
       />
-      <MicBtn onResult={t => onChange(t)}
-        style={{flexShrink:0,width:40,height:40}} />
+      <MicBtn onResult={t => onChange(t)} style={{ height: 38 }} />
     </div>
   );
 }
@@ -937,7 +901,7 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
         </button>
       ))}
     </div>
-    {treatmentDays>0&&<div style={{fontSize:11,color:"var(--primary,#8B5CF6)",background:"rgba(26,46,26,.5)",padding:"6px 10px",borderRadius:8}}>
+    {treatmentDays>0&&<div style={{fontSize:11,color:theme.primary,background:"rgba(26,46,26,.5)",padding:"6px 10px",borderRadius:8}}>
       📅 {treatmentDays} günlük tedavi takvimi oluşturulacak ({date} tarihinden itibaren)
     </div>}
     <FL>Durum *</FL>
@@ -965,7 +929,7 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
         </div>
       ))}
     </div>}
-    {uploading&&<div style={{fontSize:11,color:"var(--primary,#8B5CF6)"}}>⏳ Fotoğraflar yükleniyor...</div>}
+    {uploading&&<div style={{fontSize:11,color:theme.primary}}>⏳ Fotoğraflar yükleniyor...</div>}
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
       <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
@@ -1042,31 +1006,23 @@ function BulkEarTagInput({ tags, onTagsChange }) {
       .replace(/on\s*dokuz/g,"19").replace(/on\s*sekiz/g,"18").replace(/on\s*yedi/g,"17")
       .replace(/on\s*altı/g,"16").replace(/on\s*beş/g,"15").replace(/on\s*dört/g,"14")
       .replace(/on\s*üç/g,"13").replace(/on\s*iki/g,"12").replace(/on\s*bir/g,"11")
-      .replace(/\bon\s*(\d)\b/g,(m,d)=>"1"+d).replace(/\bon\s*(\d)\b/g,(m,d)=>"1"+d).replace(/\bon\b/g,"10").replace(/yirmi\s*dokuz/g,"29").replace(/yirmi\s*sekiz/g,"28")
+      .replace(/\bon\b/g,"10").replace(/yirmi\s*dokuz/g,"29").replace(/yirmi\s*sekiz/g,"28")
       .replace(/yirmi\s*yedi/g,"27").replace(/yirmi\s*altı/g,"26").replace(/yirmi\s*beş/g,"25")
       .replace(/yirmi\s*dört/g,"24").replace(/yirmi\s*üç/g,"23").replace(/yirmi\s*iki/g,"22")
-      .replace(/yirmi\s*bir/g,"21").replace(/\byirmi\s*(\d)\b/g,(m,d)=>"2"+d).replace(/\byirmi\b/g,"20")
+      .replace(/yirmi\s*bir/g,"21").replace(/\byirmi\b/g,"20")
       .replace(/otuz\s*dokuz/g,"39").replace(/otuz\s*sekiz/g,"38").replace(/otuz\s*yedi/g,"37")
       .replace(/otuz\s*altı/g,"36").replace(/otuz\s*beş/g,"35").replace(/otuz\s*dört/g,"34")
       .replace(/otuz\s*üç/g,"33").replace(/otuz\s*iki/g,"32").replace(/otuz\s*bir/g,"31")
-      .replace(/\botuz\s*(\d)\b/g,(m,d)=>"3"+d).replace(/\botuz\b/g,"30").replace(/kırk\s*dokuz/g,"49").replace(/kırk\s*sekiz/g,"48")
+      .replace(/\botuz\b/g,"30").replace(/kırk\s*dokuz/g,"49").replace(/kırk\s*sekiz/g,"48")
       .replace(/kırk\s*yedi/g,"47").replace(/kırk\s*altı/g,"46").replace(/kırk\s*beş/g,"45")
       .replace(/kırk\s*dört/g,"44").replace(/kırk\s*üç/g,"43").replace(/kırk\s*iki/g,"42")
-      .replace(/kırk\s*bir/g,"41").replace(/\bkırk\s*(\d)\b/g,(m,d)=>"4"+d).replace(/\bkırk\b/g,"40")
-      .replace(/elli\s*dokuz/g,"59").replace(/elli\s*sekiz/g,"58").replace(/elli\s*yedi/g,"57")
-      .replace(/elli\s*altı/g,"56").replace(/elli\s*beş/g,"55").replace(/elli\s*dört/g,"54")
-      .replace(/elli\s*üç/g,"53").replace(/elli\s*iki/g,"52").replace(/elli\s*bir/g,"51")
-      .replace(/\belli\s*(\d)\b/g,(m,d)=>"5"+d).replace(/\belli\b/g,"50")
-      .replace(/altmış/g,"60").replace(/yetmiş/g,"70")
+      .replace(/kırk\s*bir/g,"41").replace(/\bkırk\b/g,"40")
+      .replace(/elli/g,"50").replace(/altmış/g,"60").replace(/yetmiş/g,"70")
       .replace(/seksen/g,"80").replace(/doksan/g,"90")
-      .replace(/sıfır/g,"0").replace(/\bbir\b/g,"1").replace(/\biki\b/g,"2").replace(/\büç\b/g,"3")
-      .replace(/\bdört\b/g,"4").replace(/\bbeş\b/g,"5").replace(/\baltı\b/g,"6")
-      .replace(/\byedi\b/g,"7").replace(/\bsekiz\b/g,"8").replace(/\bdokuz\b/g,"9");
-    // "10 5","20 3" gibi onluk+tek rakam → birleştir
-    s = s.replace(/\b(10|20|30|40|50|60|70|80|90) ([0-9])\b/g, function(m,t,o){return String(parseInt(t)+parseInt(o));});
-    const parts = s.match(/\d+/g);
-    if(!parts) return "";
-    return parts.join("");
+      .replace(/sıfır/g,"0").replace(/bir/g,"1").replace(/iki/g,"2").replace(/üç/g,"3")
+      .replace(/dört/g,"4").replace(/beş/g,"5").replace(/altı/g,"6")
+      .replace(/yedi/g,"7").replace(/sekiz/g,"8").replace(/dokuz/g,"9");
+    return s.replace(/[^0-9]/g,"");
   };
 
   // Gelen metni TR işaretine göre küpe bloklarına ayır
@@ -1199,7 +1155,7 @@ function BulkEarTagInput({ tags, onTagsChange }) {
 
       {/* Elle ekleme butonu */}
       <button type="button" onClick={()=>onTagsChange([...tags,{p1:"",p2:"",full:"TR--"}])}
-        style={{width:"100%",padding:"8px",borderRadius:8,border:"1.5px dashed #4A7C3F",background:"rgba(26,46,26,.5)",color:"var(--primary,#8B5CF6)",fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10}}>
+        style={{width:"100%",padding:"8px",borderRadius:8,border:"1.5px dashed #4A7C3F",background:"rgba(26,46,26,.5)",color:theme.primary,fontWeight:700,fontSize:12,cursor:"pointer",marginBottom:10}}>
         + Elle Küpe Ekle
       </button>
 
@@ -1208,14 +1164,14 @@ function BulkEarTagInput({ tags, onTagsChange }) {
         <div style={{background:"#F0F0F0",borderRadius:14,padding:10,maxHeight:320,overflowY:"auto",border:"1px solid rgba(212,175,55,.08)"}}>
           <div style={{fontSize:11,fontWeight:700,color:"#6B7280",marginBottom:8,display:"flex",justifyContent:"space-between"}}>
             <span>📋 Küpe Listesi</span>
-            <span style={{color:"var(--primary,#8B5CF6)"}}>{tags.filter(t=>t.p1&&t.p2).length} geçerli</span>
+            <span style={{color:theme.primary}}>{tags.filter(t=>t.p1&&t.p2).length} geçerli</span>
           </div>
           {tags.map((t,i)=>(
-            <div key={i} style={{display:"flex",flexDirection:"row",alignItems:"center",gap:3,marginBottom:6,background:"#FFFFFF",borderRadius:8,padding:"5px",border:`1px solid ${t.p1&&t.p2?"#D4E8C2":"#F5C0BA"}`,boxSizing:"border-box",width:"100%"}}>
+            <div key={i} style={{display:"flex",alignItems:"center",gap:4,marginBottom:6,background:"#FFFFFF",borderRadius:8,padding:"6px 8px",border:`1px solid ${t.p1&&t.p2?"#D4E8C2":"#F5C0BA"}`}}>
               {/* Sıra no */}
               <span style={{fontSize:11,color:"#D1D5DB",fontWeight:700,minWidth:18,flexShrink:0}}>{i+1}.</span>
               {/* TR sabit — EarTagInput ile birebir aynı */}
-              <div style={{background:"rgba(var(--primary-rgb),.08)",borderRadius:8,padding:"5px 7px",fontWeight:700,fontSize:13,color:"var(--primary,#8B5CF6)",border:"1px solid rgba(212,175,55,.2)",flexShrink:0,letterSpacing:1}}>TR</div>
+              <div style={{background:"rgba(var(--primary-rgb),.08)",borderRadius:8,padding:"5px 7px",fontWeight:700,fontSize:13,color:theme.primary,border:"1px solid rgba(212,175,55,.2)",flexShrink:0,letterSpacing:1}}>TR</div>
               <span style={{color:"#D1D5DB",fontWeight:700,fontSize:15}}>-</span>
               {/* İki haneli */}
               <input
@@ -1230,7 +1186,7 @@ function BulkEarTagInput({ tags, onTagsChange }) {
                   onTagsChange(newTags);
                   if(v.length===2) rowRefs.current[`p2_${i}`]?.focus();
                 }}
-                style={{width:38,padding:"5px 4px",borderRadius:8,border:"1px solid rgba(212,175,55,.18)",fontSize:13,fontWeight:700,textAlign:"center",outline:"none",background:"#F8F8FC",color:"#1A1A2E"}}
+                style={{width:38,padding:"5px 4px",borderRadius:8,border:"1px solid rgba(212,175,55,.18)",fontSize:13,fontWeight:700,textAlign:"center",outline:"none",background:"#F5F5F5",color:"#1A1A2E"}}
               />
               <span style={{color:"#D1D5DB",fontWeight:700,fontSize:15}}>-</span>
               {/* Son haneler */}
@@ -1245,7 +1201,7 @@ function BulkEarTagInput({ tags, onTagsChange }) {
                   newTags[i]={p1:t.p1,p2:v,full:`TR-${t.p1}-${v}`};
                   onTagsChange(newTags);
                 }}
-                style={{flex:1,padding:"5px 6px",borderRadius:8,border:"1px solid rgba(212,175,55,.18)",fontSize:13,fontWeight:700,outline:"none",letterSpacing:1,minWidth:0,background:"#F8F8FC",color:"#1A1A2E"}}
+                style={{flex:1,padding:"5px 6px",borderRadius:8,border:"1px solid rgba(212,175,55,.18)",fontSize:13,fontWeight:700,outline:"none",letterSpacing:1,minWidth:0,background:"#F5F5F5",color:"#1A1A2E"}}
               />
               {/* Satır mikrofon butonu — EarTagInput'taki MicBtn ile aynı mantık */}
               <MicBtn onResult={txt=>handleRowMic(txt,i)} style={{height:32,minWidth:32,padding:"0 6px",flexShrink:0}}/>
@@ -1407,7 +1363,7 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
         <label style={{display:"block",background:"rgba(26,46,26,.5)",border:"1.5px dashed #4A7C3F",borderRadius:10,padding:"14px",textAlign:"center",cursor:"pointer"}}>
           <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={handleFile}/>
           <div style={{fontSize:22}}>📂</div>
-          <div style={{fontSize:13,color:"var(--primary,#8B5CF6)",fontWeight:700,marginTop:4}}>Excel / CSV Seç</div>
+          <div style={{fontSize:13,color:theme.primary,fontWeight:700,marginTop:4}}>Excel / CSV Seç</div>
           <div style={{fontSize:10,color:"#9CA3AF",marginTop:2}}>.xlsx, .xls, .csv desteklenir</div>
         </label>
         {fileRows.length>0 && <div style={{fontSize:11,color:"#10B981",background:"rgba(74,124,63,.2)",borderRadius:8,padding:"6px 10px"}}>
@@ -1489,25 +1445,25 @@ function ModalWrap({title,onClose,children}){
   },[el]);
   return ReactDOM.createPortal(
     <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,overflowY:"auto",backgroundColor:"rgba(0,0,0,.65)",WebkitOverflowScrolling:"touch"}}>
-      <div style={{minHeight:"100%",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 10px 100px"}}>
+      <div style={{minHeight:"100%",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px 100px"}}>
         <div onClick={e=>e.stopPropagation()} style={{background:"#FFFFFF",borderRadius:16,width:"100%",maxWidth:456,marginTop:8}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 20px 14px",borderBottom:"1px solid rgba(212,175,55,.1)",position:"sticky",top:0,background:"#FFFFFF",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderRadius:"24px 24px 0 0",zIndex:1}}>
             <div style={{fontWeight:700,fontSize:15,color:"#111827",flex:1,paddingRight:10,letterSpacing:"-.2px"}}>{title}</div>
             <button onClick={onClose} style={{background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.1)",borderRadius:"50%",width:32,height:32,fontSize:14,cursor:"pointer",color:"#4B5563",flexShrink:0}}>✕</button>
           </div>
-          <div style={{padding:"14px 16px 20px",display:"flex",flexDirection:"column",gap:10,boxSizing:"border-box",width:"100%",minWidth:0}}>{children}</div>
+          <div style={{padding:"16px 20px 24px",display:"flex",flexDirection:"column",gap:10}}>{children}</div>
         </div>
       </div>
     </div>,
     el
   );
 }
-function FL({children}){return <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:5,marginTop:8,letterSpacing:".5px",textTransform:"uppercase"}}>{children}</div>;}
+function FL({children}){return <div style={{fontSize:11,fontWeight:600,color:"#6B7280",marginBottom:5,marginTop:8,letterSpacing:".3px",textTransform:"uppercase"}}>{children}</div>;}
 function ErrBox({msg}){return <div style={{background:"rgba(239,68,68,.1)",border:"1px solid rgba(190,59,49,.4)",borderRadius:12,padding:"10px 14px",fontSize:13,color:"#EF4444",fontWeight:600}}>⚠️ {msg}</div>;}
-function StatusPicker({value,onChange}){return <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{[["tedavi_altında","Tedavide","#FEF3C7","#D97706"],["iyileşti","İyileşti","#D1FAE5","#059669"],["kronik","Kronik","#EDE9FE","#7C3AED"],["öldü","Öldü","#FEE2E2","#DC2626"]].map(([v,l,bg,col])=><button key={v} onClick={()=>onChange(v)} style={{padding:"7px 16px",borderRadius:20,border:`1.5px solid ${value===v?col+"44":"#E5E7EB"}`,background:value===v?bg:"#F9FAFB",color:value===v?col:"#9CA3AF",fontWeight:600,fontSize:12,cursor:"pointer",transition:"all .2s"}}>{l}</button>)}</div>;}
-function Stat({v,l,bg,c}){return <div style={{background:"#F8F8FC",border:"1px solid rgba(212,175,55,.12)",borderRadius:14,padding:"12px 8px",textAlign:"center",flex:1,backdropFilter:"blur(8px)"}}><div style={{fontSize:22,fontWeight:800,color:"var(--primary,#8B5CF6)",letterSpacing:"-1px"}}>{v}</div><div style={{fontSize:10,color:"#6B7280",fontWeight:600,marginTop:2,letterSpacing:".3px"}}>{l}</div></div>;}
-function Badge({bg,color,text}){return <span style={{background:"rgba(var(--primary-rgb),.12)",color:"var(--primary,#8B5CF6)",fontSize:9,fontWeight:700,padding:"3px 8px",borderRadius:10,whiteSpace:"nowrap",border:"1px solid rgba(212,175,55,.2)"}}>{text}</span>;}
-function StatusBadge({status}){const m={"tedavi_altında":["#FEF3C7","#D97706","Tedavide"],"iyileşti":["rgba(74,124,63,.2)","#10B981","İyileşti"],"kronik":["rgba(123,75,148,.2)","#B97FD4","Kronik"],"öldü":["rgba(239,68,68,.15)","#EF4444","Öldü"]};const [bg,col,t]=m[status]||["rgba(255,255,255,.08)","#6B7280",status];return <span style={{background:bg,color:col,fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:10,border:`1px solid ${col}44`}}>{t}</span>;}
+function StatusPicker({value,onChange}){return <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{[["tedavi_altında","Tedavide","rgba(var(--primary-rgb),.18)",theme.primary],["iyileşti","İyileşti","rgba(74,124,63,.2)","#10B981"],["kronik","Kronik","rgba(123,75,148,.2)","#B97FD4"],["öldü","Öldü","rgba(239,68,68,.15)","#EF4444"]].map(([v,l,bg,col])=><button key={v} onClick={()=>onChange(v)} style={{padding:"7px 16px",borderRadius:20,border:`1.5px solid ${value===v?col:"rgba(255,255,255,.1)"}`,background:value===v?bg:"transparent",color:value===v?col:"#9CA3AF",fontWeight:600,fontSize:12,cursor:"pointer",transition:"all .2s"}}>{l}</button>)}</div>;}
+function Stat({v,l,bg,c}){return <div style={{background:"#F5F5F5",border:"1px solid rgba(212,175,55,.12)",borderRadius:14,padding:"12px 8px",textAlign:"center",flex:1,backdropFilter:"blur(8px)"}}><div style={{fontSize:22,fontWeight:800,color:theme.primary,letterSpacing:"-1px"}}>{v}</div><div style={{fontSize:10,color:"#6B7280",fontWeight:600,marginTop:2,letterSpacing:".3px"}}>{l}</div></div>;}
+function Badge({bg,color,text}){return <span style={{background:"rgba(var(--primary-rgb),.12)",color:theme.primary,fontSize:9,fontWeight:700,padding:"3px 8px",borderRadius:10,whiteSpace:"nowrap",border:"1px solid rgba(212,175,55,.2)"}}>{text}</span>;}
+function StatusBadge({status}){const m={"tedavi_altında":["rgba(var(--primary-rgb),.18)",theme.primary,"Tedavide"],"iyileşti":["rgba(74,124,63,.2)","#10B981","İyileşti"],"kronik":["rgba(123,75,148,.2)","#B97FD4","Kronik"],"öldü":["rgba(239,68,68,.15)","#EF4444","Öldü"]};const [bg,col,t]=m[status]||["rgba(255,255,255,.08)","#6B7280",status];return <span style={{background:bg,color:col,fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:10,border:`1px solid ${col}44`}}>{t}</span>;}
 // ── Son İşlemler ──
 const ACTIVITY_ICONS = {
   saglik_eklendi:   {ic:"🩺", bg:"#FFF0EE", label:"Sağlık kaydı eklendi"},
@@ -1540,7 +1496,7 @@ function RecentActivities({ activities, onDelete, currentUser }) {
   return (
     <div style={{background:"#FFFFFF",borderRadius:14,marginBottom:12,padding:0,overflow:"hidden",border:"1px solid #D4A574",boxShadow:"0 1px 3px rgba(0,0,0,.03)"}}>
       <div style={{background:"rgba(var(--primary-rgb),.1)",borderRadius:"14px 14px 0 0",padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid rgba(212,175,55,.1)"}}>
-        <div style={{color:"var(--primary,#8B5CF6)",fontWeight:700,fontSize:13,letterSpacing:".3px"}}>🕐 SON İŞLEMLER</div>
+        <div style={{color:theme.primary,fontWeight:700,fontSize:13,letterSpacing:".3px"}}>🕐 SON İŞLEMLER</div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
           <span style={{color:"rgba(var(--primary-rgb),.35)",fontSize:10}}>Son {activities.length} kayıt</span>
           <button onClick={()=>setExpanded(!expanded)} style={{background:"none",border:"none",color:"#D4A574",fontSize:12,cursor:"pointer"}}>{expanded?"▲":"▼"}</button>
@@ -1599,7 +1555,7 @@ function AnnouncementBox({ announcements, setAnnouncements, currentUser, vaccine
   return (
     <div style={{...S.card,marginBottom:12,border:"1px solid rgba(212,175,55,.2)"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:expanded?10:0}}>
-        <div style={{fontWeight:800,fontSize:14,color:"var(--primary,#8B5CF6)"}}>
+        <div style={{fontWeight:800,fontSize:14,color:theme.primary}}>
           📢 Duyurular {(announcements.length+urgentVaccines.length)>0&&`(${announcements.length+urgentVaccines.length})`}
         </div>
         <button onClick={()=>setExpanded(!expanded)} style={{...S.ghost,fontSize:12,color:"#9CA3AF"}}>{expanded?"▲ Gizle":"▼ Göster"}</button>
@@ -1635,7 +1591,7 @@ function AnnouncementBox({ announcements, setAnnouncements, currentUser, vaccine
           <div key={a.id} style={{display:"flex",alignItems:"start",gap:8,padding:"8px 10px",background:"rgba(var(--primary-rgb),.08)",borderRadius:8,marginBottom:6,border:"1px solid #F5E0A0"}}>
             <div style={{flex:1}}>
               <div style={{fontSize:13,color:"#1A1A2E",fontWeight:500,marginBottom:3}}>{a.message}</div>
-              <div style={{fontSize:10,color:"var(--primary,#8B5CF6)",fontWeight:600}}>{a.user_name} · {fmtDT(a.created_at)}</div>
+              <div style={{fontSize:10,color:theme.primary,fontWeight:600}}>{a.user_name} · {fmtDT(a.created_at)}</div>
             </div>
             {isVet && (
               <button onClick={()=>del(a.id)} style={{...S.btnSm,background:"rgba(239,68,68,.1)",color:"#EF4444",fontSize:11,padding:"3px 8px",flexShrink:0}}>✕</button>
@@ -1822,7 +1778,7 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
               </div>
             ))}
           </div>}
-          {uploading&&<div style={{fontSize:11,color:"var(--primary,#8B5CF6)",marginTop:4}}>⏳ Fotoğraflar yükleniyor...</div>}
+          {uploading&&<div style={{fontSize:11,color:theme.primary,marginTop:4}}>⏳ Fotoğraflar yükleniyor...</div>}
           <div style={{display:"flex",gap:8,marginTop:4}}>
             <button onClick={()=>{setShowForm(false);reset();}} style={{...S.btnOutline,flex:1,padding:11}}>İptal</button>
             <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:11,background:"#C0392B",opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
@@ -1849,7 +1805,7 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
                 <div style={{fontSize:10,color:"#D1D5DB",marginTop:4}}>Ekleyen: {d.createdBy}</div>
                 <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:6}}>
                   {deathPhotos[d.id]?.length>0&&(
-                    <button onClick={()=>setViewPhotos({deathId:d.id,urls:deathPhotos[d.id]})}
+                    <button onClick={function(){setViewPhotos({deathId:d.id,urls:deathPhotos[d.id]});}}
                       style={{...S.btnSm,background:"rgba(14,165,233,.1)",color:"#0EA5E9",fontSize:10,padding:"3px 8px"}}>
                       📷 {deathPhotos[d.id].length} Fotoğraf
                     </button>
@@ -1857,13 +1813,12 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
                   {currentUser!=="Misafir"&&(
                     <label style={{...S.btnSm,background:"rgba(16,185,129,.1)",color:"#059669",fontSize:10,padding:"3px 8px",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:3}}>
                       📎 Fotoğraf Ekle
-                      <input type="file" accept="image/*" multiple style={{display:"none"}}
-                        onChange={async e=>{
-                          const files=Array.from(e.target.files);
-                          if(!files.length) return;
-                          await uploadPhotos(d.id,files);
-                          e.target.value="";
-                        }}/>
+                      <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={function(e){
+                        var files=Array.from(e.target.files);
+                        if(!files.length) return;
+                        uploadPhotos(d.id,files);
+                        e.target.value="";
+                      }}/>
                     </label>
                   )}
                 </div>
@@ -2125,7 +2080,7 @@ function BirthModal({ onSave, onClose, currentUser, editData }) {
     <FL>Ana Hayvan Küpe No *</FL>
     <VoiceInput value={motherEarTag} onChange={setMotherEarTag} placeholder="TR-15-0042"/>
     <BtnGroup label="Doğum Türü *" options={[["normal","✅ Normal"],["gunsuz","⚠️ Günsüz"],["atik","❌ Atık"]]} value={birthType} onChange={v=>{setBirthType(v);if(v==="atik"){setKidCount(0);setKids([]);}}}
-      colorMap={{normal:{bg:"#E3F0DC",color:"#10B981",border:"#4A7C3F"},gunsuz:{bg:"#FFF8EC",color:"var(--primary,#8B5CF6)",border:"#D4850A"},atik:{bg:"#FFF0EE",color:"#EF4444",border:"#BE3B31"}}}/>
+      colorMap={{normal:{bg:"#E3F0DC",color:"#10B981",border:"#4A7C3F"},gunsuz:{bg:"#FFF8EC",color:theme.primary,border:"#D4850A"},atik:{bg:"#FFF0EE",color:"#EF4444",border:"#BE3B31"}}}/>
     {birthType!=="atik" && <>
       <BtnGroup label="Yavru Sayısı" options={[[1,"1"],[2,"2"],[3,"3"],[4,"4"]]} value={kidCount} onChange={updateKidCount}
         colorMap={{1:{bg:"#E3F0DC",color:"#10B981",border:"#4A7C3F"},2:{bg:"#E3F0DC",color:"#10B981",border:"#4A7C3F"},3:{bg:"#E3F0DC",color:"#10B981",border:"#4A7C3F"},4:{bg:"#E3F0DC",color:"#10B981",border:"#4A7C3F"}}}/>
@@ -2182,7 +2137,7 @@ function BirthsPage({ births, currentUser, onDelete, onAdd }) {
   };
 
   const typeLabel = {normal:"Normal",gunsuz:"Günsüz",atik:"Atık"};
-  const typeBg = {normal:{bg:"#E3F0DC",color:"#10B981"},gunsuz:{bg:"#FFF8EC",color:"var(--primary,#8B5CF6)"},atik:{bg:"#FFF0EE",color:"#EF4444"}};
+  const typeBg = {normal:{bg:"#E3F0DC",color:"#10B981"},gunsuz:{bg:"#FFF8EC",color:theme.primary},atik:{bg:"#FFF0EE",color:"#EF4444"}};
 
   return (
     <div className="anim-fade">
@@ -2253,7 +2208,7 @@ function BirthsPage({ births, currentUser, onDelete, onAdd }) {
   );
 }
 function MiniPill({label,val,color}){return <div style={{display:"flex",alignItems:"center",gap:4}}><span style={{fontSize:13,fontWeight:900,color}}>{val}</span><span style={{fontSize:10,color:"#9CA3AF"}}>{label}</span></div>;}
-function PillTag({bg,color,text}){return <span style={{background:"rgba(var(--primary-rgb),.1)",color:"var(--primary,#8B5CF6)",fontSize:11,fontWeight:600,padding:"4px 12px",borderRadius:10,whiteSpace:"nowrap",border:"1px solid rgba(212,175,55,.18)"}}>{text}</span>;}
+function PillTag({bg,color,text}){return <span style={{background:"rgba(var(--primary-rgb),.1)",color:theme.primary,fontSize:11,fontWeight:600,padding:"4px 12px",borderRadius:10,whiteSpace:"nowrap",border:"1px solid rgba(212,175,55,.18)"}}>{text}</span>;}
 
 // ── Raporlar ──
 function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, groupTreatments, treatmentDaysData, currentUser, onDeleteReport}) {
@@ -2692,7 +2647,7 @@ const VACCINE_TYPES_EXT = [
   { id:"coxiella",       name:"Coxiella",         color:"#D4850A" },
   { id:"abort_durdurma", name:"Abort Durdurma",   color:"#7B4B94" },
   { id:"agalaksi",       name:"Agalaksi",         color:"#0EA5E9" },
-  { id:"ic_parazit",     name:"İç Parazit",       color:"var(--primary,#8B5CF6)" },
+  { id:"ic_parazit",     name:"İç Parazit",       color:theme.primary },
   { id:"dis_parazit",    name:"Dış Parazit",      color:"#10B981" },
   { id:"celerme",        name:"Çelerme",          color:"#E8975A" },
   { id:"brusella",       name:"Brusella",         color:"#7B4B94" },
@@ -2845,7 +2800,7 @@ function CreateGroupModal({ breed, goats, onSave, onClose, currentUser }) {
     <VoiceInput value={desc} onChange={setDesc} placeholder="İsteğe bağlı..."/>
     <FL>Hayvan Seç (opsiyonel — sonradan da eklenebilir)</FL>
     <div style={{fontSize:11,color:"#9CA3AF",marginBottom:8}}>{selected.size} hayvan seçildi</div>
-    {breedGoats.length===0 && <div style={{fontSize:12,color:"#D1D5DB",textAlign:"center",padding:8,background:"#F8F8FC",borderRadius:8}}>Bu ırkta henüz hayvan yok</div>}
+    {breedGoats.length===0 && <div style={{fontSize:12,color:"#D1D5DB",textAlign:"center",padding:8,background:"#F5F5F5",borderRadius:8}}>Bu ırkta henüz hayvan yok</div>}
     {anacList.length>0&&<>
       <div style={{fontSize:11,fontWeight:700,color:"#10B981",marginBottom:4,marginTop:4}}>🐐 Anaçlar</div>
       {anacList.map(g=><GoatRow key={g.id} g={g}/>)}
@@ -2936,7 +2891,7 @@ function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCr
                   )}
                 </div>
                 {lastVaccine && (
-                  <div style={{fontSize:11,color:"var(--primary,#8B5CF6)",background:"rgba(26,46,26,.5)",padding:"4px 8px",borderRadius:6,marginBottom:8}}>
+                  <div style={{fontSize:11,color:theme.primary,background:"rgba(26,46,26,.5)",padding:"4px 8px",borderRadius:6,marginBottom:8}}>
                     Son aşı: {VACCINE_TYPES_EXT.find(v=>v.id===lastVaccine.vaccineType)?.name} · {fmt(lastVaccine.date)}
                   </div>
                 )}
@@ -3298,7 +3253,7 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
             </div>
           ))}
           {goat.archived && <div style={{marginTop:8,padding:"8px 10px",background:"rgba(239,68,68,.1)",borderRadius:8,fontSize:12,color:"#EF4444"}}><b>Arşiv Nedeni:</b> {goat.archiveReason}</div>}
-          {goat.notes && <div style={{marginTop:4,padding:"8px 10px",background:"#F8F8FC",borderRadius:8,fontSize:12,color:"#6B7280"}}><b>Not:</b> {goat.notes}</div>}
+          {goat.notes && <div style={{marginTop:4,padding:"8px 10px",background:"#F5F5F5",borderRadius:8,fontSize:12,color:"#6B7280"}}><b>Not:</b> {goat.notes}</div>}
         </div>
       )}
       {detailTab==="health" && (
@@ -3373,98 +3328,6 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
 }
 
 // ════════════ MAIN APP ════════════
-const BREEDS = [
-  { id:"saanen",  name:"Saanen",  emoji:"🤍", color:theme.primary, bg:"#E3F0DC", bgCard:"#F5FAF0", desc:"Süt verimi yüksek, beyaz tüylü" },
-  { id:"honamli", name:"Honamlı", emoji:"🖤", color:"#7B4B94", bg:"#F0E6F6", bgCard:"#F9F3FC", desc:"Yerli ırk, dayanıklı, uzun tüylü" },
-  { id:"halep",   name:"Halep",   emoji:"🤎", color:"#B8602A", bg:"#FFF0E6", bgCard:"#FFF8F2", desc:"Kırmızımsı kahve, uzun kulaklı" },
-];
-
-const VACCINE_DEFS = [
-  { id:"enterotoksemi", name:"Enterotoksemi",  intervalDays:180, color:theme.primary },
-  { id:"brusella",      name:"Brusella",       intervalDays:365, color:"#7B4B94" },
-  { id:"ppr",           name:"PPR (Veba)",     intervalDays:365, color:"#B8602A" },
-  { id:"agiz_tirnak",   name:"Ağız ve Tırnak", intervalDays:180, color:"#0EA5E9" },
-  { id:"cice",          name:"Çiçek",          intervalDays:365, color:"#D4850A" },
-  { id:"parazit",       name:"İç/Dış Parazit", intervalDays:120, color:"#E8975A" },
-  { id:"mastitis",      name:"Mastitis",       intervalDays:365, color:"#EF4444" },
-];
-
-const CONDITION_OPTIONS = ["Mastitis","Topallık","İshal","Parazit","Abort","Pnömoni","Eklem İltihabı","Göz Enfeksiyonu","Yaralanma","Diğer"];
-const CLOSE_REASONS = ["İyileşti","Tedavi Tamamlandı","Kronik Hastalık","Hayvan Öldü","Başka Tesise Nakil","Diğer"];
-
-const DEMO_USERS = [
-  { id:"u1", name:"Veteriner Hekim", role:"veteriner", emoji:"👨‍⚕️", members:[], pin:"" },
-  { id:"u2", name:"Şef",              role:"sef",       emoji:"👤",    members:["Bekir Zengin","Ali Özen"], pin:"" },
-  { id:"u3", name:"Vardiya 1",       role:"vardiya",   emoji:"👷",    members:["Uğur","Erdem","Hakan"] },
-  { id:"u4", name:"Vardiya 2",       role:"vardiya",   emoji:"👷",    members:["Mehmet","Zafer","Turan"] },
-  { id:"u5", name:"Vardiya 3",       role:"vardiya",   emoji:"👷",    members:["İsmail","Süleyman","Ramazan"] },
-  { id:"u6", name:"Vardiya 4",       role:"vardiya",   emoji:"👷",    members:["M. Ali","Mustafa","Hüseyin"] },
-  { id:"u7", name:"Misafir",         role:"misafir",   emoji:"👁",    members:[], pin:"" },
-];
-
-// Supabase dönüşümleri
-const toGoat    = r => ({ id:r.id, name:r.name, earTag:r.ear_tag, gender:r.gender, breed:r.breed, category:r.category, birthDate:r.birth_date||"", weight:r.weight||"", color:r.color||"", motherTag:r.mother_tag||"", fatherTag:r.father_tag||"", abortHistory:r.abort_history||"hayır", reproductionStatus:r.reproduction_status||"", lastBirthDate:r.last_birth_date||"", kidCount:r.kid_count||"0", notes:r.notes||"", abortDetails:r.abort_details||"", archived:r.archived||false, archiveReason:r.archive_reason||"" });
-const fromGoat  = g => ({ id:g.id, name:g.name, ear_tag:g.earTag, gender:g.gender, breed:g.breed, category:g.category, birth_date:g.birthDate||null, weight:g.weight||null, color:g.color||null, mother_tag:g.motherTag||null, father_tag:g.fatherTag||null, abort_history:g.abortHistory||"hayır", reproduction_status:g.reproductionStatus||null, last_birth_date:g.lastBirthDate||null, kid_count:g.kidCount||"0", notes:g.notes||null, abort_details:g.abortDetails||null, archived:false });
-const toHealth  = r => ({ id:r.id, goatId:r.goat_id, goatEarTag:r.goat_ear_tag||"", breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false, category:r.category||"anac" });
-const fromHealth= h => ({ id:h.id, goat_id:h.goatId, goat_ear_tag:h.goatEarTag||null, breed:h.breed, category:h.category||"anac", date:h.date, condition:h.condition, treatment:h.treatment||null, status:h.status, veterinarian:h.veterinarian||null, cost:h.cost||null, created_by_name:h.createdByName||null, notes:h.notes||null, closed:false });
-const toVaccine = r => ({ id:r.id, goatId:r.goat_id, breed:r.breed, date:r.date, vaccineType:r.vaccine_type, batchNo:r.batch_no||"", createdByName:r.created_by_name||"" });
-const fromVaccine=v => ({ id:v.id, goat_id:v.goatId, breed:v.breed, date:v.date, vaccine_type:v.vaccineType, batch_no:v.batchNo||null, created_by_name:v.createdByName||null });
-const toReport  = r => ({ id:r.id, goatId:r.goat_id, goatName:r.goat_name, goatEarTag:r.goat_ear_tag||"", breed:r.breed, dateStarted:r.date_started, dateClosed:r.date_closed, condition:r.condition, treatment:r.treatment||"", closeReason:r.close_reason, closeNote:r.close_note||"", veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"" });
-const fromReport= r => ({ id:r.id, goat_id:r.goatId, goat_name:r.goatName, goat_ear_tag:r.goatEarTag||null, breed:r.breed, date_started:r.dateStarted, date_closed:r.dateClosed, condition:r.condition, treatment:r.treatment||null, close_reason:r.closeReason, close_note:r.closeNote||null, veterinarian:r.veterinarian||null, cost:r.cost||null, created_by_name:r.createdByName||null, notes:r.notes||null });
-const toLog     = r => ({ id:r.id, healthRecordId:r.health_record_id, goatId:r.goat_id, breed:r.breed, action:r.action, actionDetail:r.action_detail||"", userName:r.user_name||"", createdAt:r.created_at });
-
-const fmt       = d => d ? new Date(d).toLocaleDateString("tr-TR") : "—";
-const fmtDT     = d => d ? new Date(d).toLocaleString("tr-TR", {day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—";
-const todayISO  = () => new Date().toISOString().split("T")[0];
-const daysUntil = d => d ? Math.ceil((new Date(d)-new Date())/86400000) : Infinity;
-const getAge    = bd => {
-  if (!bd) return "—";
-  const d = Math.floor((new Date()-new Date(bd))/86400000);
-  if (d>365) return `${Math.floor(d/365)}y ${Math.floor((d%365)/30)}a`;
-  if (d>30)  return `${Math.floor(d/30)} ay`;
-  return `${d} gün`;
-};
-const nextVaccineDate = (goatId, vaccineTypeId, vaccines) => {
-  const vt = VACCINE_DEFS.find(v=>v.id===vaccineTypeId);
-  const last = vaccines.filter(v=>v.goatId===goatId&&v.vaccineType===vaccineTypeId).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
-  if (!last||!vt) return null;
-  const d = new Date(last.date); d.setDate(d.getDate()+vt.intervalDays);
-  return d.toISOString().split("T")[0];
-};
-
-// Log kaydet
-const addLog = async (healthRecordId, goatId, breed, action, actionDetail, userName) => {
-  const log = { id:"l"+Date.now()+Math.random().toString(36).slice(2), health_record_id:healthRecordId, goat_id:goatId, breed, action, action_detail:actionDetail, user_name:userName };
-  await sb.from("health_logs").insert(log);
-};
-
-// ── Küpe Okuma ──
-// ── Sağlık Kaydı Detay & Log ──
-// ── Küpe No Tarayıcı ──
-// ── Küpe No Formatı: TR-xx-xxxxxx ──
-
-
-// ── Son İşlemler ──
-const ACTIVITY_ICONS = {
-  saglik_eklendi:   {ic:"🩺", bg:"#FFF0EE", label:"Sağlık kaydı eklendi"},
-  saglik_guncellendi: {ic:"✏️", bg:"#FFF8EC", label:"Sağlık kaydı güncellendi"},
-  saglik_sonlandi:  {ic:"✅", bg:"#E3F0DC", label:"Sağlık kaydı sonlandırıldı"},
-  hayvan_eklendi:   {ic:"🐐", bg:"#E3F0DC", label:"Yeni hayvan eklendi"},
-  toplu_hayvan:     {ic:"🐐", bg:"#E3F0DC", label:"Toplu hayvan eklendi"},
-  arsivlendi:       {ic:"📦", bg:"#F2F0EA", label:"Hayvan arşivlendi"},
-  asi_uygulandı:    {ic:"💉", bg:"#E6F1FB", label:"Aşı uygulandı"},
-  asi_takvim:       {ic:"📅", bg:"#E6F1FB", label:"Aşı takvime eklendi"},
-  dogum_eklendi:    {ic:"🐣", bg:"#FFF8EC", label:"Doğum kaydedildi"},
-  olum_eklendi:     {ic:"💔", bg:"#FFF0EE", label:"Ölüm kaydedildi"},
-  toplu_tedavi:     {ic:"🏥", bg:"#F5FAF0", label:"Toplu tedavi eklendi"},
-};
-
-// ── Doğum Kayıtları Sayfası ──
-// ── Raporlar ──
-// ── Gruba Hayvan Ekle Modal ──
-// ── Irk Aşı Sekmesi (Grup Sistemi) ──
-// ── Aşı Takvim Kaydı Ekle Modal ──
-// ── Global Aşı Sayfası ──
 function App(){
   const [page,setPage]=useState("home");
   const [selBreed,setSelBreed]=useState(null);
@@ -3935,17 +3798,17 @@ function App(){
           </div>
           <h1 style={{color:"#1A1A2E",fontSize:17,fontWeight:800,margin:"12px 0 4px",lineHeight:1.4,letterSpacing:"-.3px",textAlign:"center"}}>
             BURDUR AÇIK CEZAEVİ<br/>
-            <span style={{color:"var(--primary,#8B5CF6)"}}>İŞ YURTLARI HAYVANCILIK</span>
+            <span style={{color:theme.primary}}>İŞ YURTLARI HAYVANCILIK</span>
           </h1>
           <div style={{display:"flex",gap:8,justifyContent:"center",marginTop:6}}>
-            <span style={{background:"rgba(var(--primary-rgb),.12)",color:"var(--primary,#8B5CF6)",fontSize:10,fontWeight:600,padding:"3px 10px",borderRadius:20,border:"1px solid rgba(212,175,55,.25)"}}>🤖 Yapay Zeka</span>
-            <span style={{background:"rgba(var(--primary-rgb),.12)",color:"var(--primary,#8B5CF6)",fontSize:10,fontWeight:600,padding:"3px 10px",borderRadius:20,border:"1px solid rgba(212,175,55,.25)"}}>☁️ Bulut</span>
+            <span style={{background:"rgba(var(--primary-rgb),.12)",color:theme.primary,fontSize:10,fontWeight:600,padding:"3px 10px",borderRadius:20,border:"1px solid rgba(212,175,55,.25)"}}>🤖 Yapay Zeka</span>
+            <span style={{background:"rgba(var(--primary-rgb),.12)",color:theme.primary,fontSize:10,fontWeight:600,padding:"3px 10px",borderRadius:20,border:"1px solid rgba(212,175,55,.25)"}}>☁️ Bulut</span>
           </div>
         </div>
 
         {/* Duyurular */}
         <div style={{background:"#FFFFFF",borderRadius:18,padding:14,marginBottom:16,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",border:"1px solid rgba(212,175,55,.15)"}}>
-          <div style={{color:"var(--primary,#8B5CF6)",fontWeight:700,fontSize:13,marginBottom:10,letterSpacing:".5px"}}>📢 DUYURULAR</div>
+          <div style={{color:theme.primary,fontWeight:700,fontSize:13,marginBottom:10,letterSpacing:".5px"}}>📢 DUYURULAR</div>
           <div style={{maxHeight:140,overflowY:"auto"}}>
             {announcements.length===0 && <div style={{color:"#9CA3AF",fontSize:12,textAlign:"center",padding:"10px 0"}}>Henüz duyuru yok</div>}
             {announcements.map(a=>(
@@ -3958,21 +3821,13 @@ function App(){
           <div style={{color:"#D1D5DB",fontSize:10,textAlign:"center",marginTop:6}}>Duyuru eklemek için giriş yapın</div>
         </div>
 
-        {/* ACİL BUTONU */}
-        <button onClick={function(){setShowAcil(true);}} style={{
-          width:"100%",marginBottom:16,padding:"14px",
-          background:"linear-gradient(135deg,#DC2626,#EF4444)",
-          color:"#fff",border:"none",borderRadius:16,
-          fontSize:16,fontWeight:800,cursor:"pointer",
-          boxShadow:"0 4px 20px rgba(220,38,38,.4)",
-          display:"flex",alignItems:"center",justifyContent:"center",gap:8,
-          WebkitAppearance:"none"
-        }}>
+        {/* ACİL */}
+        <button onClick={function(){setShowAcil(true);}} style={{width:"100%",marginBottom:16,padding:"14px",background:"linear-gradient(135deg,#DC2626,#EF4444)",color:"#fff",border:"none",borderRadius:16,fontSize:16,fontWeight:800,cursor:"pointer",boxShadow:"0 4px 20px rgba(220,38,38,.4)",display:"flex",alignItems:"center",justifyContent:"center",gap:8,WebkitAppearance:"none"}}>
           🚨 ACİL YARDIM
         </button>
         <AcilModal show={showAcil} onClose={function(){setShowAcil(false);}} nums={["905426321183","905386430705","905412633285"]}/>
 
-        {/* Giriş kutusu */}        {/* Giriş kutusu */}
+        {/* Giriş kutusu */}
         <div style={{background:"#FFFFFF",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:24,padding:22,boxShadow:"0 24px 80px rgba(0,0,0,.8)",border:"1px solid rgba(212,175,55,.18)"}}>
 
           {/* Adım 1: Grup seç */}
@@ -3981,7 +3836,7 @@ function App(){
               <h2 style={{margin:"0 0 14px",fontSize:15,fontWeight:700,color:"#374151",letterSpacing:"1px",textTransform:"uppercase"}}>Giriş Yapın</h2>
               {DEMO_USERS.filter(u=>u.id!=="u7").map(u=>(
                 <button key={u.id} onClick={()=>{setSelUser(u.id);setPinInput("");setPinError("");setPinStep("enter");setSelPerson(null);}}
-                  style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderRadius:14,border:"1px solid rgba(212,175,55,.15)",background:"#FFFFFF",cursor:"pointer",width:"100%",marginBottom:8,textAlign:"left",transition:"all .2s"}}>
+                  style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderRadius:14,border:"1px solid rgba(212,175,55,.15)",background:"#F9F9F9",cursor:"pointer",width:"100%",marginBottom:8,textAlign:"left",transition:"all .2s"}}>
                   <span style={{fontSize:18}}>{u.emoji}</span>
                   <div style={{flex:1}}>
                     <div style={{fontWeight:600,fontSize:14,color:"#111827"}}>{u.name}</div>
@@ -3999,10 +3854,10 @@ function App(){
               }} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:`1px solid ${guestAccess.isOpen?"#4A7C3F":"#E0DDD4"}`,background:guestAccess.isOpen?theme.bg:"#F9F9F6",cursor:guestAccess.isOpen?"pointer":"not-allowed",width:"100%",marginBottom:6,textAlign:"left",opacity:guestAccess.isOpen?1:.6}}>
                 <span style={{fontSize:18}}>👁</span>
                 <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:14,color:guestAccess.isOpen?"var(--primary,#8B5CF6)":"#9CA3AF"}}>Misafir</div>
-                  <div style={{fontSize:10,color:guestAccess.isOpen?"var(--primary,#8B5CF6)":"#aaa"}}>{guestAccess.isOpen?"✅ Açık — Giriş yapabilirsiniz":"🔒 Kapalı — Veteriner Hekim açabilir"}</div>
+                  <div style={{fontWeight:700,fontSize:14,color:guestAccess.isOpen?theme.primary:"#9CA3AF"}}>Misafir</div>
+                  <div style={{fontSize:10,color:guestAccess.isOpen?theme.primary:"#aaa"}}>{guestAccess.isOpen?"✅ Açık — Giriş yapabilirsiniz":"🔒 Kapalı — Veteriner Hekim açabilir"}</div>
                 </div>
-                {guestAccess.isOpen&&<span style={{color:"var(--primary,#8B5CF6)",fontSize:16}}>›</span>}
+                {guestAccess.isOpen&&<span style={{color:theme.primary,fontSize:16}}>›</span>}
               </button>
               {pinError&&<div style={{background:"rgba(239,68,68,.1)",border:"1px solid rgba(190,59,49,.3)",borderRadius:10,padding:"8px 12px",fontSize:12,color:"#EF4444",fontWeight:600,marginTop:6}}>{pinError}</div>}
             </>
@@ -4027,11 +3882,11 @@ function App(){
                 <div style={{fontSize:12,color:"#9CA3AF",marginBottom:10,fontWeight:500,letterSpacing:".5px",textTransform:"uppercase"}}>Adınızı seçin</div>
                 {user.members.map(m=>(
                   <button key={m} onClick={()=>{setSelPerson(m);setPinInput("");setPinError("");setPinStep(userPins[m]?"enter":"create");}}
-                    style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderRadius:14,border:"1px solid rgba(212,175,55,.15)",background:"#FFFFFF",cursor:"pointer",width:"100%",marginBottom:8,textAlign:"left",transition:"all .2s"}}>
+                    style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderRadius:14,border:"1px solid rgba(212,175,55,.15)",background:"#F9F9F9",cursor:"pointer",width:"100%",marginBottom:8,textAlign:"left",transition:"all .2s"}}>
                     <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(74,124,63,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#10B981"}}>{m[0]}</div>
                     <div style={{flex:1}}>
                       <div style={{fontWeight:600,fontSize:14,color:"#111827"}}>{m}</div>
-                      <div style={{fontSize:10,color:userPins[m]?"#10B981":"var(--primary,#8B5CF6)"}}>{userPins[m]?"🔐 PIN oluşturulmuş":"⚠️ Henüz PIN oluşturulmamış"}</div>
+                      <div style={{fontSize:10,color:userPins[m]?"#10B981":theme.primary}}>{userPins[m]?"🔐 PIN oluşturulmuş":"⚠️ Henüz PIN oluşturulmamış"}</div>
                     </div>
                     <span style={{color:"rgba(var(--primary-rgb),.35)",fontSize:18}}>›</span>
                   </button>
@@ -4059,7 +3914,7 @@ function App(){
               </div>
 
               {pinStep==="create"&&(
-                <div style={{background:"rgba(var(--primary-rgb),.08)",border:"1px solid rgba(212,175,55,.2)",borderRadius:10,padding:"8px 12px",fontSize:12,color:"var(--primary,#8B5CF6)",marginBottom:10}}>
+                <div style={{background:"rgba(var(--primary-rgb),.08)",border:"1px solid rgba(212,175,55,.2)",borderRadius:10,padding:"8px 12px",fontSize:12,color:theme.primary,marginBottom:10}}>
                   ⚠️ İlk girişiniz! Kendinize 4 haneli bir PIN oluşturun.
                 </div>
               )}
@@ -4071,7 +3926,7 @@ function App(){
 
               <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:12}}>
                 {[0,1,2,3].map(i=>(
-                  <div key={i} style={{width:44,height:52,borderRadius:10,border:`2px solid ${pinInput.length>i?"var(--primary,#8B5CF6)":"rgba(var(--primary-rgb),.12)"}`,background:pinInput.length>i?"rgba(var(--primary-rgb),.12)":"rgba(255,255,255,.04)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:900,color:"var(--primary,#8B5CF6)"}}>
+                  <div key={i} style={{width:44,height:52,borderRadius:10,border:`2px solid ${pinInput.length>i?theme.primary:"rgba(var(--primary-rgb),.12)"}`,background:pinInput.length>i?"rgba(var(--primary-rgb),.12)":"rgba(255,255,255,.04)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:900,color:theme.primary}}>
                     {pinInput.length>i?"●":""}
                   </div>
                 ))}
@@ -4096,7 +3951,7 @@ function App(){
   if(loading) return <Loading/>;
 
   return (
-    <div style={{...S.app,"--primary":"var(--primary,#8B5CF6)","--primary-rgb":theme.primaryRgb||"139,92,246",background:theme.bg||"#F5F0FF",color:theme.textColor||"#1A1A2E"}}>
+    <div style={{...S.app,"--primary":theme.primary,"--primary-rgb":theme.primaryRgb||"139,92,246",background:theme.bg||"#F5F0FF",color:theme.textColor||"#1A1A2E"}}>
       {/* Fotoğraf üstü hafif overlay — içerik okunabilsin */}
       {theme.photo&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:theme.overlay||"rgba(0,0,0,.5)",zIndex:0,pointerEvents:"none"}}/>}
       <style>{":root{--primary:"+theme.primary+";--primary-rgb:"+(theme.primaryRgb||"139,92,246")+";}body{background-color:"+(theme.bg||"#F5F0FF")+";color:"+(theme.textColor||"#1A1A2E")+";"+( theme.photo?"background-image:url("+theme.photo+");background-size:cover;background-position:center top;background-repeat:no-repeat;":"")+"}"}</style>
@@ -4138,7 +3993,7 @@ function App(){
                     </div>
                   )}
                   <div style={{padding:"6px 4px",background:theme.id===t.id?"rgba(var(--primary-rgb),.12)":"#FFFFFF",textAlign:"center"}}>
-                    <div style={{fontSize:10,fontWeight:700,color:theme.id===t.id?"var(--primary,#8B5CF6)":t.primary}}>{t.name}</div>
+                    <div style={{fontSize:10,fontWeight:700,color:theme.id===t.id?theme.primary:t.primary}}>{t.name}</div>
                   </div>
                 </button>
               ))}
@@ -4158,10 +4013,10 @@ function App(){
               Her girişinizde sizi sesli karşılayalım mı?
             </div>
             <div style={{display:"flex",gap:10}}>
-              <button onClick={()=>saveSoundPref(false)} style={{...S.btnOutline,flex:1,padding:12,fontSize:13,borderColor:"var(--primary,#8B5CF6)",color:"var(--primary,#8B5CF6)"}}>
+              <button onClick={()=>saveSoundPref(false)} style={{...S.btnOutline,flex:1,padding:12,fontSize:13,borderColor:theme.primary,color:theme.primary}}>
                 Hayır
               </button>
-              <button onClick={()=>saveSoundPref(true)} style={{...S.btnPrimary,flex:1,padding:12,fontSize:13,background:"var(--primary,#8B5CF6)"}}>
+              <button onClick={()=>saveSoundPref(true)} style={{...S.btnPrimary,flex:1,padding:12,fontSize:13,background:theme.primary}}>
                 Evet!
               </button>
             </div>
@@ -4192,7 +4047,7 @@ function App(){
           : <button onClick={goBack} style={{...S.ghost,color:"rgba(212,175,55,.7)",fontSize:26,padding:"0 8px 0 0",lineHeight:1,fontWeight:300}}>‹</button>
         }
         <div style={{flex:1}}>
-          <div style={{color:"#111827",fontWeight:700,fontSize:15,letterSpacing:"-.2px"}}>{selGoat&&goat?goat.name:selBreed&&breed?breed.name:page==="home"?"Hayvancılık":page==="health"?"Sağlık Kayıtları":page==="vaccines"?"Aşı Takvimi":page==="births"?"Doğum Kayıtları":page==="deaths"?"Ölüm Kayıtları":page==="group_tx"?"Toplu Tedavi":page==="reports"?"Raporlar":page==="profile"?"Profil":page==="game"?"🐐 Oyun":"Hayvancılık"}</div>
+          <div style={{color:"#111827",fontWeight:700,fontSize:15,letterSpacing:"-.2px"}}>{selGoat&&goat?goat.name:selBreed&&breed?breed.name:page==="home"?"Hayvancılık":page==="health"?"Sağlık Kayıtları":page==="vaccines"?"Aşı Takvimi":page==="births"?"Doğum Kayıtları":page==="deaths"?"Ölüm Kayıtları":page==="group_tx"?"Toplu Tedavi":page==="reports"?"Raporlar":page==="profile"?"Profil":"Hayvancılık"}</div>
           <div style={{color:"rgba(var(--primary-rgb),.4)",fontSize:9,letterSpacing:".3px"}}>
             {isGuest?"👁 Misafir · Sadece Görüntüleme":"☁️ "+currentUser+" · "+activeGoats.length+" keçi"}
           </div>
@@ -4239,20 +4094,20 @@ function App(){
               boxShadow:"0 8px 32px rgba(0,0,0,.4),inset 0 1px 0 rgba(212,175,55,.08)"
             }}>
               <div style={{display:"flex",alignItems:"center",gap:14}}>
-                
+                <img src="data:image/webp;base64,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" style={{width:56,height:"auto",filter:"drop-shadow(0 0 12px rgba(212,175,55,.4))",flexShrink:0}}/>
                 <div style={{flex:1}}>
                   <div style={{fontSize:9,color:"rgba(var(--primary-rgb),.45)",fontWeight:700,letterSpacing:"2px",textTransform:"uppercase",marginBottom:3}}>BURDUR AÇIK CEZAEVİ</div>
-                  <div style={{fontSize:15,fontWeight:800,color:"#1A1A2E",letterSpacing:"-.3px",lineHeight:1.3}}>İş Yurtları <span style={{color:"var(--primary,#8B5CF6)"}}>Hayvancılık</span></div>
+                  <div style={{fontSize:15,fontWeight:800,color:"#1A1A2E",letterSpacing:"-.3px",lineHeight:1.3}}>İş Yurtları <span style={{color:theme.primary}}>Hayvancılık</span></div>
                   <div style={{display:"flex",gap:5,marginTop:7}}>
                     <span style={{background:"rgba(0,0,0,.06)",color:"rgba(var(--primary-rgb),.45)",fontSize:8,fontWeight:700,padding:"2px 7px",borderRadius:8,border:"1px solid rgba(212,175,55,.12)"}}>🤖 Yapay Zeka</span>
                     <span style={{background:"rgba(0,0,0,.06)",color:"rgba(var(--primary-rgb),.45)",fontSize:8,fontWeight:700,padding:"2px 7px",borderRadius:8,border:"1px solid rgba(212,175,55,.12)"}}>☁️ Bulut</span>
                     <span style={{background:"#D1FAE5",color:"#059669",fontSize:9,fontWeight:600,padding:"3px 10px",borderRadius:20}}>● Canlı</span>
-                    <button onClick={()=>navigate("game")} style={{background:"rgba(var(--primary-rgb),.12)",color:"var(--primary,#8B5CF6)",fontSize:9,fontWeight:700,padding:"3px 10px",borderRadius:20,border:"none",cursor:"pointer",WebkitAppearance:"none"}}>🎮 Oyun</button>
+                    <button onClick={function(){navigate("game");}} style={{background:"rgba(var(--primary-rgb),.12)",color:"var(--primary,#8B5CF6)",fontSize:9,fontWeight:700,padding:"3px 10px",borderRadius:20,border:"none",cursor:"pointer",WebkitAppearance:"none"}}>🎮 Oyun</button>
                   </div>
                 </div>
                 <div style={{textAlign:"right",flexShrink:0}}>
                   <div style={{fontSize:11,color:"#9CA3AF",fontWeight:500}}>Hoş geldiniz</div>
-                  <div style={{fontSize:13,color:"var(--primary,#8B5CF6)",fontWeight:700}}>{currentUser}</div>
+                  <div style={{fontSize:13,color:theme.primary,fontWeight:700}}>{currentUser}</div>
                 </div>
               </div>
             </div>
@@ -4289,7 +4144,7 @@ function App(){
         {/* GOATS BREED SELECT */}
         {page==="goats"&&!selBreed && (
           <div className="anim-fade">
-            <h2 style={{...S.title,marginBottom:16,color:"var(--primary,#8B5CF6)",fontSize:13,fontWeight:600,letterSpacing:"2px",textTransform:"uppercase"}}>🐐 Sürü Seçin</h2>
+            <h2 style={{...S.title,marginBottom:16,color:theme.primary,fontSize:13,fontWeight:600,letterSpacing:"2px",textTransform:"uppercase"}}>🐐 Sürü Seçin</h2>
             {BREEDS.map((b,i)=>{
               const bs=breedStats[b.id];
               return (
@@ -4302,7 +4157,7 @@ function App(){
                   <div style={{display:"flex",alignItems:"stretch"}}>
                     <div style={{width:80,background:`${b.color}15`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"16px 0",borderRight:`1px solid ${b.color}20`}}>
                       <span style={{fontSize:34,filter:`drop-shadow(0 0 12px ${b.color}60)`}}>{b.emoji}</span>
-                      <span style={{fontSize:24,fontWeight:800,color:"var(--primary,#8B5CF6)",marginTop:6,letterSpacing:"-1px"}}>{bs.total}</span>
+                      <span style={{fontSize:24,fontWeight:800,color:theme.primary,marginTop:6,letterSpacing:"-1px"}}>{bs.total}</span>
                       <span style={{fontSize:9,color:"rgba(var(--primary-rgb),.35)",fontWeight:600}}>HAYVAN</span>
                     </div>
                     <div style={{flex:1,padding:"14px 16px"}}>
@@ -4561,7 +4416,7 @@ function App(){
 
         {/* GAME */}
         {page==="game" && (
-          <div style={{padding:"0 2px"}}>
+          <div style={{padding:"0 2px"}} className="anim-fade">
             <GoatMatchGame/>
           </div>
         )}
@@ -4592,14 +4447,14 @@ function App(){
                     setSoundPref(true);
                     await sb.from("user_preferences").upsert({id:"sp_"+currentUser.replace(/\s/g,"_"),user_name:currentUser,sound_enabled:true,theme_id:theme.id});
                     playWelcome(currentUser,healthRecs);
-                  }} style={{...S.btnPrimary,flex:1,padding:10,fontSize:12,background:"var(--primary,#8B5CF6)",opacity:soundPref===true?.4:1}}>
+                  }} style={{...S.btnPrimary,flex:1,padding:10,fontSize:12,background:theme.primary,opacity:soundPref===true?.4:1}}>
                     🔊 Aç
                   </button>
                   <button onClick={async()=>{
                     setSoundPref(false);
                     window._welcomeAudio?.pause();
                     await sb.from("user_preferences").upsert({id:"sp_"+currentUser.replace(/\s/g,"_"),user_name:currentUser,sound_enabled:false,theme_id:theme.id});
-                  }} style={{...S.btnOutline,flex:1,padding:10,fontSize:12,borderColor:"var(--primary,#8B5CF6)",color:"var(--primary,#8B5CF6)",opacity:soundPref===false?.4:1}}>
+                  }} style={{...S.btnOutline,flex:1,padding:10,fontSize:12,borderColor:theme.primary,color:theme.primary,opacity:soundPref===false?.4:1}}>
                     🔇 Kapat
                   </button>
                 </div>
@@ -4611,7 +4466,7 @@ function App(){
               <div style={{...S.card,marginBottom:10}}>
                 <div style={{fontWeight:700,fontSize:13,color:"#111827",marginBottom:8}}>🎨 Arayüz Rengi</div>
                 <div style={{fontSize:12,color:"#9CA3AF",marginBottom:10}}>
-                  Şu an: <b style={{color:"var(--primary,#8B5CF6)"}}>{theme.emoji} {theme.name}</b>
+                  Şu an: <b style={{color:theme.primary}}>{theme.emoji} {theme.name}</b>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}}>
                   {COLOR_THEMES.map(t=>(
@@ -4624,7 +4479,7 @@ function App(){
                       ) : (
                         <div style={{height:40,background:t.header||t.primary||"#8B5CF6"||t.primary||"#8B5CF6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>{t.emoji}</div>
                       )}
-                      <div style={{fontSize:8,fontWeight:700,color:theme.id===t.id?"var(--primary,#8B5CF6)":t.primary,textAlign:"center",padding:"3px 2px",background:"#F8F8FC"}}>{t.name}</div>
+                      <div style={{fontSize:8,fontWeight:700,color:theme.id===t.id?theme.primary:t.primary,textAlign:"center",padding:"3px 2px",background:"#F5F5F5"}}>{t.name}</div>
                     </button>
                   ))}
                 </div>
@@ -4657,7 +4512,7 @@ function App(){
             )}
 
             <div style={S.card}>
-              <div style={{fontWeight:700,fontSize:13,color:"var(--primary,#8B5CF6)",marginBottom:8}}>👥 Kullanıcılar & Vardiyalar</div>
+              <div style={{fontWeight:700,fontSize:13,color:theme.primary,marginBottom:8}}>👥 Kullanıcılar & Vardiyalar</div>
               {DEMO_USERS.filter(u=>u.id!=="u7").map(u=>(
                 <div key={u.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
                   <span style={{fontSize:18}}>{u.emoji}</span>
@@ -4676,9 +4531,9 @@ function App(){
       {page!=="home" && (
         <div style={S.nav}>
           {[["home","🏠","Ana"],["health","🩺","Sağlık"],["vaccines","💉","Aşı"],["game","🐐","Oyun"]].map(([k,ic,l])=>(
-            <button key={k} onClick={()=>navigate(k)} style={{...S.ghost,display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"6px 14px",color:page===k?"var(--primary,#8B5CF6)":"#9CA3AF",transition:"color .2s"}}>
+            <button key={k} onClick={()=>navigate(k)} style={{...S.ghost,display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"6px 20px",color:page===k?theme.primary:"#9CA3AF",transition:"color .2s"}}>
               <span style={{fontSize:20}}>{ic}</span>
-              <span style={{fontSize:9,fontWeight:page===k?700:500,letterSpacing:".3px",textTransform:"uppercase",color:page===k?"var(--primary,#8B5CF6)":"#9CA3AF"}}>{l}</span>
+              <span style={{fontSize:9,fontWeight:page===k?700:500,letterSpacing:".3px",textTransform:"uppercase",color:page===k?theme.primary:"#9CA3AF"}}>{l}</span>
             </button>
           ))}
         </div>
@@ -4704,7 +4559,7 @@ const css=`
   }
   button:active{opacity:.75;transform:scale(.97)}
   select option{background:#fff;color:#1A1A2E}
-  input::placeholder,textarea::placeholder{color:#A0AEC0}
+  input::placeholder,textarea::placeholder{color:#9CA3AF}
 `;
 
 const S={
@@ -4754,23 +4609,22 @@ const S={
   title:{margin:0,fontSize:19,fontWeight:800,color:"#1A1A2E",letterSpacing:"-.3px"},
   input:{
     padding:"11px 14px",borderRadius:12,
-    border:"1.5px solid #DDD8EE",
+    border:"1.5px solid #E8E4F0",
     fontSize:14,fontWeight:500,
-    background:"#FFFFFF",
-    color:"#111827",outline:"none",width:"100%",
+    background:"#FAFAFA",
+    color:"#1A1A2E",outline:"none",width:"100%",
     boxSizing:"border-box",
     WebkitAppearance:"none",
     transition:"border-color .2s,box-shadow .2s"
   },
   select:{
     padding:"11px 14px",borderRadius:12,
-    border:"1.5px solid #DDD8EE",
+    border:"1.5px solid #E8E4F0",
     fontSize:14,fontWeight:500,
-    background:"#FFFFFF",
-    color:"#111827",outline:"none",width:"100%",
+    background:"#FAFAFA",
+    color:"#1A1A2E",outline:"none",width:"100%",
     boxSizing:"border-box",
-    WebkitAppearance:"none",
-    appearance:"none"
+    WebkitAppearance:"none"
   },
   btnPrimary:{
     background:"var(--primary,#8B5CF6)",
@@ -4805,7 +4659,11 @@ const S={
 };
 
 const root=ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App/>);
+try {
+  root.render(<App/>);
+} catch(e) {
+  document.body.innerHTML = '<div style="color:red;padding:20px;font-size:16px"><b>HATA:</b><br>' + e.message + '<br><br><pre>' + e.stack + '</pre></div>';
+}
 </script>
 </body>
 </html>
