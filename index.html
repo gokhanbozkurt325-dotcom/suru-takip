@@ -1270,7 +1270,7 @@ function EarTagInput({ value, onChange }) {
   };
 
   return (
-    <div style={{display:"flex",alignItems:"center",gap:4}}>
+    <div style={{display:"flex",alignItems:"center",gap:4,minWidth:0}}>
       <div style={{background:"rgba(var(--primary-rgb),.08)",borderRadius:10,padding:"9px 10px",fontWeight:700,fontSize:14,color:"var(--primary,#8B5CF6)",border:"1px solid rgba(212,175,55,.25)",flexShrink:0,letterSpacing:1}}>TR</div>
       <div style={{color:"#6B7280",fontWeight:700,fontSize:16}}>-</div>
       <input
@@ -1374,7 +1374,7 @@ function MicBtn({ onResult, style }) {
         animation: listening ? "pulse 1s infinite" : "none",
         transition: "all .2s",
         ...style
-      }}>
+      , flexShrink: 0}}>
       {listening ? "⏹" : "🎤"}
     </button>
   );
@@ -1384,15 +1384,15 @@ function MicBtn({ onResult, style }) {
 function VoiceInput({ value, onChange, placeholder, style, multiline, rows }) {
   if (multiline) {
     return (
-      <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "flex-start", minWidth: 0 }}>
         <textarea
           value={value}
           onChange={e => onChange(e.target.value)}
           rows={rows || 3}
           placeholder={placeholder}
-          style={{ ...S.input, resize: "vertical", lineHeight: 1.5, flex: 1, ...style }}
+          style={{ ...S.input, flex: 1, minWidth: 0, resize: "vertical", lineHeight: 1.5, flex: 1, ...style }}
         />
-        <MicBtn onResult={t => onChange(value ? value + " " + t : t)} style={{ height: 38, marginTop: 2 }} />
+        <MicBtn onResult={t => onChange(value ? value + " " + t : t)} style={{ height: 38, marginTop: 2, flexShrink: 0 }} />
       </div>
     );
   }
@@ -1404,7 +1404,7 @@ function VoiceInput({ value, onChange, placeholder, style, multiline, rows }) {
         placeholder={placeholder}
         style={{ ...S.input, flex: 1, ...style }}
       />
-      <MicBtn onResult={t => onChange(t)} style={{ height: 38 }} />
+      <MicBtn onResult={t => onChange(t)} style={{ height: 38, flexShrink: 0 }} />
     </div>
   );
 }
@@ -2620,7 +2620,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
 }
 function BirthModal({ onSave, onClose, currentUser, editData }) {
   const [breed, setBreed] = useState(editData?.breed||"");
-  const [motherEarTag, setMotherEarTag] = useState(editData?.motherEarTag||"");
+  const [motherEarTag, setMotherEarTag] = useState(editData?.motherEarTag||"TR--");
   const [birthType, setBirthType] = useState(editData?.birthType||"");
   const [birthDate, setBirthDate] = useState(editData?.birthDate||todayISO());
   const [kidCount, setKidCount] = useState(editData?.kidCount||0);
@@ -2642,7 +2642,7 @@ function BirthModal({ onSave, onClose, currentUser, editData }) {
 
   const save = async () => {
     if(!breed){setErr("Irk seçiniz");return;}
-    if(!motherEarTag.trim()){setErr("Ana hayvan küpe no giriniz");return;}
+    // Ana küpe opsiyonel
     if(!birthType){setErr("Doğum türü seçiniz");return;}
     if(!birthDate){setErr("Tarih giriniz");return;}
     setSaving(true);
@@ -2686,7 +2686,7 @@ function BirthModal({ onSave, onClose, currentUser, editData }) {
     <BtnGroup label="Irk *" options={BREEDS.map(b=>[b.id,b.emoji+" "+b.name])} value={breed} onChange={setBreed}
       colorMap={{saanen:{bg:"#E3F0DC",color:"#10B981",border:"#4A7C3F"},honamli:{bg:"#F0E6F6",color:"#BA68C8",border:"#7B4B94"},halep:{bg:"#FFF0E6",color:"#E8975A",border:"#B8602A"}}}/>
     <FL>Ana Hayvan Küpe No *</FL>
-    <VoiceInput value={motherEarTag} onChange={setMotherEarTag} placeholder="TR-15-0042"/>
+    <EarTagInput value={motherEarTag} onChange={setMotherEarTag}/>
     <BtnGroup label="Doğum Türü *" options={[["normal","✅ Normal"],["gunsuz","⚠️ Günsüz"],["atik","❌ Atık"]]} value={birthType} onChange={v=>{setBirthType(v);if(v==="atik"){setKidCount(0);setKids([]);}}}
       colorMap={{normal:{bg:"#E3F0DC",color:"#10B981",border:"#4A7C3F"},gunsuz:{bg:"#FFF8EC",color:"var(--primary,#8B5CF6)",border:"#D4850A"},atik:{bg:"#FFF0EE",color:"#EF4444",border:"#BE3B31"}}}/>
     {birthType!=="atik" && <>
