@@ -3749,8 +3749,8 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
                     style={{...S.btnPrimary,fontSize:11,padding:"5px 10px",opacity:applyingId===r.id?.6:1}}>
                     {applyingId===r.id?"...":"✅ Uygulandı"}
                   </button>}
-                  {!isApplied && <button onClick={()=>setEditSchedule(r)} style={{...S.btnSm,background:"rgba(40,115,168,.15)",color:"#0EA5E9",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>}
-                  {isVet && <button onClick={()=>deleteReport(r.id)} style={{...S.btnSm,background:"rgba(239,68,68,.1)",color:"#EF4444",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
+                  {!isApplied && (currentUser==="Veteriner Hekim"||currentUser==="Ali Özen"||currentUser==="Bekir Zengin") && <button onClick={()=>setEditSchedule(r)} style={{...S.btnSm,background:"rgba(40,115,168,.15)",color:"#0EA5E9",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>}
+                  {isVet && {(currentUser==="Veteriner Hekim"||currentUser==="Ali Özen"||currentUser==="Bekir Zengin")&&<button onClick={()=>deleteReport(r.id)} style={{...S.btnSm,background:"rgba(239,68,68,.1)",color:"#EF4444",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}}
                 </div>
               </div>
               {r.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:4}}>📝 {r.notes}</div>}
@@ -3777,8 +3777,8 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
                       style={{...S.btnOutline,fontSize:11,padding:"5px 10px",opacity:applyingId===r.id?.6:1}}>
                       {applyingId===r.id?"...":"✅ Uygulandı"}
                     </button>}
-                    {!isApplied && <button onClick={()=>setEditSchedule(r)} style={{...S.btnSm,background:"rgba(40,115,168,.15)",color:"#0EA5E9",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>}
-                    {isVet && <button onClick={()=>deleteReport(r.id)} style={{...S.btnSm,background:"rgba(239,68,68,.1)",color:"#EF4444",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}
+                    {!isApplied && (currentUser==="Veteriner Hekim"||currentUser==="Ali Özen"||currentUser==="Bekir Zengin") && <button onClick={()=>setEditSchedule(r)} style={{...S.btnSm,background:"rgba(40,115,168,.15)",color:"#0EA5E9",fontSize:10,padding:"3px 8px"}}>✏️ Düzenle</button>}
+                    {isVet && {(currentUser==="Veteriner Hekim"||currentUser==="Ali Özen"||currentUser==="Bekir Zengin")&&<button onClick={()=>deleteReport(r.id)} style={{...S.btnSm,background:"rgba(239,68,68,.1)",color:"#EF4444",fontSize:10,padding:"3px 8px"}}>🗑 Sil</button>}}
                   </div>
                 </div>
               </div>
