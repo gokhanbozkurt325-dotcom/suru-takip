@@ -73,6 +73,111 @@ const COLOR_THEMES = [
 const DEFAULT_THEME = COLOR_THEMES[0];
 
 
+function VaccineCalendar({ vaccineReports }) {
+  const [curDate, setCurDate] = React.useState(new Date());
+  const [selDay, setSelDay] = React.useState(null);
+
+  const year  = curDate.getFullYear();
+  const month = curDate.getMonth();
+
+  const monthNames = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+  const dayNames   = ["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];
+
+  // Aşı günleri — scheduled_date veya applied_at tarihlerini al
+  const vacDays = {};
+  (vaccineReports||[]).forEach(r => {
+    const dates = [];
+    if(r.scheduled_date) dates.push(r.scheduled_date.slice(0,10));
+    if(r.applied_at)     dates.push(r.applied_at.slice(0,10));
+    dates.forEach(d => {
+      if(!vacDays[d]) vacDays[d] = [];
+      vacDays[d].push(r);
+    });
+  });
+
+  // Ayın günleri
+  const firstDay = new Date(year, month, 1).getDay(); // 0=Paz
+  const startOffset = firstDay === 0 ? 6 : firstDay - 1; // Pazartesi başlat
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0,10);
+
+  const prevMonth = () => setCurDate(new Date(year, month - 1, 1));
+  const nextMonth = () => setCurDate(new Date(year, month + 1, 1));
+
+  // Seçili güne ait aşılar
+  const selStr = selDay ? `${year}-${String(month+1).padStart(2,'0')}-${String(selDay).padStart(2,'0')}` : null;
+  const selVacs = selStr ? (vacDays[selStr]||[]) : [];
+
+  const cells = [];
+  for(let i = 0; i < startOffset; i++) cells.push(null);
+  for(let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  return (
+    <div style={{background:"#FFFFFF",borderRadius:18,padding:"16px 14px",marginBottom:12,boxShadow:"0 2px 12px rgba(0,0,0,.06)",border:"1px solid rgba(212,175,55,.12)"}}>
+      {/* Başlık */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <button onClick={prevMonth} style={{background:"none",border:"1.5px solid #E5E7EB",borderRadius:8,width:30,height:30,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",WebkitAppearance:"none"}}>‹</button>
+        <div style={{fontWeight:800,fontSize:15,color:"#111827"}}>📅 {monthNames[month]} {year}</div>
+        <button onClick={nextMonth} style={{background:"none",border:"1.5px solid #E5E7EB",borderRadius:8,width:30,height:30,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",WebkitAppearance:"none"}}>›</button>
+      </div>
+
+      {/* Gün isimleri */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:4}}>
+        {dayNames.map(d=>(
+          <div key={d} style={{textAlign:"center",fontSize:10,fontWeight:700,color:"#9CA3AF",padding:"2px 0"}}>{d}</div>
+        ))}
+      </div>
+
+      {/* Günler */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
+        {cells.map((day,i) => {
+          if(!day) return <div key={"e"+i}/>;
+          const dStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+          const hasVac  = !!vacDays[dStr];
+          const isToday = dStr === todayStr;
+          const isSel   = selDay === day;
+          return (
+            <div key={day} onClick={()=>setSelDay(isSel?null:day)}
+              style={{
+                textAlign:"center",padding:"5px 2px",borderRadius:8,cursor:hasVac?"pointer":"default",
+                background: isSel?"#8B5CF6": hasVac?"#FEF3C7": isToday?"rgba(139,92,246,.1)":"transparent",
+                border: isToday?"1.5px solid #8B5CF6": isSel?"1.5px solid #7C3AED":"1.5px solid transparent",
+                position:"relative",transition:"all .15s"
+              }}>
+              <div style={{fontSize:12,fontWeight:isToday||hasVac?700:400,color:isSel?"#fff":isToday?"#7C3AED":hasVac?"#D97706":"#374151"}}>{day}</div>
+              {hasVac && <div style={{width:5,height:5,borderRadius:"50%",background:isSel?"#fff":"#F59E0B",margin:"1px auto 0"}}/>}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Seçili gün aşı listesi */}
+      {selDay && (
+        <div style={{marginTop:12,padding:"10px 12px",background:"#FFFBEB",borderRadius:12,border:"1.5px solid #FDE68A"}}>
+          <div style={{fontWeight:700,fontSize:13,color:"#D97706",marginBottom:6}}>
+            💉 {selDay} {monthNames[month]} — {selVacs.length > 0 ? selVacs.length+" aşı kaydı" : "Aşı kaydı yok"}
+          </div>
+          {selVacs.map((r,i)=>(
+            <div key={i} style={{fontSize:12,padding:"5px 8px",background:"#fff",borderRadius:8,marginBottom:4,border:"1px solid #FDE68A"}}>
+              <div style={{fontWeight:600,color:"#111827"}}>🐐 {r.breed_name||r.breed||"—"} — {r.vaccine_name||r.vaccineName||"—"}</div>
+              {r.group_name && <div style={{color:"#6B7280",marginTop:1}}>Grup: {r.group_name}</div>}
+              {r.applied && <div style={{color:"#059669",marginTop:1}}>✅ Uygulandı — {r.applied_by||""}</div>}
+              {!r.applied && <div style={{color:"#D97706",marginTop:1}}>⏳ Planlandı</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Açıklama */}
+      <div style={{marginTop:8,display:"flex",gap:12,fontSize:11,color:"#9CA3AF",justifyContent:"center"}}>
+        <span>🟡 Aşı planlandı/uygulandı</span>
+        <span style={{color:"#7C3AED"}}>● Bugün</span>
+      </div>
+    </div>
+  );
+}
+
 function WeatherWidget() {
   const [weather, setWeather] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -4674,6 +4779,9 @@ function App(){
               currentUser={currentUser}
               vaccineReports={vaccineReports}
             />
+
+            {/* Aşı Takvimi */}
+            <VaccineCalendar vaccineReports={vaccineReports}/>
 
             {/* Hava Durumu */}
             <WeatherWidget/>
