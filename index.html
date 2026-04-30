@@ -1087,8 +1087,8 @@ const DEMO_USERS = [
 // Supabase dönüşümleri
 const toGoat    = r => ({ id:r.id, name:r.name, earTag:r.ear_tag, gender:r.gender, breed:r.breed, category:r.category, birthDate:r.birth_date||"", weight:r.weight||"", color:r.color||"", motherTag:r.mother_tag||"", fatherTag:r.father_tag||"", abortHistory:r.abort_history||"hayır", reproductionStatus:r.reproduction_status||"", lastBirthDate:r.last_birth_date||"", kidCount:r.kid_count||"0", notes:r.notes||"", abortDetails:r.abort_details||"", archived:r.archived||false, archiveReason:r.archive_reason||"" });
 const fromGoat  = g => ({ id:g.id, name:g.name, ear_tag:g.earTag, gender:g.gender, breed:g.breed, category:g.category, birth_date:g.birthDate||null, weight:g.weight||null, color:g.color||null, mother_tag:g.motherTag||null, father_tag:g.fatherTag||null, abort_history:g.abortHistory||"hayır", reproduction_status:g.reproductionStatus||null, last_birth_date:g.lastBirthDate||null, kid_count:g.kidCount||"0", notes:g.notes||null, abort_details:g.abortDetails||null, archived:false });
-const toHealth  = r => ({ id:r.id, goatId:r.goat_id, goatEarTag:r.goat_ear_tag||"", breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false, category:r.category||"anac" });
-const fromHealth= h => ({ id:h.id, goat_id:h.goatId, goat_ear_tag:h.goatEarTag||null, breed:h.breed, category:h.category||"anac", date:h.date, condition:h.condition, treatment:h.treatment||null, status:h.status, veterinarian:h.veterinarian||null, cost:h.cost||null, created_by_name:h.createdByName||null, notes:h.notes||null, closed:false });
+const toHealth  = r => ({ id:r.id, goatId:r.goat_id, goatEarTag:r.goat_ear_tag||"", breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false, mediaUrls:r.media_urls||"", category:r.category||"anac" });
+const fromHealth= h => ({ id:h.id, goat_id:h.goatId, goat_ear_tag:h.goatEarTag||null, breed:h.breed, category:h.category||"anac", date:h.date, condition:h.condition, treatment:h.treatment||null, status:h.status, veterinarian:h.veterinarian||null, cost:h.cost||null, created_by_name:h.createdByName||null, notes:h.notes||null, closed:false, media_urls:h.mediaUrls||null });
 const toVaccine = r => ({ id:r.id, goatId:r.goat_id, breed:r.breed, date:r.date, vaccineType:r.vaccine_type, batchNo:r.batch_no||"", createdByName:r.created_by_name||"" });
 const fromVaccine=v => ({ id:v.id, goat_id:v.goatId, breed:v.breed, date:v.date, vaccine_type:v.vaccineType, batch_no:v.batchNo||null, created_by_name:v.createdByName||null });
 const toReport  = r => ({ id:r.id, goatId:r.goat_id, goatName:r.goat_name, goatEarTag:r.goat_ear_tag||"", breed:r.breed, dateStarted:r.date_started, dateClosed:r.date_closed, condition:r.condition, treatment:r.treatment||"", closeReason:r.close_reason, closeNote:r.close_note||"", veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"" });
@@ -1548,13 +1548,17 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
 
   const uploadHealthPhotos = async (recId, files) => {
     setUploading(true);
+    const urls = [];
     for(const file of files){
       const ext = file.name.split(".").pop();
       const path = `${recId}_${Date.now()}.${ext}`;
       const bucket = file.type.startsWith("video") ? "health-videos" : "health-photos";
       await sb.storage.from(bucket).upload(path, file, {contentType:file.type});
+      const {data:ud} = sb.storage.from(bucket).getPublicUrl(path);
+      if(ud) urls.push(ud.publicUrl);
     }
     setUploading(false);
+    return urls;
   };
 
   const startAudioRecording = async () => {
@@ -1580,11 +1584,15 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
 
   const uploadAudio = async (recId) => {
     setUploading(true);
+    const urls = [];
     for(let i=0;i<audioBlobs.length;i++){
       const path = `${recId}_audio_${Date.now()}_${i}.webm`;
       await sb.storage.from("health-audio").upload(path, audioBlobs[i], {contentType:"audio/webm"});
+      const {data:ud} = sb.storage.from("health-audio").getPublicUrl(path);
+      if(ud) urls.push(ud.publicUrl);
     }
     setUploading(false);
+    return urls;
   };
 
   const save = async () => {
@@ -1600,8 +1608,19 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     const { error } = await sb.from("health_records").insert({...fromHealth(rec), goat_ear_tag:earTag.trim()});
     if(error){setErr("Kayıt hatası: "+error.message);setSaving(false);return;}
     await addLog(rec.id, goatId, breed, "açılış", `${cond} — ${currentUser} tarafından açıldı`, currentUser);
-    if(photos.length>0 || videos.length>0) await uploadHealthPhotos(rec.id, [...photos,...videos]);
-    if(audioBlobs.length>0) await uploadAudio(rec.id);
+    const mediaUrls = [];
+    if(photos.length>0 || videos.length>0){
+      const photoUrls = await uploadHealthPhotos(rec.id, [...photos,...videos]);
+      if(photoUrls) mediaUrls.push(...photoUrls);
+    }
+    if(audioBlobs.length>0){
+      const audioUrls = await uploadAudio(rec.id);
+      if(audioUrls) mediaUrls.push(...audioUrls);
+    }
+    if(mediaUrls.length>0){
+      await sb.from("health_records").update({media_urls: mediaUrls.join(",")}).eq("id", rec.id);
+      rec.mediaUrls = mediaUrls.join(",");
+    }
     if(treatmentDays>0){
       const days=[];
       for(let i=0;i<treatmentDays;i++){
@@ -4010,36 +4029,9 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
 function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHealth,onUpdateHealth,onFinalizeHealth,onLogsUpdate,onTreatmentDayUpdate,detailTab,setDetailTab,currentUser}){
   const b=BREEDS.find(x=>x.id===goat.breed);
   const [selRecord,setSelRecord]=useState(null);
-  const [healthMedia,setHealthMedia]=React.useState({});
+
   const activeRecs=healthRecs.filter(h=>h.goatId===goat.id&&!h.closed);
   const selRecordObj=selRecord?healthRecs.find(h=>h.id===selRecord):null;
-
-  // Sağlık kaydı medyalarını yükle
-  React.useEffect(()=>{
-    const loadMedia = async () => {
-      try {
-        const buckets = ["health-photos","health-videos","health-audio"];
-        const allMedia = {};
-        for(const bucket of buckets){
-          const {data} = await sb.storage.from(bucket).list("", {limit:1000});
-          if(data){
-            data.forEach(f=>{
-              // Dosya adı: recId_timestamp.ext
-              const parts = f.name.split("_");
-              if(parts.length >= 2){
-                const recId = parts[0];
-                if(!allMedia[recId]) allMedia[recId] = [];
-                const {data:urlData} = sb.storage.from(bucket).getPublicUrl(f.name);
-                allMedia[recId].push({url:urlData.publicUrl, name:f.name, bucket, type:bucket==="health-photos"?"image":bucket==="health-videos"?"video":"audio"});
-              }
-            });
-          }
-        }
-        setHealthMedia(allMedia);
-      } catch(e){}
-    };
-    loadMedia();
-  },[]);
 
   return (
     <div className="anim-slide">
@@ -4095,18 +4087,20 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
               </div>
               {h.treatment&&<div style={{fontSize:12,marginTop:5,color:"#1F2937"}}>💊 {h.treatment}</div>}
               {/* Medya */}
-              {healthMedia[h.id]&&healthMedia[h.id].length>0&&(
-                <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:6}} onClick={e=>e.stopPropagation()}>
-                  {healthMedia[h.id].filter(m=>m.type==="image").map((m,i)=>(
-                    <a key={i} href={m.url} target="_blank" rel="noreferrer">
-                      <img src={m.url} style={{width:52,height:52,objectFit:"cover",borderRadius:7,border:"1.5px solid #E5E7EB",cursor:"pointer"}}/>
-                    </a>
+              {h.mediaUrls&&h.mediaUrls.length>0&&(
+                <div style={{marginTop:6}} onClick={e=>e.stopPropagation()}>
+                  <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:4}}>
+                    {h.mediaUrls.split(",").filter(u=>u.includes("health-photos")||u.match(/\.(jpg|jpeg|png|gif|webp)/i)).map((url,i)=>(
+                      <a key={i} href={url} target="_blank" rel="noreferrer">
+                        <img src={url} style={{width:56,height:56,objectFit:"cover",borderRadius:8,border:"1.5px solid #E5E7EB",cursor:"pointer"}}/>
+                      </a>
+                    ))}
+                  </div>
+                  {h.mediaUrls.split(",").filter(u=>u.includes("health-videos")||u.match(/\.(mp4|mov|avi|webm)/i)).map((url,i)=>(
+                    <video key={i} src={url} controls style={{width:"100%",maxHeight:160,borderRadius:8,border:"1.5px solid #E5E7EB",marginBottom:4}}/>
                   ))}
-                  {healthMedia[h.id].filter(m=>m.type==="video").map((m,i)=>(
-                    <video key={i} src={m.url} controls style={{width:100,height:60,borderRadius:7,border:"1.5px solid #E5E7EB",objectFit:"cover"}}/>
-                  ))}
-                  {healthMedia[h.id].filter(m=>m.type==="audio").map((m,i)=>(
-                    <audio key={i} src={m.url} controls style={{height:32,maxWidth:"100%"}}/>
+                  {h.mediaUrls.split(",").filter(u=>u.includes("health-audio")||u.match(/\.(mp3|wav|webm|ogg)/i)).map((url,i)=>(
+                    <audio key={i} src={url} controls style={{width:"100%",marginBottom:4}}/>
                   ))}
                 </div>
               )}
