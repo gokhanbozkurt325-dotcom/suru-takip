@@ -1553,7 +1553,8 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
       const ext = file.name.split(".").pop();
       const path = `${recId}_${Date.now()}.${ext}`;
       const bucket = file.type.startsWith("video") ? "health-videos" : "health-photos";
-      await sb.storage.from(bucket).upload(path, file, {contentType:file.type});
+      const {error:upErr} = await sb.storage.from(bucket).upload(path, file, {contentType:file.type});
+      if(upErr){console.error("Upload hata:",upErr.message); setUploading(false); continue;}
       const {data:ud} = sb.storage.from(bucket).getPublicUrl(path);
       if(ud) urls.push(ud.publicUrl);
     }
@@ -1584,9 +1585,11 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
       setMediaRecorder(mr);
       setRecording(true);
     } catch(e) {
-      if(e.name === "NotAllowedError") alert("Mikrofon izni verilmedi. Ayarlardan izin verin.");
-      else if(e.name === "NotFoundError") alert("Mikrofon bulunamadı.");
-      else alert("Ses kaydı hatası: " + e.message);
+      setRecording(false);
+      if(e.name==="NotAllowedError"||e.name==="PermissionDeniedError") setErr("Mikrofon izni verilmedi. Tarayıcı ayarlarından izin verin.");
+      else if(e.name==="NotFoundError") setErr("Mikrofon bulunamadı.");
+      else if(e.name==="NotSupportedError") setErr("Bu tarayıcı ses kaydını desteklemiyor. Ses dosyası yükleyin.");
+      else setErr("Ses hatası: " + (e.message||e.name));
     }
   };
 
@@ -1736,16 +1739,25 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
 
     {/* Ses Kaydı */}
     <div style={{display:"flex",gap:6,marginBottom:4}}>
-      {!recording
-        ? <button type="button" onClick={startAudioRecording}
-            style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"rgba(239,68,68,.1)",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>
-            🎙️ Ses Kaydı Başlat
-          </button>
-        : <button type="button" onClick={stopAudioRecording}
-            style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"#EF4444",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",animation:"pulse 1s infinite"}}>
-            ⏹ Kaydı Durdur
-          </button>
-      }
+      {typeof MediaRecorder !== "undefined" ? (
+        !recording
+          ? <button type="button" onClick={startAudioRecording}
+              style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"rgba(239,68,68,.1)",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+              🎙️ Ses Kaydı Başlat
+            </button>
+          : <button type="button" onClick={stopAudioRecording}
+              style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"#EF4444",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+              ⏹ Kaydı Durdur
+            </button>
+      ) : (
+        <label style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"rgba(239,68,68,.1)",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"center",display:"block"}}>
+          🎙️ Ses Dosyası Seç
+          <input type="file" accept="audio/*" style={{display:"none"}} onChange={e=>{
+            const files = Array.from(e.target.files||[]);
+            files.forEach(f=>{ const reader = new FileReader(); reader.onload=ev=>{ const blob=new Blob([ev.target.result],{type:f.type}); setAudioBlobs(p=>[...p,blob]); }; reader.readAsArrayBuffer(f); });
+          }}/>
+        </label>
+      )}
     </div>
     {audioBlobs.length>0&&<div style={{marginBottom:4}}>
       {audioBlobs.map((blob,i)=>(
@@ -4041,6 +4053,8 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
 function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHealth,onUpdateHealth,onFinalizeHealth,onLogsUpdate,onTreatmentDayUpdate,detailTab,setDetailTab,currentUser}){
   const b=BREEDS.find(x=>x.id===goat.breed);
   const [selRecord,setSelRecord]=useState(null);
+  const [mediaTabs,setMediaTabs]=useState({});
+  const setMediaTab=(id,tab)=>setMediaTabs(p=>({...p,[id]:tab}));
 
   const activeRecs=healthRecs.filter(h=>h.goatId===goat.id&&!h.closed);
   const selRecordObj=selRecord?healthRecs.find(h=>h.id===selRecord):null;
@@ -4202,38 +4216,28 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
               {/* Medya — sadece bu kayda ait */}
               {mediaList.length>0&&(
                 <div style={{borderTop:"1px solid #F0F0F0",background:"#FAFAFA"}}>
-                  {/* Medya sekmeleri */}
+              {/* Medya */}
+              {mediaList.length>0&&(
+                <div style={{borderTop:'1px solid #F0F0F0',background:'#FAFAFA'}} onClick={e=>e.stopPropagation()}>
                   {(()=>{
-                    const [activeTab, setActiveTab] = React.useState(photos.length>0?"foto":videos.length>0?"video":"ses");
+                    const activeTab = mediaTabs[h.id] || (photos.length>0?'foto':videos.length>0?'video':'ses');
                     return (
                       <div>
-                        <div style={{display:"flex",borderBottom:"1px solid #F0F0F0"}}>
-                          {photos.length>0&&<button onClick={e=>{e.stopPropagation();setActiveTab("foto")}} style={{flex:1,padding:"6px 0",fontSize:11,fontWeight:activeTab==="foto"?700:400,color:activeTab==="foto"?"var(--primary,#8B5CF6)":"#9CA3AF",background:"none",border:"none",borderBottom:activeTab==="foto"?"2px solid var(--primary,#8B5CF6)":"2px solid transparent",cursor:"pointer"}}>📸 Foto ({photos.length})</button>}
-                          {videos.length>0&&<button onClick={e=>{e.stopPropagation();setActiveTab("video")}} style={{flex:1,padding:"6px 0",fontSize:11,fontWeight:activeTab==="video"?700:400,color:activeTab==="video"?"var(--primary,#8B5CF6)":"#9CA3AF",background:"none",border:"none",borderBottom:activeTab==="video"?"2px solid var(--primary,#8B5CF6)":"2px solid transparent",cursor:"pointer"}}>🎥 Video ({videos.length})</button>}
-                          {audios.length>0&&<button onClick={e=>{e.stopPropagation();setActiveTab("ses")}} style={{flex:1,padding:"6px 0",fontSize:11,fontWeight:activeTab==="ses"?700:400,color:activeTab==="ses"?"var(--primary,#8B5CF6)":"#9CA3AF",background:"none",border:"none",borderBottom:activeTab==="ses"?"2px solid var(--primary,#8B5CF6)":"2px solid transparent",cursor:"pointer"}}>🎙️ Ses ({audios.length})</button>}
+                        <div style={{display:'flex',borderBottom:'1px solid #F0F0F0'}}>
+                          {photos.length>0&&<button onClick={e=>{e.stopPropagation();setMediaTab(h.id,'foto')}} style={{flex:1,padding:'6px 0',fontSize:11,fontWeight:activeTab==='foto'?700:400,color:activeTab==='foto'?'var(--primary,#8B5CF6)':'#9CA3AF',background:'none',border:'none',borderBottom:activeTab==='foto'?'2px solid var(--primary,#8B5CF6)':'2px solid transparent',cursor:'pointer'}}>📸 Foto ({photos.length})</button>}
+                          {videos.length>0&&<button onClick={e=>{e.stopPropagation();setMediaTab(h.id,'video')}} style={{flex:1,padding:'6px 0',fontSize:11,fontWeight:activeTab==='video'?700:400,color:activeTab==='video'?'var(--primary,#8B5CF6)':'#9CA3AF',background:'none',border:'none',borderBottom:activeTab==='video'?'2px solid var(--primary,#8B5CF6)':'2px solid transparent',cursor:'pointer'}}>🎥 Video ({videos.length})</button>}
+                          {audios.length>0&&<button onClick={e=>{e.stopPropagation();setMediaTab(h.id,'ses')}} style={{flex:1,padding:'6px 0',fontSize:11,fontWeight:activeTab==='ses'?700:400,color:activeTab==='ses'?'var(--primary,#8B5CF6)':'#9CA3AF',background:'none',border:'none',borderBottom:activeTab==='ses'?'2px solid var(--primary,#8B5CF6)':'2px solid transparent',cursor:'pointer'}}>🎙️ Ses ({audios.length})</button>}
                         </div>
-                        <div style={{padding:"8px 10px"}} onClick={e=>e.stopPropagation()}>
-                          {activeTab==="foto"&&<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                            {photos.map((url,i)=>(
-                              <a key={i} href={url} target="_blank" rel="noreferrer">
-                                <img src={url} style={{width:72,height:72,objectFit:"cover",borderRadius:8,border:"1.5px solid #E5E7EB"}}/>
-                              </a>
-                            ))}
-                          </div>}
-                          {activeTab==="video"&&<div>
-                            {videos.map((url,i)=>(
-                              <video key={i} src={url} controls style={{width:"100%",borderRadius:8,border:"1.5px solid #E5E7EB",marginBottom:4,maxHeight:180}}/>
-                            ))}
-                          </div>}
-                          {activeTab==="ses"&&<div>
-                            {audios.map((url,i)=>(
-                              <audio key={i} src={url} controls style={{width:"100%",marginBottom:4}}/>
-                            ))}
-                          </div>}
+                        <div style={{padding:'8px 10px'}}>
+                          {activeTab==='foto'&&<div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{photos.map((url,i)=><a key={i} href={url} target='_blank' rel='noreferrer'><img src={url} style={{width:72,height:72,objectFit:'cover',borderRadius:8,border:'1.5px solid #E5E7EB'}}/></a>)}</div>}
+                          {activeTab==='video'&&<div>{videos.map((url,i)=><video key={i} src={url} controls style={{width:'100%',borderRadius:8,marginBottom:4,maxHeight:180}}/>)}</div>}
+                          {activeTab==='ses'&&<div>{audios.map((url,i)=><audio key={i} src={url} controls style={{width:'100%',marginBottom:4}}/>)}</div>}
                         </div>
                       </div>
                     );
                   })()}
+                </div>
+              )}
                 </div>
               )}
 
