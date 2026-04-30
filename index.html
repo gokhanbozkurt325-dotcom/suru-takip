@@ -1534,7 +1534,13 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
   const [notes,setNotes]=useState("");
   const [treatmentDays,setTreatmentDays]=useState(0);
   const [photos,setPhotos]=useState([]);
+  const [videos,setVideos]=useState([]);
+  const [audioBlobs,setAudioBlobs]=useState([]);
   const [uploading,setUploading]=useState(false);
+  const [recording,setRecording]=useState(false);
+  const [mediaRecorder,setMediaRecorder]=useState(null);
+  const videoRef = useRef(null);
+  const audioChunksRef = useRef([]);
   const [err,setErr]=useState("");
   const [saving,setSaving]=useState(false);
   const photoRef = useRef(null);
@@ -1545,7 +1551,38 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     for(const file of files){
       const ext = file.name.split(".").pop();
       const path = `${recId}_${Date.now()}.${ext}`;
-      await sb.storage.from("health-photos").upload(path, file, {contentType:file.type});
+      const bucket = file.type.startsWith("video") ? "health-videos" : "health-photos";
+      await sb.storage.from(bucket).upload(path, file, {contentType:file.type});
+    }
+    setUploading(false);
+  };
+
+  const startAudioRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      const mr = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      mr.ondataavailable = e => { if(e.data.size>0) audioChunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, {type:"audio/webm"});
+        setAudioBlobs(p=>[...p, blob]);
+        stream.getTracks().forEach(t=>t.stop());
+      };
+      mr.start();
+      setMediaRecorder(mr);
+      setRecording(true);
+    } catch(e) { alert("Mikrofon erişimi reddedildi: "+e.message); }
+  };
+
+  const stopAudioRecording = () => {
+    if(mediaRecorder) { mediaRecorder.stop(); setRecording(false); setMediaRecorder(null); }
+  };
+
+  const uploadAudio = async (recId) => {
+    setUploading(true);
+    for(let i=0;i<audioBlobs.length;i++){
+      const path = `${recId}_audio_${Date.now()}_${i}.webm`;
+      await sb.storage.from("health-audio").upload(path, audioBlobs[i], {contentType:"audio/webm"});
     }
     setUploading(false);
   };
@@ -1563,7 +1600,8 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     const { error } = await sb.from("health_records").insert({...fromHealth(rec), goat_ear_tag:earTag.trim()});
     if(error){setErr("Kayıt hatası: "+error.message);setSaving(false);return;}
     await addLog(rec.id, goatId, breed, "açılış", `${cond} — ${currentUser} tarafından açıldı`, currentUser);
-    if(photos.length>0) await uploadHealthPhotos(rec.id, photos);
+    if(photos.length>0 || videos.length>0) await uploadHealthPhotos(rec.id, [...photos,...videos]);
+    if(audioBlobs.length>0) await uploadAudio(rec.id);
     if(treatmentDays>0){
       const days=[];
       for(let i=0;i<treatmentDays;i++){
@@ -1628,7 +1666,8 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     <StatusPicker value={status} onChange={setStatus}/>
     <FL>Notlar</FL>
     <VoiceInput value={notes} onChange={setNotes} placeholder="Notlar..." multiline rows={2}/>
-    <FL>Fotoğraf Ekle</FL>
+    <FL>📸 Fotoğraf / 🎥 Video / 🎙️ Ses</FL>
+    {/* Fotoğraf + Video butonları */}
     <div style={{display:"flex",gap:6,marginBottom:4}}>
       <button type="button" onClick={()=>cameraRef2.current?.click()}
         style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #4A7C3F",background:"rgba(74,124,63,.2)",color:"#10B981",fontWeight:700,fontSize:12,cursor:"pointer"}}>
@@ -1636,20 +1675,57 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
       </button>
       <button type="button" onClick={()=>photoRef.current?.click()}
         style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #2873A8",background:"rgba(40,115,168,.2)",color:"#42A5F5",fontWeight:700,fontSize:12,cursor:"pointer"}}>
-        🖼️ Galeri
+        🖼️ Fotoğraf
+      </button>
+      <button type="button" onClick={()=>videoRef.current?.click()}
+        style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #7C3AED",background:"rgba(124,58,237,.15)",color:"#7C3AED",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+        🎥 Video
       </button>
     </div>
     <input ref={cameraRef2} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>setPhotos(p=>[...p,...Array.from(e.target.files)])}/>
     <input ref={photoRef} type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>setPhotos(p=>[...p,...Array.from(e.target.files)])}/>
-    {photos.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:4}}>
+    <input ref={videoRef} type="file" accept="video/*" multiple style={{display:"none"}} onChange={e=>setVideos(p=>[...p,...Array.from(e.target.files)])}/>
+
+    {/* Önizlemeler */}
+    {(photos.length>0||videos.length>0)&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:4,marginBottom:4}}>
       {photos.map((f,i)=>(
-        <div key={i} style={{position:"relative"}}>
-          <img src={URL.createObjectURL(f)} style={{width:60,height:60,objectFit:"cover",borderRadius:8,border:"1px solid rgba(212,175,55,.12)"}}/>
-          <button onClick={()=>setPhotos(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#C0392B",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:11,cursor:"pointer",lineHeight:"18px",textAlign:"center",padding:0}}>×</button>
+        <div key={"p"+i} style={{position:"relative"}}>
+          <img src={URL.createObjectURL(f)} style={{width:60,height:60,objectFit:"cover",borderRadius:8,border:"1px solid #E5E7EB"}}/>
+          <button onClick={()=>setPhotos(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:11,cursor:"pointer",padding:0,lineHeight:"18px",textAlign:"center"}}>×</button>
+        </div>
+      ))}
+      {videos.map((f,i)=>(
+        <div key={"v"+i} style={{position:"relative"}}>
+          <video src={URL.createObjectURL(f)} style={{width:60,height:60,objectFit:"cover",borderRadius:8,border:"1px solid #E5E7EB"}}/>
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}><span style={{fontSize:20}}>▶️</span></div>
+          <button onClick={()=>setVideos(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:11,cursor:"pointer",padding:0,lineHeight:"18px",textAlign:"center"}}>×</button>
         </div>
       ))}
     </div>}
-    {uploading&&<div style={{fontSize:11,color:"var(--primary,#8B5CF6)"}}>⏳ Fotoğraflar yükleniyor...</div>}
+
+    {/* Ses Kaydı */}
+    <div style={{display:"flex",gap:6,marginBottom:4}}>
+      {!recording
+        ? <button type="button" onClick={startAudioRecording}
+            style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"rgba(239,68,68,.1)",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+            🎙️ Ses Kaydı Başlat
+          </button>
+        : <button type="button" onClick={stopAudioRecording}
+            style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"#EF4444",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",animation:"pulse 1s infinite"}}>
+            ⏹ Kaydı Durdur
+          </button>
+      }
+    </div>
+    {audioBlobs.length>0&&<div style={{marginBottom:4}}>
+      {audioBlobs.map((blob,i)=>(
+        <div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,padding:"6px 8px",background:"#FEF3C7",borderRadius:8}}>
+          <audio controls src={URL.createObjectURL(blob)} style={{flex:1,height:32}}/>
+          <button onClick={()=>setAudioBlobs(p=>p.filter((_,j)=>j!==i))} style={{background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:20,height:20,fontSize:12,cursor:"pointer",padding:0,lineHeight:"20px",textAlign:"center"}}>×</button>
+        </div>
+      ))}
+    </div>}
+
+    {uploading&&<div style={{fontSize:11,color:"var(--primary,#8B5CF6)",marginBottom:4}}>⏳ Medya yükleniyor...</div>}
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
       <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
@@ -3934,8 +4010,36 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
 function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHealth,onUpdateHealth,onFinalizeHealth,onLogsUpdate,onTreatmentDayUpdate,detailTab,setDetailTab,currentUser}){
   const b=BREEDS.find(x=>x.id===goat.breed);
   const [selRecord,setSelRecord]=useState(null);
+  const [healthMedia,setHealthMedia]=React.useState({});
   const activeRecs=healthRecs.filter(h=>h.goatId===goat.id&&!h.closed);
   const selRecordObj=selRecord?healthRecs.find(h=>h.id===selRecord):null;
+
+  // Sağlık kaydı medyalarını yükle
+  React.useEffect(()=>{
+    const loadMedia = async () => {
+      try {
+        const buckets = ["health-photos","health-videos","health-audio"];
+        const allMedia = {};
+        for(const bucket of buckets){
+          const {data} = await sb.storage.from(bucket).list("", {limit:1000});
+          if(data){
+            data.forEach(f=>{
+              // Dosya adı: recId_timestamp.ext
+              const parts = f.name.split("_");
+              if(parts.length >= 2){
+                const recId = parts[0];
+                if(!allMedia[recId]) allMedia[recId] = [];
+                const {data:urlData} = sb.storage.from(bucket).getPublicUrl(f.name);
+                allMedia[recId].push({url:urlData.publicUrl, name:f.name, bucket, type:bucket==="health-photos"?"image":bucket==="health-videos"?"video":"audio"});
+              }
+            });
+          }
+        }
+        setHealthMedia(allMedia);
+      } catch(e){}
+    };
+    loadMedia();
+  },[]);
 
   return (
     <div className="anim-slide">
@@ -3990,6 +4094,22 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
                 <StatusBadge status={h.status}/>
               </div>
               {h.treatment&&<div style={{fontSize:12,marginTop:5,color:"#1F2937"}}>💊 {h.treatment}</div>}
+              {/* Medya */}
+              {healthMedia[h.id]&&healthMedia[h.id].length>0&&(
+                <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:6}} onClick={e=>e.stopPropagation()}>
+                  {healthMedia[h.id].filter(m=>m.type==="image").map((m,i)=>(
+                    <a key={i} href={m.url} target="_blank" rel="noreferrer">
+                      <img src={m.url} style={{width:52,height:52,objectFit:"cover",borderRadius:7,border:"1.5px solid #E5E7EB",cursor:"pointer"}}/>
+                    </a>
+                  ))}
+                  {healthMedia[h.id].filter(m=>m.type==="video").map((m,i)=>(
+                    <video key={i} src={m.url} controls style={{width:100,height:60,borderRadius:7,border:"1.5px solid #E5E7EB",objectFit:"cover"}}/>
+                  ))}
+                  {healthMedia[h.id].filter(m=>m.type==="audio").map((m,i)=>(
+                    <audio key={i} src={m.url} controls style={{height:32,maxWidth:"100%"}}/>
+                  ))}
+                </div>
+              )}
               {/* Geçmiş logları */}
               {logs.filter(l=>l.healthRecordId===h.id).length>0 && (
                 <div style={{marginTop:8,borderTop:"1px solid #F0F0F0",paddingTop:6}}>
