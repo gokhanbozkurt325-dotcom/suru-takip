@@ -4191,61 +4191,52 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
             const mediaList = h.mediaUrls ? h.mediaUrls.split(",").filter(u=>u.trim()) : [];
             const photos = mediaList.filter(u=>u.includes("health-photos")||/\.(jpg|jpeg|png|gif|webp)/i.test(u));
             const videos = mediaList.filter(u=>u.includes("health-videos")||/\.(mp4|mov|avi)/i.test(u));
-            const audios  = mediaList.filter(u=>u.includes("health-audio")||/\.(mp3|wav|webm|ogg)/i.test(u));
+            const audios  = mediaList.filter(u=>u.includes("health-audio")||/\.(webm|mp3|wav|ogg)/i.test(u));
+            const activeTab = mediaTabs[h.id] || (photos.length>0?"foto":videos.length>0?"video":"ses");
             return (
-            <div key={h.id} style={{...S.card,padding:0,marginBottom:8,border:"1.5px solid #E8E5DC",overflow:"hidden"}}>
-              {/* Kart başlık */}
-              <div onClick={()=>setSelRecord(h.id)} style={{padding:"10px 12px",cursor:"pointer"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                  <div style={{flex:1}}>
-                    <div style={{fontWeight:700,fontSize:14,color:"#1A1A2E"}}>{h.condition}</div>
-                    {h.goatEarTag&&<div style={{fontSize:11,color:"#9CA3AF",marginTop:1}}>🏷️ {h.goatEarTag}</div>}
+            <div key={h.id} style={{background:"#fff",borderRadius:16,marginBottom:10,overflow:"hidden",border:"1px solid #E8E5DC",boxShadow:"0 1px 4px rgba(0,0,0,.04)"}}>
+              {/* Üst kısım */}
+              <div onClick={()=>setSelRecord(h.id)} style={{padding:"12px 14px",cursor:"pointer"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                  <div>
+                    <div style={{fontSize:13,color:"#9CA3AF",marginBottom:2}}>{h.goatEarTag||""}</div>
+                    <div style={{fontSize:16,fontWeight:700,color:"#1A1A2E"}}>{h.condition}</div>
                   </div>
                   <StatusBadge status={h.status}/>
                 </div>
-                {h.treatment&&<div style={{fontSize:12,color:"#1F2937",marginBottom:4}}>💊 {h.treatment}</div>}
-                {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginBottom:4}}>📝 {h.notes}</div>}
-                <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginTop:4}}>
-                  <span style={{fontSize:11,color:"#9CA3AF"}}>📅 Açılış: {fmt(h.date)} {h.createdByName?" — "+h.createdByName:""}</span>
-                  {totalDays>0&&<span style={{fontSize:11,fontWeight:700,color:"#059669",background:"#D1FAE5",padding:"1px 7px",borderRadius:20}}>💊 {doneDays}/{totalDays} gün</span>}
+                {h.treatment&&<div style={{fontSize:13,color:"#1F2937",marginBottom:4}}>💊 {h.treatment}</div>}
+                {h.notes&&<div style={{fontSize:12,color:"#6B7280",fontStyle:"italic",marginBottom:6}}>📝 {h.notes}</div>}
+                <div style={{display:"flex",flexWrap:"wrap",gap:8,alignItems:"center",marginBottom:6}}>
+                  <span style={{fontSize:11,color:"#9CA3AF"}}>📅 Açılış: {fmt(h.date)}{h.createdByName?" — "+h.createdByName:""}</span>
+                  {totalDays>0&&<span style={{fontSize:11,fontWeight:700,color:"#059669",background:"#D1FAE5",padding:"2px 8px",borderRadius:20}}>💊 {doneDays}/{totalDays} gün — {doneDays+1}. günde</span>}
                   {mediaList.length>0&&<span style={{fontSize:11,color:"var(--primary,#8B5CF6)",fontWeight:600}}>📎 {mediaList.length} medya</span>}
                 </div>
-                {lastLog&&<div style={{fontSize:11,color:"#9CA3AF",marginTop:3}}>
-                  🕐 Son: <span style={{fontWeight:600,color:"#374151"}}>{lastLog.createdBy||""}</span> — {fmtDT(lastLog.createdAt)}
+                {lastLog&&<div style={{fontSize:11,color:"#9CA3AF"}}>
+                  🕐 Son işlem: <span style={{fontWeight:600,color:"#374151"}}>{lastLog.createdBy||""}</span> — {fmtDT(lastLog.createdAt)}
                 </div>}
               </div>
 
-              {/* Medya — sadece bu kayda ait */}
+              {/* Medya sekmeleri */}
               {mediaList.length>0&&(
-                <div style={{borderTop:"1px solid #F0F0F0",background:"#FAFAFA"}}>
-              {/* Medya */}
-              {mediaList.length>0&&(
-                <div style={{borderTop:'1px solid #F0F0F0',background:'#FAFAFA'}} onClick={e=>e.stopPropagation()}>
-                  {(()=>{
-                    const activeTab = mediaTabs[h.id] || (photos.length>0?'foto':videos.length>0?'video':'ses');
-                    return (
-                      <div>
-                        <div style={{display:'flex',borderBottom:'1px solid #F0F0F0'}}>
-                          {photos.length>0&&<button onClick={e=>{e.stopPropagation();setMediaTab(h.id,'foto')}} style={{flex:1,padding:'6px 0',fontSize:11,fontWeight:activeTab==='foto'?700:400,color:activeTab==='foto'?'var(--primary,#8B5CF6)':'#9CA3AF',background:'none',border:'none',borderBottom:activeTab==='foto'?'2px solid var(--primary,#8B5CF6)':'2px solid transparent',cursor:'pointer'}}>📸 Foto ({photos.length})</button>}
-                          {videos.length>0&&<button onClick={e=>{e.stopPropagation();setMediaTab(h.id,'video')}} style={{flex:1,padding:'6px 0',fontSize:11,fontWeight:activeTab==='video'?700:400,color:activeTab==='video'?'var(--primary,#8B5CF6)':'#9CA3AF',background:'none',border:'none',borderBottom:activeTab==='video'?'2px solid var(--primary,#8B5CF6)':'2px solid transparent',cursor:'pointer'}}>🎥 Video ({videos.length})</button>}
-                          {audios.length>0&&<button onClick={e=>{e.stopPropagation();setMediaTab(h.id,'ses')}} style={{flex:1,padding:'6px 0',fontSize:11,fontWeight:activeTab==='ses'?700:400,color:activeTab==='ses'?'var(--primary,#8B5CF6)':'#9CA3AF',background:'none',border:'none',borderBottom:activeTab==='ses'?'2px solid var(--primary,#8B5CF6)':'2px solid transparent',cursor:'pointer'}}>🎙️ Ses ({audios.length})</button>}
-                        </div>
-                        <div style={{padding:'8px 10px'}}>
-                          {activeTab==='foto'&&<div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{photos.map((url,i)=><a key={i} href={url} target='_blank' rel='noreferrer'><img src={url} style={{width:72,height:72,objectFit:'cover',borderRadius:8,border:'1.5px solid #E5E7EB'}}/></a>)}</div>}
-                          {activeTab==='video'&&<div>{videos.map((url,i)=><video key={i} src={url} controls style={{width:'100%',borderRadius:8,marginBottom:4,maxHeight:180}}/>)}</div>}
-                          {activeTab==='ses'&&<div>{audios.map((url,i)=><audio key={i} src={url} controls style={{width:'100%',marginBottom:4}}/>)}</div>}
-                        </div>
-                      </div>
-                    );
-                  })()}
+                <div style={{borderTop:"1px solid #F0F0F0"}} onClick={e=>e.stopPropagation()}>
+                  <div style={{display:"flex",borderBottom:"1px solid #F0F0F0"}}>
+                    {photos.length>0&&<button onClick={()=>setMediaTab(h.id,"foto")} style={{flex:1,padding:"8px 0",fontSize:12,fontWeight:activeTab==="foto"?600:400,color:activeTab==="foto"?"var(--primary,#8B5CF6)":"#9CA3AF",background:"none",border:"none",borderBottom:activeTab==="foto"?"2px solid var(--primary,#8B5CF6)":"2px solid transparent",cursor:"pointer"}}>Foto ({photos.length})</button>}
+                    {videos.length>0&&<button onClick={()=>setMediaTab(h.id,"video")} style={{flex:1,padding:"8px 0",fontSize:12,fontWeight:activeTab==="video"?600:400,color:activeTab==="video"?"var(--primary,#8B5CF6)":"#9CA3AF",background:"none",border:"none",borderBottom:activeTab==="video"?"2px solid var(--primary,#8B5CF6)":"2px solid transparent",cursor:"pointer"}}>Video ({videos.length})</button>}
+                    {audios.length>0&&<button onClick={()=>setMediaTab(h.id,"ses")} style={{flex:1,padding:"8px 0",fontSize:12,fontWeight:activeTab==="ses"?600:400,color:activeTab==="ses"?"var(--primary,#8B5CF6)":"#9CA3AF",background:"none",border:"none",borderBottom:activeTab==="ses"?"2px solid var(--primary,#8B5CF6)":"2px solid transparent",cursor:"pointer"}}>Ses ({audios.length})</button>}
+                  </div>
+                  <div style={{padding:"10px 12px"}}>
+                    {activeTab==="foto"&&<div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                      {photos.map((url,i)=><a key={i} href={url} target="_blank" rel="noreferrer"><img src={url} style={{width:72,height:72,objectFit:"cover",borderRadius:10,border:"1.5px solid #E5E7EB"}}/></a>)}
+                    </div>}
+                    {activeTab==="video"&&<div>
+                      {videos.map((url,i)=><video key={i} src={url} controls style={{width:"100%",borderRadius:10,border:"1.5px solid #E5E7EB",marginBottom:4,maxHeight:180}}/>)}
+                    </div>}
+                    {activeTab==="ses"&&<div>
+                      {audios.map((url,i)=><audio key={i} src={url} controls style={{width:"100%",marginBottom:4}}/>)}
+                    </div>}
+                  </div>
                 </div>
               )}
-                </div>
-              )}
-
-              <div onClick={()=>setSelRecord(h.id)} style={{padding:"6px 12px",borderTop:"1px solid #F0F0F0",display:"flex",justifyContent:"flex-end"}}>
-                <span style={{fontSize:10,color:"var(--primary,#8B5CF6)",fontWeight:600,letterSpacing:".3px"}}>👆 Düzenle / Sonlandır</span>
-              </div>
             </div>
             );
           })}
