@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-  <title>BURDUR Açık Cezaevi Hayvancılık 🐐</title>
+  <title>Burdur Hayvancılık v2 🐑</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
     body{
@@ -4067,20 +4067,21 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
         const buckets = ["health-photos","health-videos","health-audio"];
         const map = {};
         for(const bucket of buckets){
-          const {data} = await sb.storage.from(bucket).list("", {limit:1000});
+          const {data} = await sb.storage.from(bucket).list("", {limit:500});
           if(!data) continue;
           data.forEach(f=>{
             const recId = f.name.split("_")[0];
             if(!map[recId]) map[recId]=[];
-            const {data:{publicUrl}} = sb.storage.from(bucket).getPublicUrl(f.name);
-            map[recId].push({url:publicUrl, type:bucket==="health-photos"?"image":bucket==="health-videos"?"video":"audio"});
+            const {data:ud} = sb.storage.from(bucket).getPublicUrl(f.name);
+            if(ud && ud.publicUrl) map[recId].push({url:ud.publicUrl, type:bucket==="health-photos"?"image":bucket==="health-videos"?"video":"audio"});
           });
         }
+        console.log("healthPhotos map:", JSON.stringify(Object.keys(map)));
         setHealthPhotos(map);
-      } catch(e){}
+      } catch(e){ console.error("healthPhotos hata:", e); }
     };
     load();
-  },[goat.id]);
+  },[]);
 
   return (
     <div className="anim-slide">
