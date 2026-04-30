@@ -125,12 +125,13 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
   const today = todayISO();
   const lastLog = recLogs[0];
 
-  // Medya yükle
+  // Medya yükle - prefix ile filtrele
   useEffect(()=>{
     if(tab!=="medya") return;
     setLoadingMedia(true);
-    sb.storage.from("health-photos").list("", {search: record.id}).then(({data})=>{
-      setMediaFiles(data||[]);
+    sb.storage.from("health-photos").list("", {limit:100}).then(({data})=>{
+      const filtered = (data||[]).filter(f=>f.name.startsWith(record.id));
+      setMediaFiles(filtered);
       setLoadingMedia(false);
     });
   },[tab, record.id]);
@@ -367,8 +368,34 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
   </ModalWrap>;
 }
 
-// ── Küpe No Tarayıcı ──
-// ── Küpe No Formatı: TR-xx-xxxxxx ──
+// Sağlık kartı - küçük medya thumbnail
+function HealthCardMedia({ recordId }) {
+  const [files, setFiles] = useState([]);
+  useEffect(()=>{
+    sb.storage.from("health-photos").list("", {limit:100}).then(({data})=>{
+      const f = (data||[]).filter(x=>x.name.startsWith(recordId));
+      setFiles(f);
+    });
+  },[recordId]);
+  if(files.length===0) return null;
+  const photos = files.filter(f=>!f.name.includes("video")&&!f.name.includes("audio"));
+  const videos = files.filter(f=>f.name.includes("video"));
+  const audios = files.filter(f=>f.name.includes("audio"));
+  const getUrl = name => sb.storage.from("health-photos").getPublicUrl(name).data.publicUrl;
+  return (
+    <div style={{display:"flex",gap:4,marginTop:6,flexWrap:"wrap",alignItems:"center"}}>
+      {photos.slice(0,3).map((f,i)=>(
+        <img key={i} src={getUrl(f.name)}
+          style={{width:44,height:44,objectFit:"cover",borderRadius:6,border:"1.5px solid #4A7C3F"}}
+          onClick={e=>{e.stopPropagation();window.open(getUrl(f.name),"_blank");}}
+        />
+      ))}
+      {photos.length>3 && <div style={{width:44,height:44,borderRadius:6,background:"#E3F0DC",border:"1.5px solid #4A7C3F",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#3D5A25"}}>+{photos.length-3}</div>}
+      {videos.length>0 && <div style={{padding:"4px 8px",borderRadius:6,background:"#FFF4E6",border:"1.5px solid #7B4A1E",fontSize:11,fontWeight:700,color:"#7B4A1E"}}>🎥 {videos.length}</div>}
+      {audios.length>0 && <div style={{padding:"4px 8px",borderRadius:6,background:"#FFF8EC",border:"1.5px solid #F0D49A",fontSize:11,fontWeight:700,color:"#B8750A"}}>🎙️ {audios.length}</div>}
+    </div>
+  );
+}
 function EarTagInput({ value, onChange }) {
   const part1Ref = useRef(null);
   const part2Ref = useRef(null);
@@ -3906,6 +3933,7 @@ function App(){
                                     </span>
                                   </div>
                                 )}
+                                <HealthCardMedia recordId={h.id}/>
                               </div>
                               <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
                                 <StatusBadge status={h.status}/>
