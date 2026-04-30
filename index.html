@@ -4055,12 +4055,48 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
   const [selRecord,setSelRecord]=useState(null);
   const [mediaTabs,setMediaTabs]=useState({});
   const setMediaTab=(id,tab)=>setMediaTabs(p=>({...p,[id]:tab}));
+  const [healthPhotos,setHealthPhotos]=useState({});
+  const [viewHealthPhotos,setViewHealthPhotos]=useState(null);
 
   const activeRecs=healthRecs.filter(h=>h.goatId===goat.id&&!h.closed);
   const selRecordObj=selRecord?healthRecs.find(h=>h.id===selRecord):null;
 
+  useEffect(()=>{
+    const load = async () => {
+      try {
+        const buckets = ["health-photos","health-videos","health-audio"];
+        const map = {};
+        for(const bucket of buckets){
+          const {data} = await sb.storage.from(bucket).list("", {limit:1000});
+          if(!data) continue;
+          data.forEach(f=>{
+            const recId = f.name.split("_")[0];
+            if(!map[recId]) map[recId]=[];
+            const {data:{publicUrl}} = sb.storage.from(bucket).getPublicUrl(f.name);
+            map[recId].push({url:publicUrl, type:bucket==="health-photos"?"image":bucket==="health-videos"?"video":"audio"});
+          });
+        }
+        setHealthPhotos(map);
+      } catch(e){}
+    };
+    load();
+  },[goat.id]);
+
   return (
     <div className="anim-slide">
+      {viewHealthPhotos&&(
+        <div onClick={()=>setViewHealthPhotos(null)} style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.85)",zIndex:9999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div style={{color:"#fff",fontSize:13,marginBottom:12,fontWeight:700}}>📷 Medya ({viewHealthPhotos.length})</div>
+          <div style={{display:"flex",flexDirection:"column",gap:10,overflowY:"auto",maxHeight:"80vh",width:"100%",maxWidth:400}}>
+            {viewHealthPhotos.map((m,i)=>(
+              m.type==="image" ? <img key={i} src={m.url} style={{width:"100%",borderRadius:12,objectFit:"cover"}} onClick={e=>e.stopPropagation()}/> :
+              m.type==="video" ? <video key={i} src={m.url} controls style={{width:"100%",borderRadius:12}} onClick={e=>e.stopPropagation()}/> :
+              <audio key={i} src={m.url} controls style={{width:"100%"}} onClick={e=>e.stopPropagation()}/>
+            ))}
+          </div>
+          <button onClick={()=>setViewHealthPhotos(null)} style={{marginTop:16,background:"#fff",border:"none",borderRadius:10,padding:"10px 28px",fontWeight:700,fontSize:14,cursor:"pointer"}}>Kapat</button>
+        </div>
+      )}
       {selRecordObj && (
         <HealthDetailModal
           record={selRecordObj} goat={goat} logs={logs} treatmentDays={treatmentDays} currentUser={currentUser}
@@ -4214,6 +4250,12 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
                 {lastLog&&<div style={{fontSize:11,color:"#9CA3AF"}}>
                   🕐 Son işlem: <span style={{fontWeight:600,color:"#374151"}}>{lastLog.createdBy||""}</span> — {fmtDT(lastLog.createdAt)}
                 </div>}
+                {healthPhotos[h.id]&&healthPhotos[h.id].length>0&&(
+                  <button onClick={function(e){e.stopPropagation();setViewHealthPhotos(healthPhotos[h.id]);}}
+                    style={{marginTop:6,background:"rgba(14,165,233,.1)",color:"#0EA5E9",border:"none",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                    📷 {healthPhotos[h.id].length} Medya
+                  </button>
+                )}
               {mediaList.length>0&&(
                 <div style={{marginTop:8,paddingTop:8,borderTop:"1px solid #F5F5F5"}} onClick={e=>e.stopPropagation()}>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
