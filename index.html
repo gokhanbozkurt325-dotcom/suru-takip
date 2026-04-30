@@ -4351,6 +4351,8 @@ function App(){
 
   const [goats,setGoats]=useState([]);
   const [healthRecs,setHealthRecs]=useState([]);
+  const [healthPhotosMap,setHealthPhotosMap]=useState({});
+  const [viewHealthMedia,setViewHealthMedia]=useState(null);
   const [vaccines,setVaccines]=useState([]);
   const [reports,setReports]=useState([]);
   const [logs,setLogs]=useState([]);
@@ -4406,7 +4408,22 @@ function App(){
       setLogs((lRes.data||[]).map(toLog));
       setVaccineGroups(groups);
       setVaccineReports(vReports);
-      setTreatmentDaysData((tdRes.data||[]).map(r=>({
+      // health-photos bucket'tan medyaları yükle
+    try {
+      const buckets = ["health-photos","health-videos","health-audio"];
+      const pmap = {};
+      for(const bkt of buckets){
+        const {data:bdata} = await sb.storage.from(bkt).list("", {limit:500});
+        if(bdata) bdata.forEach(f=>{
+          const rid = f.name.split("_")[0];
+          if(!pmap[rid]) pmap[rid]=[];
+          const {data:ud} = sb.storage.from(bkt).getPublicUrl(f.name);
+          if(ud&&ud.publicUrl) pmap[rid].push({url:ud.publicUrl,type:bkt==="health-photos"?"image":bkt==="health-videos"?"video":"audio"});
+        });
+      }
+      setHealthPhotosMap(pmap);
+    } catch(e){}
+    setTreatmentDaysData((tdRes.data||[]).map(r=>({
         id:r.id, healthRecordId:r.health_record_id, goatId:r.goat_id,
         dayNumber:r.day_number, plannedDate:r.planned_date,
         done: r.done === true, doneBy:r.done_by||"", doneAt:r.done_at||""
@@ -4958,6 +4975,19 @@ function App(){
       {/* Fotoğraf üstü hafif overlay — içerik okunabilsin */}
       {theme.photo&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:theme.overlay||"rgba(0,0,0,.5)",zIndex:0,pointerEvents:"none"}}/>}
       <style>{":root{--primary:"+theme.primary+";--primary-rgb:"+(theme.primaryRgb||"139,92,246")+";}body{background-color:"+(theme.bg||"#F5F0FF")+";color:"+(theme.textColor||"#1A1A2E")+";"+( theme.photo?"background-image:url("+theme.photo+");background-size:cover;background-position:center top;background-repeat:no-repeat;":"")+"}"}</style>
+      {viewHealthMedia&&(
+        <div onClick={()=>setViewHealthMedia(null)} style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.88)",zIndex:9999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div style={{color:"#fff",fontSize:13,marginBottom:12,fontWeight:700}}>📷 Medya ({viewHealthMedia.length})</div>
+          <div style={{display:"flex",flexDirection:"column",gap:10,overflowY:"auto",maxHeight:"80vh",width:"100%",maxWidth:420}}>
+            {viewHealthMedia.map((m,i)=>(
+              m.type==="image"?<img key={i} src={m.url} style={{width:"100%",borderRadius:12,objectFit:"cover"}} onClick={e=>e.stopPropagation()}/>:
+              m.type==="video"?<video key={i} src={m.url} controls style={{width:"100%",borderRadius:12}} onClick={e=>e.stopPropagation()}/>:
+              <audio key={i} src={m.url} controls style={{width:"100%"}} onClick={e=>e.stopPropagation()}/>
+            ))}
+          </div>
+          <button onClick={()=>setViewHealthMedia(null)} style={{marginTop:16,background:"#fff",border:"none",borderRadius:10,padding:"10px 28px",fontWeight:700,fontSize:14,cursor:"pointer"}}>Kapat</button>
+        </div>
+      )}
       {hModal&&!isGuest&&<HealthModal goats={goats} breedFilter={hModal.breedId||null} preGoatId={hModal.goatId||""} onSave={saveHealth} onClose={()=>setHModal(null)} currentUser={currentUser}/>}
       {vModal&&!isGuest&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
       {addGoatModal&&!isGuest&&<AddGoatModal breed={BREEDS.find(b=>b.id===(addGoatModal.breedId||addGoatModal))} defaultCategory={addGoatModal.defaultCategory||"anac"} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser}/>}
@@ -5281,6 +5311,12 @@ function App(){
                                 <div style={{fontSize:11,color:"#9CA3AF"}}>📅 {fmt(h.date)} · {h.createdByName}</div>
                                 {h.treatment&&<div style={{fontSize:12,color:"#1F2937",marginTop:4}}>💊 {h.treatment}</div>}
                                 {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
+                                {healthPhotosMap[h.id]&&healthPhotosMap[h.id].length>0&&(
+                                  <button onClick={function(e){e.stopPropagation();setViewHealthMedia(healthPhotosMap[h.id]);}}
+                                    style={{marginTop:4,background:"rgba(14,165,233,.1)",color:"#0EA5E9",border:"none",borderRadius:8,padding:"3px 8px",fontSize:10,fontWeight:700,cursor:"pointer"}}>
+                                    📷 {healthPhotosMap[h.id].length} Medya
+                                  </button>
+                                )}
                                 {hDays.length>0&&(
                                   <div style={{marginTop:4,display:"flex",gap:4,alignItems:"center"}}>
                                     <span style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",padding:"2px 8px",borderRadius:8,fontWeight:700}}>
@@ -5309,7 +5345,7 @@ function App(){
         {/* GOAT DETAIL */}
         {page==="goats"&&selGoat&&goat && (
           <GoatDetail goat={goat} goats={goats} healthRecs={healthRecs} vaccines={vaccines} logs={logs}
-            treatmentDays={treatmentDaysData}
+            treatmentDays={treatmentDaysData} healthPhotosMap={healthPhotosMap} setViewHealthMedia={setViewHealthMedia}
             onAddHealth={()=>setHModal({breedId:goat.breed,goatId:goat.id})}
             onUpdateHealth={updateHealth} onFinalizeHealth={finalizeHealth}
             onLogsUpdate={addLogToState}
