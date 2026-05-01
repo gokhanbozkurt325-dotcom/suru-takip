@@ -1090,7 +1090,7 @@ const DEMO_USERS = [
 // Supabase dönüşümleri
 const toGoat    = r => ({ id:r.id, name:r.name, earTag:r.ear_tag, gender:r.gender, breed:r.breed, category:r.category, birthDate:r.birth_date||"", weight:r.weight||"", color:r.color||"", motherTag:r.mother_tag||"", fatherTag:r.father_tag||"", abortHistory:r.abort_history||"hayır", reproductionStatus:r.reproduction_status||"", lastBirthDate:r.last_birth_date||"", kidCount:r.kid_count||"0", notes:r.notes||"", abortDetails:r.abort_details||"", archived:r.archived||false, archiveReason:r.archive_reason||"" });
 const fromGoat  = g => ({ id:g.id, name:g.name, ear_tag:g.earTag, gender:g.gender, breed:g.breed, category:g.category, birth_date:g.birthDate||null, weight:g.weight||null, color:g.color||null, mother_tag:g.motherTag||null, father_tag:g.fatherTag||null, abort_history:g.abortHistory||"hayır", reproduction_status:g.reproductionStatus||null, last_birth_date:g.lastBirthDate||null, kid_count:g.kidCount||"0", notes:g.notes||null, abort_details:g.abortDetails||null, archived:false });
-const toHealth  = r => ({ id:r.id, goatId:r.goat_id, goatEarTag:r.goat_ear_tag||"", breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false, mediaUrls:r.media_urls||"", category:r.category||"anac" });
+const toHealth  = r => ({ id:r.id, goatId:r.goat_id, goatEarTag:r.goat_ear_tag||"", breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false, mediaUrls:r.media_urls||null, category:r.category||"anac" });
 const fromHealth= h => ({ id:h.id, goat_id:h.goatId, goat_ear_tag:h.goatEarTag||null, breed:h.breed, category:h.category||"anac", date:h.date, condition:h.condition, treatment:h.treatment||null, status:h.status, veterinarian:h.veterinarian||null, cost:h.cost||null, created_by_name:h.createdByName||null, notes:h.notes||null, closed:false, media_urls:h.mediaUrls||null });
 const toVaccine = r => ({ id:r.id, goatId:r.goat_id, breed:r.breed, date:r.date, vaccineType:r.vaccine_type, batchNo:r.batch_no||"", createdByName:r.created_by_name||"" });
 const fromVaccine=v => ({ id:v.id, goat_id:v.goatId, breed:v.breed, date:v.date, vaccine_type:v.vaccineType, batch_no:v.batchNo||null, created_by_name:v.createdByName||null });
@@ -5314,7 +5314,7 @@ function App(){
                                 <div style={{fontSize:11,color:"#9CA3AF"}}>📅 {fmt(h.date)} · {h.createdByName}</div>
                                 {h.treatment&&<div style={{fontSize:12,color:"#1F2937",marginTop:4}}>💊 {h.treatment}</div>}
                                 {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
-                                {h.mediaUrls&&h.mediaUrls.length>0&&(
+                                {h.mediaUrls&&h.mediaUrls.trim&&h.mediaUrls.trim().length>0&&(
                                   <div style={{marginTop:6,display:"flex",gap:5,flexWrap:"wrap"}} onClick={function(e){e.stopPropagation();}}>
                                     {h.mediaUrls.split(",").filter(u=>u.trim()).map(function(url,i){
                                       var isVideo = url.indexOf("health-videos")>-1||/\.(mp4|mov|avi)/i.test(url);
