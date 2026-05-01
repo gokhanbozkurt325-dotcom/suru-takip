@@ -4380,7 +4380,7 @@ function App(){
       setLoading(true);
       const [gRes,hRes,vRes,rRes,lRes,vgRes,vgmRes,vrRes,tdRes,bRes,dRes,gtRes]=await Promise.all([
         sb.from("goats").select("*"),
-        sb.from("health_records").select("*").eq("closed",false),
+        sb.from("health_records").select("id,goat_id,goat_ear_tag,breed,date,condition,treatment,status,veterinarian,cost,created_by_name,notes,closed,category,media_urls").eq("closed",false),
         sb.from("vaccines").select("*"),
         sb.from("reports").select("*"),
         sb.from("health_logs").select("*"),
