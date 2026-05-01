@@ -1090,7 +1090,7 @@ const DEMO_USERS = [
 // Supabase dönüşümleri
 const toGoat    = r => ({ id:r.id, name:r.name, earTag:r.ear_tag, gender:r.gender, breed:r.breed, category:r.category, birthDate:r.birth_date||"", weight:r.weight||"", color:r.color||"", motherTag:r.mother_tag||"", fatherTag:r.father_tag||"", abortHistory:r.abort_history||"hayır", reproductionStatus:r.reproduction_status||"", lastBirthDate:r.last_birth_date||"", kidCount:r.kid_count||"0", notes:r.notes||"", abortDetails:r.abort_details||"", archived:r.archived||false, archiveReason:r.archive_reason||"" });
 const fromGoat  = g => ({ id:g.id, name:g.name, ear_tag:g.earTag, gender:g.gender, breed:g.breed, category:g.category, birth_date:g.birthDate||null, weight:g.weight||null, color:g.color||null, mother_tag:g.motherTag||null, father_tag:g.fatherTag||null, abort_history:g.abortHistory||"hayır", reproduction_status:g.reproductionStatus||null, last_birth_date:g.lastBirthDate||null, kid_count:g.kidCount||"0", notes:g.notes||null, abort_details:g.abortDetails||null, archived:false });
-const toHealth  = r => ({ id:r.id, goatId:r.goat_id, goatEarTag:r.goat_ear_tag||"", breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false, mediaUrls:r.media_urls||null, category:r.category||"anac" });
+const toHealth  = r => ({ id:r.id, goatId:r.goat_id, goatEarTag:r.goat_ear_tag||"", breed:r.breed, date:r.date, condition:r.condition, treatment:r.treatment||"", status:r.status, veterinarian:r.veterinarian||"", cost:r.cost||"", createdByName:r.created_by_name||"", notes:r.notes||"", closed:r.closed||false, mediaUrls:r.media_urls||"", category:r.category||"anac" });
 const fromHealth= h => ({ id:h.id, goat_id:h.goatId, goat_ear_tag:h.goatEarTag||null, breed:h.breed, category:h.category||"anac", date:h.date, condition:h.condition, treatment:h.treatment||null, status:h.status, veterinarian:h.veterinarian||null, cost:h.cost||null, created_by_name:h.createdByName||null, notes:h.notes||null, closed:false, media_urls:h.mediaUrls||null });
 const toVaccine = r => ({ id:r.id, goatId:r.goat_id, breed:r.breed, date:r.date, vaccineType:r.vaccine_type, batchNo:r.batch_no||"", createdByName:r.created_by_name||"" });
 const fromVaccine=v => ({ id:v.id, goat_id:v.goatId, breed:v.breed, date:v.date, vaccine_type:v.vaccineType, batch_no:v.batchNo||null, created_by_name:v.createdByName||null });
@@ -1536,14 +1536,34 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
   const [status,setStatus]=useState("tedavi_altında");
   const [notes,setNotes]=useState("");
   const [treatmentDays,setTreatmentDays]=useState(0);
+  const [photos,setPhotos]=useState([]);
+  const [videos,setVideos]=useState([]);
   const [audioBlobs,setAudioBlobs]=useState([]);
   const [uploading,setUploading]=useState(false);
   const [recording,setRecording]=useState(false);
   const [mediaRecorder,setMediaRecorder]=useState(null);
+  const videoRef = useRef(null);
   const audioChunksRef = useRef([]);
   const [err,setErr]=useState("");
   const [saving,setSaving]=useState(false);
+  const photoRef = useRef(null);
+  const cameraRef2 = useRef(null);
 
+  const uploadHealthPhotos = async (recId, files) => {
+    setUploading(true);
+    const urls = [];
+    for(const file of files){
+      const ext = file.name.split(".").pop();
+      const path = `${recId}_${Date.now()}.${ext}`;
+      const bucket = file.type.startsWith("video") ? "health-videos" : "health-photos";
+      const {error:upErr} = await sb.storage.from(bucket).upload(path, file, {contentType:file.type});
+      if(upErr){console.error("Upload hata:",upErr.message); setUploading(false); continue;}
+      const {data:ud} = sb.storage.from(bucket).getPublicUrl(path);
+      if(ud) urls.push(ud.publicUrl);
+    }
+    setUploading(false);
+    return urls;
+  };
 
   const startAudioRecording = async () => {
     try {
@@ -1607,6 +1627,10 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     if(error){setErr("Kayıt hatası: "+error.message);setSaving(false);return;}
     await addLog(rec.id, goatId, breed, "açılış", `${cond} — ${currentUser} tarafından açıldı`, currentUser);
     const mediaUrls = [];
+    if(photos.length>0 || videos.length>0){
+      const photoUrls = await uploadHealthPhotos(rec.id, [...photos,...videos]);
+      if(photoUrls) mediaUrls.push(...photoUrls);
+    }
     if(audioBlobs.length>0){
       const audioUrls = await uploadAudio(rec.id);
       if(audioUrls) mediaUrls.push(...audioUrls);
@@ -1679,7 +1703,44 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     <StatusPicker value={status} onChange={setStatus}/>
     <FL>Notlar</FL>
     <VoiceInput value={notes} onChange={setNotes} placeholder="Notlar..." multiline rows={2}/>
-        {/* Ses Kaydı */}
+    <FL>📸 Fotoğraf / 🎥 Video / 🎙️ Ses</FL>
+    {/* Fotoğraf + Video butonları */}
+    <div style={{display:"flex",gap:6,marginBottom:4}}>
+      <button type="button" onClick={()=>cameraRef2.current?.click()}
+        style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #4A7C3F",background:"rgba(74,124,63,.2)",color:"#10B981",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+        📷 Kamera
+      </button>
+      <button type="button" onClick={()=>photoRef.current?.click()}
+        style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #2873A8",background:"rgba(40,115,168,.2)",color:"#42A5F5",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+        🖼️ Fotoğraf
+      </button>
+      <button type="button" onClick={()=>videoRef.current?.click()}
+        style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #7C3AED",background:"rgba(124,58,237,.15)",color:"#7C3AED",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+        🎥 Video
+      </button>
+    </div>
+    <input ref={cameraRef2} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>setPhotos(p=>[...p,...Array.from(e.target.files)])}/>
+    <input ref={photoRef} type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>setPhotos(p=>[...p,...Array.from(e.target.files)])}/>
+    <input ref={videoRef} type="file" accept="video/*" multiple style={{display:"none"}} onChange={e=>setVideos(p=>[...p,...Array.from(e.target.files)])}/>
+
+    {/* Önizlemeler */}
+    {(photos.length>0||videos.length>0)&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:4,marginBottom:4}}>
+      {photos.map((f,i)=>(
+        <div key={"p"+i} style={{position:"relative"}}>
+          <img src={URL.createObjectURL(f)} style={{width:60,height:60,objectFit:"cover",borderRadius:8,border:"1px solid #E5E7EB"}}/>
+          <button onClick={()=>setPhotos(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:11,cursor:"pointer",padding:0,lineHeight:"18px",textAlign:"center"}}>×</button>
+        </div>
+      ))}
+      {videos.map((f,i)=>(
+        <div key={"v"+i} style={{position:"relative"}}>
+          <video src={URL.createObjectURL(f)} style={{width:60,height:60,objectFit:"cover",borderRadius:8,border:"1px solid #E5E7EB"}}/>
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}><span style={{fontSize:20}}>▶️</span></div>
+          <button onClick={()=>setVideos(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:11,cursor:"pointer",padding:0,lineHeight:"18px",textAlign:"center"}}>×</button>
+        </div>
+      ))}
+    </div>}
+
+    {/* Ses Kaydı */}
     <div style={{display:"flex",gap:6,marginBottom:4}}>
       {typeof MediaRecorder !== "undefined" ? (
         !recording
@@ -4319,7 +4380,7 @@ function App(){
       setLoading(true);
       const [gRes,hRes,vRes,rRes,lRes,vgRes,vgmRes,vrRes,tdRes,bRes,dRes,gtRes]=await Promise.all([
         sb.from("goats").select("*"),
-        sb.from("health_records").select("id,goat_id,goat_ear_tag,breed,date,condition,treatment,status,veterinarian,cost,created_by_name,notes,closed,category,media_urls").eq("closed",false),
+        sb.from("health_records").select("*").eq("closed",false),
         sb.from("vaccines").select("*"),
         sb.from("reports").select("*"),
         sb.from("health_logs").select("*"),
@@ -5253,10 +5314,14 @@ function App(){
                                 <div style={{fontSize:11,color:"#9CA3AF"}}>📅 {fmt(h.date)} · {h.createdByName}</div>
                                 {h.treatment&&<div style={{fontSize:12,color:"#1F2937",marginTop:4}}>💊 {h.treatment}</div>}
                                 {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
-                                {h.mediaUrls&&h.mediaUrls.trim&&h.mediaUrls.trim().length>0&&(
-                                  <div style={{marginTop:6}} onClick={function(e){e.stopPropagation();}}>
-                                    {h.mediaUrls.split(",").filter(function(u){return u.trim();}).map(function(url,i){
-                                      return <audio key={i} src={url} controls style={{width:"100%",height:32,marginTop:2}}/>;
+                                {h.mediaUrls&&h.mediaUrls.length>0&&(
+                                  <div style={{marginTop:6,display:"flex",gap:5,flexWrap:"wrap"}} onClick={function(e){e.stopPropagation();}}>
+                                    {h.mediaUrls.split(",").filter(u=>u.trim()).map(function(url,i){
+                                      var isVideo = url.indexOf("health-videos")>-1||/\.(mp4|mov|avi)/i.test(url);
+                                      var isAudio = url.indexOf("health-audio")>-1||/\.(webm|mp3|wav|ogg)/i.test(url);
+                                      if(isAudio) return <audio key={i} src={url} controls style={{width:"100%",height:32,marginTop:2}}/>;
+                                      if(isVideo) return <a key={i} href={url} target="_blank" rel="noreferrer" style={{width:52,height:52,background:"#F3F4F6",borderRadius:8,border:"1.5px solid #E5E7EB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,textDecoration:"none"}}>▶️</a>;
+                                      return <a key={i} href={url} target="_blank" rel="noreferrer"><img src={url} style={{width:52,height:52,objectFit:"cover",borderRadius:8,border:"1.5px solid #E5E7EB"}}/></a>;
                                     })}
                                   </div>
                                 )}
