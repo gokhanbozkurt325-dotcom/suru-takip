@@ -4099,65 +4099,31 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
       )}
       {detailTab==="medya" && (
         <div style={{...S.card}}>
-          <div style={{fontWeight:700,fontSize:13,color:"#374151",marginBottom:10}}>📎 Medya Dosyaları</div>
+          <div style={{fontWeight:700,fontSize:13,color:"#374151",marginBottom:10}}>🎙️ Ses Kayıtları</div>
           {(()=>{
             const allMedia = healthRecs
               .filter(h=>h.mediaUrls&&h.mediaUrls.length>0)
-              .flatMap(h=>h.mediaUrls.split(",").map(url=>({url,recId:h.id,condition:h.condition,date:h.date})));
-            
-            const photos = allMedia.filter(m=>m.url.includes("health-photos")||m.url.match(/\.(jpg|jpeg|png|gif|webp)/i));
-            const videos = allMedia.filter(m=>m.url.includes("health-videos")||m.url.match(/\.(mp4|mov|avi)/i));
-            const audios  = allMedia.filter(m=>m.url.includes("health-audio")||m.url.match(/\.(mp3|wav|webm|ogg)/i));
-
+              .flatMap(h=>h.mediaUrls.split(",").map(url=>({url,condition:h.condition,date:h.date})));
             return allMedia.length === 0 ? (
               <div style={{textAlign:"center",color:"#9CA3AF",padding:"30px 0",fontSize:13}}>
                 <div style={{fontSize:36,marginBottom:8}}>📭</div>
-                Henüz medya eklenmemiş
+                Henüz ses kaydı eklenmemiş
               </div>
             ) : (
               <div>
-                {photos.length>0&&<>
-                  <div style={{fontSize:11,fontWeight:700,color:"#6B7280",marginBottom:6,textTransform:"uppercase",letterSpacing:".5px"}}>📸 Fotoğraflar ({photos.length})</div>
-                  <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>
-                    {photos.map((m,i)=>(
-                      <div key={i} style={{position:"relative"}}>
-                        <a href={m.url} target="_blank" rel="noreferrer">
-                          <img src={m.url} style={{width:80,height:80,objectFit:"cover",borderRadius:10,border:"1.5px solid #E5E7EB",cursor:"pointer"}}/>
-                        </a>
-                        <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,.5)",borderRadius:"0 0 9px 9px",padding:"2px 4px",fontSize:9,color:"#fff",textAlign:"center",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{m.condition}</div>
-                      </div>
-                    ))}
+                {allMedia.map((m,i)=>(
+                  <div key={i} style={{background:"#FEF3C7",borderRadius:10,padding:"8px 10px",marginBottom:6}}>
+                    <div style={{fontSize:11,color:"#92400E",marginBottom:4,fontWeight:600}}>🎙️ {m.condition} — {fmt(m.date)}</div>
+                    <audio src={m.url} controls style={{width:"100%"}}/>
                   </div>
-                </>}
-                {videos.length>0&&<>
-                  <div style={{fontSize:11,fontWeight:700,color:"#6B7280",marginBottom:6,textTransform:"uppercase",letterSpacing:".5px"}}>🎥 Videolar ({videos.length})</div>
-                  <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
-                    {videos.map((m,i)=>(
-                      <div key={i}>
-                        <div style={{fontSize:11,color:"#9CA3AF",marginBottom:3}}>📋 {m.condition} — {fmt(m.date)}</div>
-                        <video src={m.url} controls style={{width:"100%",borderRadius:10,border:"1.5px solid #E5E7EB",maxHeight:200}}/>
-                      </div>
-                    ))}
-                  </div>
-                </>}
-                {audios.length>0&&<>
-                  <div style={{fontSize:11,fontWeight:700,color:"#6B7280",marginBottom:6,textTransform:"uppercase",letterSpacing:".5px"}}>🎙️ Ses Kayıtları ({audios.length})</div>
-                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                    {audios.map((m,i)=>(
-                      <div key={i} style={{background:"#FEF3C7",borderRadius:10,padding:"8px 10px"}}>
-                        <div style={{fontSize:11,color:"#92400E",marginBottom:4,fontWeight:600}}>🎙️ {m.condition} — {fmt(m.date)}</div>
-                        <audio src={m.url} controls style={{width:"100%"}}/>
-                      </div>
-                    ))}
-                  </div>
-                </>}
+                ))}
               </div>
             );
           })()}
         </div>
       )}
 
-      {detailTab==="health" && (
+      detailTab==="health" && (
         <div>
           {!goat.archived && <button onClick={onAddHealth} style={{...S.btnPrimary,width:"100%",marginBottom:8,fontSize:13}}>+ Sağlık Kaydı Ekle</button>}
           {activeRecs.length===0 && <Empty text="Aktif sağlık kaydı yok"/>}
@@ -4243,7 +4209,6 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
             );
           })}
         </div>
-      )}
       {detailTab==="vaccines" && (
         <div>
           {vaccines.filter(v=>v.goatId===goat.id).length===0 && <Empty text="Aşı kaydı yok"/>}
@@ -4293,9 +4258,7 @@ function App(){
 
   const [goats,setGoats]=useState([]);
   const [healthRecs,setHealthRecs]=useState([]);
-  const [healthPhotosMap,setHealthPhotosMap]=useState({});
-  const [viewHealthMedia,setViewHealthMedia]=useState(null);
-  const [vaccines,setVaccines]=useState([]);
+      const [vaccines,setVaccines]=useState([]);
   const [reports,setReports]=useState([]);
   const [logs,setLogs]=useState([]);
   const [vaccineGroups,setVaccineGroups]=useState([]);
@@ -4350,21 +4313,6 @@ function App(){
       setLogs((lRes.data||[]).map(toLog));
       setVaccineGroups(groups);
       setVaccineReports(vReports);
-      // health-photos bucket'tan medyaları yükle
-    try {
-      const buckets = ["health-photos","health-videos","health-audio"];
-      const pmap = {};
-      for(const bkt of buckets){
-        const {data:bdata} = await sb.storage.from(bkt).list("", {limit:500});
-        if(bdata) bdata.forEach(f=>{
-          const rid = f.name.split("_")[0];
-          if(!pmap[rid]) pmap[rid]=[];
-          const {data:ud} = sb.storage.from(bkt).getPublicUrl(f.name);
-          if(ud&&ud.publicUrl) pmap[rid].push({url:ud.publicUrl,type:bkt==="health-photos"?"image":bkt==="health-videos"?"video":"audio"});
-        });
-      }
-      setHealthPhotosMap(pmap);
-    } catch(e){}
     setTreatmentDaysData((tdRes.data||[]).map(r=>({
         id:r.id, healthRecordId:r.health_record_id, goatId:r.goat_id,
         dayNumber:r.day_number, plannedDate:r.planned_date,
@@ -4917,16 +4865,7 @@ function App(){
       {/* Fotoğraf üstü hafif overlay — içerik okunabilsin */}
       {theme.photo&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:theme.overlay||"rgba(0,0,0,.5)",zIndex:0,pointerEvents:"none"}}/>}
       <style>{":root{--primary:"+theme.primary+";--primary-rgb:"+(theme.primaryRgb||"139,92,246")+";}body{background-color:"+(theme.bg||"#F5F0FF")+";color:"+(theme.textColor||"#1A1A2E")+";"+( theme.photo?"background-image:url("+theme.photo+");background-size:cover;background-position:center top;background-repeat:no-repeat;":"")+"}"}</style>
-      {viewHealthMedia&&(
-        <div onClick={()=>setViewHealthMedia(null)} style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.88)",zIndex:9999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:16}}>
-          <div style={{color:"#fff",fontSize:13,marginBottom:12,fontWeight:700}}>📷 Medya ({viewHealthMedia.length})</div>
-          <div style={{display:"flex",flexDirection:"column",gap:10,overflowY:"auto",maxHeight:"80vh",width:"100%",maxWidth:420}}>
-            {viewHealthMedia.map((m,i)=>(
-              m.type==="image"?<img key={i} src={m.url} style={{width:"100%",borderRadius:12,objectFit:"cover"}} onClick={e=>e.stopPropagation()}/>:
-              m.type==="video"?<video key={i} src={m.url} controls style={{width:"100%",borderRadius:12}} onClick={e=>e.stopPropagation()}/>:
-              <audio key={i} src={m.url} controls style={{width:"100%"}} onClick={e=>e.stopPropagation()}/>
-            ))}
-          </div>
+                </div>
           <button onClick={()=>setViewHealthMedia(null)} style={{marginTop:16,background:"#fff",border:"none",borderRadius:10,padding:"10px 28px",fontWeight:700,fontSize:14,cursor:"pointer"}}>Kapat</button>
         </div>
       )}
@@ -5253,12 +5192,15 @@ function App(){
                                 <div style={{fontSize:11,color:"#9CA3AF"}}>📅 {fmt(h.date)} · {h.createdByName}</div>
                                 {h.treatment&&<div style={{fontSize:12,color:"#1F2937",marginTop:4}}>💊 {h.treatment}</div>}
                                 {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
-                                {h.mediaUrls&&h.mediaUrls.trim&&h.mediaUrls.trim().length>0&&(
+                                {h.mediaUrls&&h.mediaUrls.trim()&&(
                                   <div style={{marginTop:6}} onClick={function(e){e.stopPropagation();}}>
                                     {h.mediaUrls.split(",").filter(function(u){return u.trim();}).map(function(url,i){
                                       return <audio key={i} src={url} controls style={{width:"100%",height:32,marginTop:2}}/>;
                                     })}
                                   </div>
+                                )}
+                                  </div>
+                                )}
                                 )}
                                 {hDays.length>0&&(
                                   <div style={{marginTop:4,display:"flex",gap:4,alignItems:"center"}}>
@@ -5277,9 +5219,7 @@ function App(){
                       })}
                     </div>
                   );
-                })}
               </div>
-            )}
 
             {breedTab==="asi" && <BreedVaccineTab breed={breed} goats={goats} vaccineGroups={vaccineGroups} vaccineReports={vaccineReports} onGroupCreated={saveVaccineGroup} onGroupUpdated={updateVaccineGroup} onGroupDeleted={deleteVaccineGroup} onVaccineApplied={saveVaccineReport} currentUser={currentUser}/>}
           </div>
