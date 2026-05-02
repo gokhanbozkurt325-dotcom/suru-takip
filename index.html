@@ -5303,7 +5303,7 @@ function App(){
                           const doneDays=hDays.filter(d=>d.done).length;
                           const lastLog=logs.filter(l=>l.healthRecordId===h.id).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt))[0];
                           return (
-                            <div key={h.id} style={{...S.card,padding:"10px 12px",marginBottom:5,cursor:"pointer"}}
+                            <div key={h.id} style={{...S.card,padding:"10px 12px",marginBottom:5,cursor:"pointer",borderLeft:`3px solid ${b.color}`}}
                               onClick={()=>setSelHealthRec(h)}>
                               <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                                 <div style={{flex:1}}>
@@ -5313,14 +5313,24 @@ function App(){
                                   <div style={{fontWeight:700,fontSize:13,color:"#1A1A2E"}}>{h.condition}</div>
                                   {h.treatment&&<div style={{fontSize:11,color:"#1F2937",marginTop:3}}>💊 {h.treatment}</div>}
                                   {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
+                                  <div style={{marginTop:6,background:"#F8F9FA",borderRadius:"0 8px 8px 0",padding:"5px 9px",fontSize:11,borderLeft:`3px solid ${b.color}`}}>
+                                    <div style={{color:"#6B7280"}}>
+                                      <span style={{fontWeight:700,color:"#374151"}}>👤 Açan:</span> {h.createdByName||"—"} · 📅 {fmt(h.date)}
+                                    </div>
+                                    {lastLog&&(
+                                      <div style={{color:"#6B7280",marginTop:2}}>
+                                        <span style={{fontWeight:700,color:"#374151"}}>🩺 Son işlem:</span> {lastLog.userName||"—"} · {fmtDT(lastLog.createdAt)}
+                                      </div>
+                                    )}
+                                  </div>
                                   {hDays.length>0&&(
                                     <div style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
                                       📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
                                     </div>
                                   )}
-                                  {lastLog&&<div style={{fontSize:10,color:"#9CA3AF",marginTop:3}}>
-                                    🕐 Son: {lastLog.userName} · {fmtDT(lastLog.createdAt)}
-                                  </div>}
+                                  {h.mediaUrls&&h.mediaUrls.trim()&&(
+                                    <AudioToggle urls={h.mediaUrls}/>
+                                  )}
                                 </div>
                                 <StatusBadge status={h.status}/>
                               </div>
