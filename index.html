@@ -190,57 +190,27 @@ function VaccineCalendar({ vaccineReports }) {
 
 function AudioToggle({urls}) {
   const [open, setOpen] = React.useState(false);
-  const list = (urls||"").split(",").map(u=>u.trim()).filter(u=>
-    u&&(u.includes("health-audio")||/\.(webm|mp3|wav|ogg|aac|m4a)/i.test(u))
-  );
+  const list = (urls||"").split(",").map(function(u){return u.trim();}).filter(Boolean);
   if(!list.length) return null;
   return (
-    <div style={{marginTop:6}} onClick={e=>e.stopPropagation()}>
-      <button onClick={e=>{e.stopPropagation();setOpen(o=>!o);}}
-        style={{display:"inline-flex",alignItems:"center",gap:5,background:open?"rgba(239,68,68,.15)":"rgba(239,68,68,.08)",border:"1.5px solid rgba(239,68,68,.3)",borderRadius:20,padding:"4px 12px",fontSize:12,fontWeight:700,color:"#DC2626",cursor:"pointer",WebkitAppearance:"none"}}>
-        <span>🎵</span>
-        <span>Ses ({list.length})</span>
-        <span style={{fontSize:10,opacity:.6}}>{open?"▲":"▼"}</span>
+    <div style={{marginTop:8}} onClick={function(e){e.stopPropagation();}}>
+      <button
+        onClick={function(e){e.stopPropagation();setOpen(function(o){return !o;});}}
+        style={{display:"inline-flex",alignItems:"center",gap:5,background:open?"rgba(139,92,246,.18)":"rgba(139,92,246,.1)",border:"1.5px solid rgba(139,92,246,.3)",borderRadius:20,padding:"4px 12px",fontSize:12,fontWeight:700,color:"#7C3AED",cursor:"pointer",WebkitAppearance:"none"}}>
+        <span style={{fontSize:14}}>🎵</span>
+        <span>Ses Kaydı ({list.length})</span>
+        <span style={{fontSize:11,opacity:.6}}>{open?"▲":"▼"}</span>
       </button>
       {open&&(
-        <div style={{marginTop:5,display:"flex",flexDirection:"column",gap:4}}>
-          {list.map((url,i)=>(
-            <div key={i} style={{background:"#FEF2F2",borderRadius:8,padding:"5px 8px",border:"1px solid rgba(239,68,68,.15)"}}>
-              <div style={{fontSize:10,color:"#DC2626",fontWeight:700,marginBottom:2}}>🎙 Kayıt{list.length>1?" "+(i+1):""}</div>
-              <audio src={url} controls style={{width:"100%",height:32}}/>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MediaCard({urls}) {
-  const [playUrl, setPlayUrl] = React.useState(null);
-  const all = (urls||"").split(",").map(u=>u.trim()).filter(Boolean);
-  const photos = all.filter(u=>u.includes("health-photos")||/\.(jpg|jpeg|png|gif|webp)/i.test(u));
-  const videos = all.filter(u=>u.includes("health-videos")||/\.(mp4|mov|avi|mkv)/i.test(u));
-  if(!photos.length&&!videos.length) return null;
-  return (
-    <div style={{marginTop:6}} onClick={e=>e.stopPropagation()}>
-      <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-        {photos.map((url,i)=>(
-          <img key={"p"+i} src={url}
-            onClick={e=>{e.stopPropagation();window.open(url,"_blank");}}
-            style={{width:54,height:54,objectFit:"cover",borderRadius:6,border:"1.5px solid #E5E7EB",cursor:"pointer"}}/>
-        ))}
-        {videos.map((url,i)=>(
-          <div key={"v"+i} onClick={e=>{e.stopPropagation();setPlayUrl(playUrl===url?null:url);}}
-            style={{width:54,height:54,borderRadius:6,border:"1.5px solid #C4B5FD",background:"#EDE9FE",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative",overflow:"hidden"}}>
-            <span style={{fontSize:22}}>▶️</span>
-            <span style={{position:"absolute",bottom:2,right:4,fontSize:9,color:"#7C3AED",fontWeight:700}}>VİD</span>
-          </div>
-        ))}
-      </div>
-      {playUrl&&(
-        <div style={{marginTop:4}}>
-          <video src={playUrl} controls autoPlay style={{width:"100%",borderRadius:8,maxHeight:200}}/>
+        <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:4}}>
+          {list.map(function(url,i){
+            return (
+              <div key={i} style={{background:"#F5F3FF",borderRadius:10,padding:"6px 10px",border:"1px solid rgba(139,92,246,.18)"}}>
+                <div style={{fontSize:10,color:"#9CA3AF",marginBottom:3,fontWeight:600}}>🎙 Kayıt {i+1}</div>
+                <audio src={url} controls style={{width:"100%",height:36}}/>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -859,139 +829,6 @@ function GoatMatchGame() {
   );
 }
 
-function SaglikGonderModal({record, goat, onClose}) {
-  var KISILER = [
-    {isim:"Veteriner Hekim", tel:"905426321183"},
-    {isim:"Şef",             tel:"905386430705"},
-    {isim:"Şef Yardımcısı",  tel:"905412633285"},
-  ];
-  const [secili,     setSecili]     = React.useState({});
-  const [gonderildi, setGonderildi] = React.useState({});
-  const [step,       setStep]       = React.useState("sec");
-
-  var mediaList = record.mediaUrls ? record.mediaUrls.split(",").filter(function(u){return u.trim();}) : [];
-  var photos = mediaList.filter(function(u){return u.includes("health-photos")||/\.(jpg|jpeg|png|gif|webp)/i.test(u);});
-  var videos = mediaList.filter(function(u){return u.includes("health-videos")||/\.(mp4|mov|avi)/i.test(u);});
-  var audios = mediaList.filter(function(u){return u.includes("health-audio")||/\.(webm|mp3|wav|ogg|aac|m4a)/i.test(u);});
-  var seciliSayisi = KISILER.filter(function(k){return secili[k.tel];}).length;
-
-  var mesajOlustur = function() {
-    var tarih = new Date().toLocaleString("tr-TR");
-    var satirlar = [
-      "🐐 SAĞLIK RAPORU — BURDUR CEZAEVİ HAYVANCILIK",
-      "",
-      "Hayvan: " + (goat ? goat.name + " (" + goat.earTag + ")" : record.goatEarTag||"—"),
-      "Hastalık: " + record.condition,
-      record.treatment ? "💊 Tedavi: " + record.treatment : null,
-      record.notes ? "📝 Not: " + record.notes : null,
-      "Durum: " + record.status,
-      "Açılış: " + record.date + (record.createdByName ? " — " + record.createdByName : ""),
-      "",
-      "📅 " + tarih,
-    ].filter(Boolean);
-    if(photos.length>0){ satirlar.push(""); satirlar.push("📷 Fotoğraflar:"); photos.forEach(function(u,i){ satirlar.push((i+1)+". "+u); }); }
-    if(videos.length>0){ satirlar.push(""); satirlar.push("🎥 Videolar:"); videos.forEach(function(u,i){ satirlar.push((i+1)+". "+u); }); }
-    if(audios.length>0){ satirlar.push(""); satirlar.push("🎵 Ses Kayıtları:"); audios.forEach(function(u,i){ satirlar.push((i+1)+". "+u); }); }
-    return encodeURIComponent(satirlar.join("\n"));
-  };
-
-  var gonderBir = function(tel) {
-    window.open("https://api.whatsapp.com/send?phone="+tel+"&text="+mesajOlustur(), "_blank");
-    setGonderildi(function(prev){var y=Object.assign({},prev);y[tel]=true;return y;});
-  };
-
-  var WaIcon = function(color) {
-    return React.createElement("svg",{width:16,height:16,viewBox:"0 0 24 24",fill:color||"#25D366"},
-      React.createElement("path",{d:"M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"}),
-      React.createElement("path",{d:"M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.843L0 24l6.343-1.505A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.88 0-3.645-.5-5.178-1.378l-.37-.22-3.77.895.928-3.68-.242-.38A9.958 9.958 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"})
-    );
-  };
-
-  return (
-    <div onClick={onClose} style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.75)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-      <div onClick={function(e){e.stopPropagation();}} style={{background:"#fff",borderRadius:22,padding:22,width:"100%",maxWidth:360,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 8px 40px rgba(0,0,0,.3)"}}>
-        {step==="sec" ? (
-          <div>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-              <div style={{width:40,height:40,borderRadius:"50%",background:"#ECFDF5",display:"flex",alignItems:"center",justifyContent:"center"}}>{WaIcon("#25D366")}</div>
-              <div>
-                <div style={{fontWeight:800,fontSize:16,color:"#1A1A2E"}}>Sağlık Raporu Gönder</div>
-                <div style={{fontSize:11,color:"#9CA3AF"}}>WhatsApp üzerinden iletilecek</div>
-              </div>
-            </div>
-            <div style={{background:"#F5F5F5",borderRadius:12,padding:"10px 12px",marginBottom:12,fontSize:12}}>
-              <div style={{fontWeight:700,fontSize:14,color:"#1A1A2E",marginBottom:4}}>🐐 {goat?goat.name+" ("+goat.earTag+")":record.goatEarTag||"—"}</div>
-              <div style={{color:"#374151",marginBottom:2}}>🦠 {record.condition}</div>
-              {record.treatment&&<div style={{color:"#374151",marginBottom:2}}>💊 {record.treatment}</div>}
-              <div style={{color:"#6B7280",marginTop:4,fontSize:11}}>
-                {photos.length>0&&<span style={{marginRight:8}}>📷 {photos.length} foto</span>}
-                {videos.length>0&&<span style={{marginRight:8}}>🎥 {videos.length} video</span>}
-                {audios.length>0&&<span>🎵 {audios.length} ses</span>}
-                {mediaList.length===0&&<span style={{color:"#D1D5DB"}}>Medya yok</span>}
-              </div>
-            </div>
-            <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:8,textTransform:"uppercase",letterSpacing:".4px"}}>Kime gönderilsin?</div>
-            {KISILER.map(function(k){
-              var sec=!!secili[k.tel];
-              return (
-                <button key={k.tel} onClick={function(){setSecili(function(p){var y=Object.assign({},p);y[k.tel]=!y[k.tel];return y;});}}
-                  style={{width:"100%",padding:"11px 14px",marginBottom:6,borderRadius:12,border:"2px solid "+(sec?"#25D366":"#E5E7EB"),background:sec?"#ECFDF5":"#FAFAFA",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",WebkitAppearance:"none"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <div style={{width:22,height:22,borderRadius:6,border:"2px solid "+(sec?"#25D366":"#D1D5DB"),background:sec?"#25D366":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                      {sec&&<span style={{color:"#fff",fontSize:14,fontWeight:700,lineHeight:1}}>✓</span>}
-                    </div>
-                    <div style={{textAlign:"left"}}>
-                      <div style={{fontWeight:700,fontSize:14,color:sec?"#065F46":"#111827"}}>{k.isim}</div>
-                      <div style={{fontSize:11,color:"#9CA3AF"}}>{k.tel.replace("90","0").replace(/(\d{4})(\d{3})(\d{2})(\d{2})$/,"$1 $2 $3 $4")}</div>
-                    </div>
-                  </div>
-                  {WaIcon(sec?"#25D366":"#D1D5DB")}
-                </button>
-              );
-            })}
-            <div style={{display:"flex",gap:8,marginTop:12}}>
-              <button onClick={onClose} style={{flex:1,padding:"11px",borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:13,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>İptal</button>
-              <button onClick={function(){if(seciliSayisi>0)setStep("gonder");}} disabled={seciliSayisi===0}
-                style={{flex:2,padding:"11px",borderRadius:12,border:"none",background:seciliSayisi>0?"#25D366":"#F3F4F6",color:seciliSayisi>0?"#fff":"#9CA3AF",fontWeight:700,fontSize:13,cursor:seciliSayisi>0?"pointer":"not-allowed",WebkitAppearance:"none"}}>
-                {seciliSayisi>0?"İleri → ("+seciliSayisi+" kişi)":"Kişi seçin"}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-              <div style={{fontSize:28}}>📱</div>
-              <div>
-                <div style={{fontWeight:800,fontSize:16,color:"#1A1A2E"}}>Mesajları Gönder</div>
-                <div style={{fontSize:11,color:"#9CA3AF"}}>Butona tıkla → WhatsApp açılır → Gönder</div>
-              </div>
-            </div>
-            <div style={{background:"#ECFDF5",borderRadius:10,padding:"8px 12px",marginBottom:12,fontSize:12,color:"#065F46",border:"1px solid #6EE7B7"}}>
-              🐐 <b>{goat?goat.name+" ("+goat.earTag+")":record.goatEarTag}</b> — {record.condition}
-              {mediaList.length>0&&<span style={{color:"#059669",marginLeft:6}}>· {photos.length>0?photos.length+"📷 ":""}{videos.length>0?videos.length+"🎥 ":""}{audios.length>0?audios.length+"🎵":""}</span>}
-            </div>
-            {KISILER.filter(function(k){return secili[k.tel];}).map(function(k){
-              var gnd=!!gonderildi[k.tel];
-              return (
-                <button key={k.tel} onClick={function(){gonderBir(k.tel);}}
-                  style={{width:"100%",padding:"13px 16px",marginBottom:8,borderRadius:12,border:gnd?"2px solid #A7F3D0":"none",background:gnd?"#ECFDF5":"#25D366",color:gnd?"#059669":"#fff",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",WebkitAppearance:"none"}}>
-                  <span>{gnd?"✅":"📲"} {k.isim}</span>
-                  <span style={{fontSize:12,opacity:.85}}>{gnd?"Gönderildi":"WhatsApp'ta Aç →"}</span>
-                </button>
-              );
-            })}
-            <div style={{fontSize:11,color:"#9CA3AF",textAlign:"center",marginBottom:12}}>Butona tıkla → WhatsApp açılır → Gönder tuşuna bas</div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={function(){setStep("sec");setGonderildi({});}} style={{flex:1,padding:"10px",borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:12,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>← Geri</button>
-              <button onClick={onClose} style={{flex:2,padding:"10px",borderRadius:12,border:"none",background:"#374151",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",WebkitAppearance:"none"}}>✅ Tamamlandı</button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function AcilModal(props) {
   var show = props.show;
   var onClose = props.onClose;
@@ -1333,62 +1170,168 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
   const [status,    setStatus]    = useState(record.status);
   const [treatment, setTreatment] = useState(record.treatment||"");
   const [notes,     setNotes]     = useState(record.notes||"");
+  const [condition, setCondition] = useState(record.condition||"");
+  const [date,      setDate]      = useState(record.date||todayISO());
+  const [category,  setCategory]  = useState(record.category||"anac");
+  const [earTag,    setEarTag]    = useState(record.goatEarTag||goat?.earTag||"");
   const [saving,    setSaving]    = useState(false);
   const [showClose, setShowClose] = useState(false);
   const [closeReason, setCloseReason] = useState("");
   const [closeNote,   setCloseNote]   = useState("");
   const [tab, setTab] = useState("detay");
-  const [treatmentChanged, setTreatmentChanged] = useState(false);
-  const [markingDay, setMarkingDay] = useState(null);
+  const [markingDay,  setMarkingDay]  = useState(null);
+  const [newDayCount, setNewDayCount] = useState(0);
+  const [addingDays,  setAddingDays]  = useState(false);
+
+  // Medya
+  const [audioBlobs,  setAudioBlobs]  = useState([]);
+  const [photoFiles,  setPhotoFiles]  = useState([]);
+  const [videoFiles,  setVideoFiles]  = useState([]);
+  const [recording,   setRecording]   = useState(false);
+  const [recSecs,     setRecSecs]     = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const audioChunksRef = useRef([]);
+  const timerRef       = useRef(null);
+  const [uploading, setUploading] = useState(false);
 
   const recLogs = logs.filter(l=>l.healthRecordId===record.id).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
-  const recDays = treatmentDays.filter(d=>d.healthRecordId===record.id).sort((a,b)=>a.dayNumber-b.dayNumber);
+  const [recDays, setRecDays] = useState(treatmentDays.filter(d=>d.healthRecordId===record.id).sort((a,b)=>a.dayNumber-b.dayNumber));
   const today = todayISO();
+
+  const startAudio = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
+      const types = ["audio/mp4","audio/aac","audio/webm;codecs=opus","audio/webm"];
+      const mime = types.find(t=>{try{return MediaRecorder.isTypeSupported(t);}catch{return false;}})||"";
+      const mr = new MediaRecorder(stream, mime?{mimeType:mime}:{});
+      audioChunksRef.current = [];
+      mr.ondataavailable = e=>{if(e.data&&e.data.size>0)audioChunksRef.current.push(e.data);};
+      mr.onstop = ()=>{
+        const usedMime = mime||mr.mimeType||"audio/webm";
+        const ext = usedMime.includes("mp4")||usedMime.includes("aac")?"m4a":"webm";
+        const blob = new Blob(audioChunksRef.current,{type:usedMime});
+        blob._ext=ext; blob._mime=usedMime;
+        setAudioBlobs(p=>[...p,blob]);
+        stream.getTracks().forEach(t=>t.stop());
+        clearInterval(timerRef.current); setRecSecs(0);
+      };
+      mr.start(100); setMediaRecorder(mr); setRecording(true); setRecSecs(0);
+      timerRef.current = setInterval(()=>setRecSecs(s=>s+1),1000);
+    } catch(e) { alert(e.name==="NotAllowedError"?"Mikrofon izni gerekli.":"Ses kaydı başlatılamadı."); }
+  };
+  const stopAudio = ()=>{if(mediaRecorder){mediaRecorder.stop();setRecording(false);setMediaRecorder(null);}};
+
+  const uploadMedia = async () => {
+    const existing = record.mediaUrls ? record.mediaUrls.split(",").filter(Boolean) : [];
+    const urls = [...existing];
+    for(let i=0;i<audioBlobs.length;i++){
+      const b=audioBlobs[i];
+      const path=`${record.id}_audio_${Date.now()}_${i}.${b._ext||"webm"}`;
+      await sb.storage.from("health-audio").upload(path,b,{contentType:b._mime||"audio/webm"});
+      const {data:ud}=sb.storage.from("health-audio").getPublicUrl(path);
+      if(ud)urls.push(ud.publicUrl);
+    }
+    for(let i=0;i<photoFiles.length;i++){
+      const f=photoFiles[i];
+      const path=`${record.id}_photo_${Date.now()}_${i}.${f.name.split(".").pop()||"jpg"}`;
+      await sb.storage.from("health-photos").upload(path,f,{contentType:f.type});
+      const {data:ud}=sb.storage.from("health-photos").getPublicUrl(path);
+      if(ud)urls.push(ud.publicUrl);
+    }
+    for(let i=0;i<videoFiles.length;i++){
+      const f=videoFiles[i];
+      const path=`${record.id}_video_${Date.now()}_${i}.${f.name.split(".").pop()||"mp4"}`;
+      await sb.storage.from("health-videos").upload(path,f,{contentType:f.type});
+      const {data:ud}=sb.storage.from("health-videos").getPublicUrl(path);
+      if(ud)urls.push(ud.publicUrl);
+    }
+    return urls;
+  };
 
   const markDay = async (day) => {
     if(day.done) return;
     setMarkingDay(day.id);
     const now = new Date().toISOString();
-    await sb.from("treatment_days").update({done:true, done_by:currentUser, done_at:now}).eq("id",day.id);
-    onTreatmentDayUpdate({...day, done:true, doneBy:currentUser, doneAt:now});
+    await sb.from("treatment_days").update({done:true,done_by:currentUser,done_at:now}).eq("id",day.id);
+    const updated = {...day,done:true,doneBy:currentUser,doneAt:now};
+    onTreatmentDayUpdate(updated);
+    setRecDays(p=>p.map(d=>d.id===day.id?updated:d));
     setMarkingDay(null);
+  };
+
+  const addTreatmentDays = async () => {
+    if(newDayCount<=0) return;
+    setAddingDays(true);
+    const startNum = recDays.length+1;
+    const startDate = recDays.length>0 ? recDays[recDays.length-1].plannedDate : date;
+    const newDays = [];
+    for(let i=0;i<newDayCount;i++){
+      const d = new Date(startDate);
+      d.setDate(d.getDate()+(recDays.length>0?i+1:i));
+      const dayObj = {
+        id:"td"+Date.now()+i,
+        healthRecordId:record.id,
+        goatId:goat?.id||record.goatId,
+        breed:goat?.breed||record.breed,
+        dayNumber:startNum+i,
+        plannedDate:d.toISOString().slice(0,10),
+        done:false
+      };
+      newDays.push(dayObj);
+    }
+    await sb.from("treatment_days").insert(newDays.map(d=>({
+      id:d.id, health_record_id:d.healthRecordId, goat_id:d.goatId,
+      breed:d.breed, day_number:d.dayNumber, planned_date:d.plannedDate, done:false
+    })));
+    newDays.forEach(d=>onTreatmentDayUpdate(d));
+    setRecDays(p=>[...p,...newDays].sort((a,b)=>a.dayNumber-b.dayNumber));
+    setNewDayCount(0);
+    setAddingDays(false);
   };
 
   const save = async () => {
     setSaving(true);
+    setUploading(true);
+    const mediaUrls = await uploadMedia();
+    setUploading(false);
     const changes = [];
-    if (status!==record.status) changes.push(`Durum değişti: "${record.status}" → "${status}"`);
-    if (treatment!==record.treatment) changes.push(`Tedavi güncellendi`);
-    if (notes!==record.notes && notes) changes.push(`Not eklendi`);
-    const { error } = await sb.from("health_records").update({ status, treatment, notes }).eq("id", record.id);
-    if (!error) {
-      const detail = changes.length>0 ? changes.join(" · ") : "Kayıt güncellendi";
-      const gId = goat?.id || record.goatId;
-      const gBreed = goat?.breed || record.breed;
-      await addLog(record.id, gId, gBreed, "güncelleme", detail, currentUser);
-      const newLog = { id:"l"+Date.now(), healthRecordId:record.id, goatId:gId, breed:gBreed, action:"güncelleme", actionDetail:detail, userName:currentUser, createdAt:new Date().toISOString() };
-      onLogsUpdate(newLog);
-      onUpdate({ ...record, status, treatment, notes });
+    if(condition!==record.condition) changes.push(`Hastalık: "${record.condition}"→"${condition}"`);
+    if(status!==record.status) changes.push(`Durum: "${record.status}"→"${status}"`);
+    if(treatment!==record.treatment) changes.push("Tedavi güncellendi");
+    if(date!==record.date) changes.push("Tarih güncellendi");
+    if(earTag!==(record.goatEarTag||goat?.earTag||"")) changes.push("Küpe no güncellendi");
+    if(mediaUrls.length>(record.mediaUrls?record.mediaUrls.split(",").filter(Boolean).length:0)) changes.push("Medya eklendi");
+    const updateData = {status, treatment, notes, condition, date, category,
+      goat_ear_tag: earTag, media_urls: mediaUrls.join(",")};
+    const {error} = await sb.from("health_records").update(updateData).eq("id",record.id);
+    if(!error){
+      const detail = changes.length>0?changes.join(" · "):"Kayıt güncellendi";
+      const gId=goat?.id||record.goatId; const gBreed=goat?.breed||record.breed;
+      await addLog(record.id,gId,gBreed,"güncelleme",detail,currentUser);
+      onLogsUpdate({id:"l"+Date.now(),healthRecordId:record.id,goatId:gId,breed:gBreed,action:"güncelleme",actionDetail:detail,userName:currentUser,createdAt:new Date().toISOString()});
+      onUpdate({...record,status,treatment,notes,condition,date,category,goatEarTag:earTag,mediaUrls:mediaUrls.join(",")});
+      setAudioBlobs([]); setPhotoFiles([]); setVideoFiles([]);
     }
     setSaving(false);
   };
 
   const finalize = async () => {
-    if (!closeReason) return;
+    if(!closeReason) return;
     setSaving(true);
     const report = {
-      id:"r"+Date.now(), goatId:goat?.id||record.goatId, goatName:goat?.name||record.goatEarTag||"—", goatEarTag:goat?.earTag||record.goatEarTag||"—", breed:goat?.breed||record.breed,
+      id:"r"+Date.now(), goatId:goat?.id||record.goatId, goatName:goat?.name||record.goatEarTag||"—",
+      goatEarTag:goat?.earTag||record.goatEarTag||"—", breed:goat?.breed||record.breed,
       dateStarted:record.date, dateClosed:todayISO(), condition:record.condition,
       treatment, closeReason, closeNote, veterinarian:record.veterinarian, cost:"", createdByName:currentUser, notes
     };
-    await sb.from("health_records").update({ closed:true, status:closeReason==="Hayvan Öldü"?"öldü":"iyileşti" }).eq("id", record.id);
+    await sb.from("health_records").update({closed:true,status:closeReason==="Hayvan Öldü"?"öldü":"iyileşti"}).eq("id",record.id);
     await sb.from("reports").insert(fromReport(report));
-    await addLog(record.id, goat?.id||record.goatId, goat?.breed||record.breed, "sonlandırma", `Neden: ${closeReason}${closeNote?" — "+closeNote:""}`, currentUser);
-    onFinalize(record.id, report);
+    await addLog(record.id,goat?.id||record.goatId,goat?.breed||record.breed,"sonlandırma",`Neden: ${closeReason}${closeNote?" — "+closeNote:""}`,currentUser);
+    onFinalize(record.id,report);
     setSaving(false);
   };
 
-  if (showClose) return <ModalWrap title="📋 Kaydı Sonlandır" onClose={()=>setShowClose(false)}>
+  if(showClose) return <ModalWrap title="📋 Kaydı Sonlandır" onClose={()=>setShowClose(false)}>
     <div style={{background:"rgba(var(--primary-rgb),.08)",border:"1px solid #F0D49A",borderRadius:10,padding:10,fontSize:12,color:"#E8975A"}}>
       ⚠️ Bu kayıt sonlandırılacak ve rapor bölümüne taşınacak.
     </div>
@@ -1405,31 +1348,80 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
     </div>
   </ModalWrap>;
 
-  return <ModalWrap title={`🩺 ${record.condition}`} onClose={onClose}>
-    <div style={{background:"#F5F5F5",borderRadius:10,padding:10,fontSize:12}}>
-      {goat ? <><b>{goat.name}</b> · 🏷 {goat.earTag}</> : <><b>🏷 {record.goatEarTag||"—"}</b></>} · Başlangıç: {fmt(record.date)}
-    </div>
-    <div style={{display:"flex",background:"#F3F4F6",borderRadius:8,overflow:"hidden",marginTop:4}}>
-      {[["detay","✏️ Güncelle"],["takvim","📅 Takvim"],["gecmis","📋 Geçmiş"]].map(([k,l])=>(
-        <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"8px 0",border:"none",fontWeight:700,fontSize:12,cursor:"pointer",background:tab===k?"#4A7C3F":"transparent",color:tab===k?"#fff":"#8c8c7e"}}>{l}</button>
+  return <ModalWrap title="🩺 Sağlık Kaydı Güncelle" onClose={onClose}>
+    <div style={{display:"flex",background:"#F3F4F6",borderRadius:8,overflow:"hidden",marginBottom:4}}>
+      {[["detay","✏️ Detaylar"],["takvim","📅 Takvim"],["gecmis","📋 Geçmiş"]].map(([k,l])=>(
+        <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"8px 0",border:"none",fontWeight:700,fontSize:11,cursor:"pointer",background:tab===k?"#4A7C3F":"transparent",color:tab===k?"#fff":"#8c8c7e"}}>{l}</button>
       ))}
     </div>
 
     {tab==="detay" && <>
+      <FL>Küpe No</FL>
+      <EarTagInput value={earTag} onChange={setEarTag}/>
+
+      <FL>Hastalık / Durum *</FL>
+      <VoiceInput value={condition} onChange={setCondition} placeholder="Hastalık veya durum adı..."/>
+
+      <FL>Kategori</FL>
+      <select value={category} onChange={e=>setCategory(e.target.value)} style={S.select}>
+        {["anac","oglak"].map(c=><option key={c} value={c}>{c==="anac"?"🐐 Anaç":"🍼 Oğlak"}</option>)}
+      </select>
+
+      <FL>Tarih</FL>
+      <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={S.input}/>
+
       <FL>Durum</FL>
       <StatusPicker value={status} onChange={setStatus}/>
+
       <FL>Tedavi / Yapılan İşlem</FL>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,padding:"6px 10px",background:"#E8F5E9",borderRadius:8,border:"1px solid #D4E8C2"}}>
-        <input type="checkbox" id="sameTreatment" checked={!treatmentChanged}
-          onChange={e=>setTreatmentChanged(!e.target.checked)}
-          style={{width:16,height:16,cursor:"pointer"}}/>
-        <label htmlFor="sameTreatment" style={{fontSize:12,color:"#10B981",fontWeight:600,cursor:"pointer"}}>
-          Aynı tedavi devam ediyor (değişiklik yok)
-        </label>
-      </div>
-      <VoiceInput value={treatment} onChange={v=>{setTreatment(v);setTreatmentChanged(true);}} placeholder="İlaç, doz, işlem..." multiline rows={3}/>
+      <VoiceInput value={treatment} onChange={setTreatment} placeholder="İlaç, doz, işlem..." multiline rows={3}/>
+
       <FL>Notlar</FL>
       <VoiceInput value={notes} onChange={setNotes} placeholder="Not ekle..." multiline rows={2}/>
+
+      <FL>Medya Ekle</FL>
+      <div style={{display:"flex",gap:6,marginBottom:6}}>
+        {!recording
+          ? <button type="button" onClick={startAudio}
+              style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"rgba(239,68,68,.1)",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+              🎙️ Ses Kaydet
+            </button>
+          : <button type="button" onClick={stopAudio}
+              style={{flex:1,padding:"9px 0",borderRadius:10,border:"none",background:"#EF4444",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+              ⏹ Durdur ({recSecs}s)
+            </button>
+        }
+        <label style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #0EA5E9",background:"rgba(14,165,233,.1)",color:"#0EA5E9",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"center",display:"block"}}>
+          📷 Fotoğraf
+          <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>setPhotoFiles(p=>[...p,...Array.from(e.target.files||[])])}/>
+        </label>
+        <label style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #8B5CF6",background:"rgba(139,92,246,.1)",color:"#8B5CF6",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"center",display:"block"}}>
+          🎥 Video
+          <input type="file" accept="video/*" style={{display:"none"}} onChange={e=>setVideoFiles(p=>[...p,...Array.from(e.target.files||[])])}/>
+        </label>
+      </div>
+      {audioBlobs.length>0&&<div style={{marginBottom:6}}>{audioBlobs.map((b,i)=>(
+        <div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,padding:"5px 8px",background:"#FEF3C7",borderRadius:8}}>
+          <audio controls src={URL.createObjectURL(b)} style={{flex:1,height:32}}/>
+          <button onClick={()=>setAudioBlobs(p=>p.filter((_,j)=>j!==i))} style={{background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:20,height:20,fontSize:12,cursor:"pointer",padding:0,lineHeight:"20px",textAlign:"center"}}>×</button>
+        </div>
+      ))}</div>}
+      {(photoFiles.length>0||videoFiles.length>0)&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:6}}>
+        {photoFiles.map((f,i)=>(
+          <div key={"p"+i} style={{position:"relative"}}>
+            <img src={URL.createObjectURL(f)} style={{width:56,height:56,objectFit:"cover",borderRadius:8,border:"1.5px solid #E5E7EB"}}/>
+            <button onClick={()=>setPhotoFiles(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:10,cursor:"pointer",padding:0,lineHeight:"18px",textAlign:"center"}}>×</button>
+          </div>
+        ))}
+        {videoFiles.map((f,i)=>(
+          <div key={"v"+i} style={{position:"relative",width:56,height:56,borderRadius:8,border:"1.5px solid #C4B5FD",background:"#EDE9FE",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <span style={{fontSize:20}}>▶️</span>
+            <button onClick={()=>setVideoFiles(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:10,cursor:"pointer",padding:0,lineHeight:"18px",textAlign:"center"}}>×</button>
+          </div>
+        ))}
+      </div>}
+      {uploading&&<div style={{fontSize:11,color:"#8B5CF6",marginBottom:4}}>⏳ Yükleniyor...</div>}
+
       <div style={{display:"flex",gap:8,marginTop:4}}>
         <button onClick={()=>setShowClose(true)} style={{...S.btnSm,background:"rgba(239,68,68,.1)",color:"#EF4444",padding:"10px 14px",fontSize:12}}>📋 Sonlandır</button>
         <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:1,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Güncelle"}</button>
@@ -1438,76 +1430,65 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
 
     {tab==="takvim" && (
       <div>
-        {/* Tedavi notu özeti */}
-        {record.treatment && (
-          <div style={{background:"#E8F5E9",border:"1px solid #D4E8C2",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#10B981",marginBottom:2}}>💊 Tedavi</div>
-            <div style={{fontSize:12,color:"#1F2937"}}>{record.treatment}</div>
+        {/* Yeni gün ekle */}
+        <div style={{background:"#F0F9FF",border:"1px solid #BAE6FD",borderRadius:10,padding:10,marginBottom:12}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#0EA5E9",marginBottom:8}}>📅 Takvime Gün Ekle</div>
+          <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
+            {[1,2,3,5,7,10,14].map(n=>(
+              <button key={n} onClick={()=>setNewDayCount(newDayCount===n?0:n)}
+                style={{padding:"6px 10px",borderRadius:8,border:"1.5px solid",borderColor:newDayCount===n?"#0EA5E9":"#E5E7EB",background:newDayCount===n?"#0EA5E9":"#fff",color:newDayCount===n?"#fff":"#374151",fontWeight:700,fontSize:12,cursor:"pointer",WebkitAppearance:"none"}}>
+                {n}
+              </button>
+            ))}
           </div>
-        )}
-        {record.notes && (
-          <div style={{background:"#F5F5F5",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#6B7280",marginBottom:2}}>📝 Not</div>
-            <div style={{fontSize:12,color:"#6B7280"}}>{record.notes}</div>
-          </div>
-        )}
-        {recDays.length===0 && (
-          <div style={{textAlign:"center",padding:20,color:"#9CA3AF",fontSize:13}}>
-            <div style={{fontSize:32,marginBottom:8}}>📅</div>
-            Bu kayıt için tedavi takvimi oluşturulmamış.
-          </div>
-        )}
+          {newDayCount>0&&(
+            <button onClick={addTreatmentDays} disabled={addingDays}
+              style={{...S.btnPrimary,width:"100%",padding:"10px",fontSize:13,opacity:addingDays?.6:1,background:"#0EA5E9"}}>
+              {addingDays?"Ekleniyor...":"➕ "+newDayCount+" Gün Ekle ("+(recDays.length+1)+"."+" - "+(recDays.length+newDayCount)+". günler)"}
+            </button>
+          )}
+        </div>
+
+        {recDays.length===0&&<div style={{textAlign:"center",padding:20,color:"#9CA3AF",fontSize:13}}>
+          <div style={{fontSize:32,marginBottom:8}}>📅</div>
+          Henüz takvim günü yok. Yukarıdan ekleyin.
+        </div>}
+
         {recDays.map(day=>{
-          const isPast = day.plannedDate < today;
-          const isToday = day.plannedDate === today;
-          const isFuture = day.plannedDate > today;
-          const canMark = (isToday || isPast) && !day.done;
+          const isPast=day.plannedDate<today; const isToday=day.plannedDate===today; const isFuture=day.plannedDate>today;
+          const canMark=(isToday||isPast)&&!day.done;
           return (
-            <div key={day.id} style={{
-              borderRadius:12, padding:12, marginBottom:8,
-              background: day.done ? "#E3F0DC" : isToday ? "#EEF6FC" : isFuture ? "#F9F9F6" : "#FFF0EE",
-              border: `2px solid ${day.done?"#4A7C3F":isToday?"#2873A8":isPast?"#F5C0BA":"#E5E7EB"}`
-            }}>
+            <div key={day.id} style={{borderRadius:12,padding:12,marginBottom:8,
+              background:day.done?"#E3F0DC":isToday?"#EEF6FC":isFuture?"#F9F9F6":"#FFF0EE",
+              border:`2px solid ${day.done?"#4A7C3F":isToday?"#2873A8":isPast?"#F5C0BA":"#E5E7EB"}`}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:800,fontSize:15,color:day.done?"#3D5A25":isToday?"#2873A8":isPast?"#BE3B31":"#8c8c7e"}}>
                     {day.done?"✅":isToday?"🔵":isPast?"⚠️":"⏳"} {day.dayNumber}. Gün
                   </div>
                   <div style={{fontSize:11,color:"#9CA3AF",marginTop:2}}>
-                    📅 {fmt(day.plannedDate)}
-                    {isToday && <span style={{color:"#0EA5E9",fontWeight:700}}> — Bugün</span>}
+                    📅 {fmt(day.plannedDate)}{isToday&&<span style={{color:"#0EA5E9",fontWeight:700}}> — Bugün</span>}
                   </div>
-                  {day.done && day.doneBy && (
-                    <div style={{fontSize:11,color:"#10B981",fontWeight:700,marginTop:4,background:"rgba(255,255,255,.7)",padding:"4px 8px",borderRadius:6,display:"inline-block"}}>
-                      👤 {day.doneBy} · {fmtDT(day.doneAt)}
-                    </div>
-                  )}
-                  {isPast && !day.done && (
-                    <div style={{fontSize:11,color:"#EF4444",fontWeight:600,marginTop:2}}>❌ Henüz yapılmadı</div>
-                  )}
-                  {isFuture && (
-                    <div style={{fontSize:11,color:"#6B7280",marginTop:2}}>⏳ {daysUntil(day.plannedDate)} gün sonra</div>
-                  )}
+                  {day.done&&day.doneBy&&<div style={{fontSize:11,color:"#10B981",fontWeight:700,marginTop:4,background:"rgba(255,255,255,.7)",padding:"4px 8px",borderRadius:6,display:"inline-block"}}>👤 {day.doneBy} · {fmtDT(day.doneAt)}</div>}
+                  {isPast&&!day.done&&<div style={{fontSize:11,color:"#EF4444",fontWeight:600,marginTop:2}}>❌ Henüz yapılmadı</div>}
+                  {isFuture&&<div style={{fontSize:11,color:"#6B7280",marginTop:2}}>⏳ {daysUntil(day.plannedDate)} gün sonra</div>}
                 </div>
-                {canMark && (
-                  <button onClick={()=>markDay(day)} disabled={markingDay===day.id}
-                    style={{...S.btnPrimary,fontSize:12,padding:"10px 16px",opacity:markingDay===day.id?.6:1,borderRadius:10,marginLeft:8,flexShrink:0}}>
-                    {markingDay===day.id?"⏳":"✅ Yapıldı"}
-                  </button>
-                )}
+                {canMark&&<button onClick={()=>markDay(day)} disabled={markingDay===day.id}
+                  style={{...S.btnPrimary,fontSize:12,padding:"10px 16px",opacity:markingDay===day.id?.6:1,borderRadius:10,marginLeft:8,flexShrink:0}}>
+                  {markingDay===day.id?"⏳":"✅ Yapıldı"}
+                </button>}
               </div>
             </div>
           );
         })}
-        {recDays.length>0 && (
-          <div style={{background:"#F5F5F5",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#6B7280",marginTop:4}}>
-            {recDays.filter(d=>d.done).length}/{recDays.length} gün tamamlandı
-          </div>
-        )}
+        {recDays.length>0&&<div style={{background:"#F5F5F5",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#6B7280",marginTop:4}}>
+          {recDays.filter(d=>d.done).length}/{recDays.length} gün tamamlandı
+        </div>}
       </div>
     )}
-    {tab==="gecmis" && <div>
-      {recLogs.length===0 && <Empty text="Henüz işlem geçmişi yok"/>}
+
+    {tab==="gecmis"&&<div>
+      {recLogs.length===0&&<Empty text="Henüz işlem geçmişi yok"/>}
       {recLogs.map((l,i)=>(
         <div key={l.id} style={{display:"flex",gap:8,padding:"10px 0",borderBottom:i<recLogs.length-1?"1px solid #F2F0EA":"none"}}>
           <div style={{width:32,height:32,borderRadius:"50%",background:l.action==="sonlandırma"?"#FFF0EE":l.action==="açılış"?"#E3F0DC":"#EEF6FC",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>
@@ -1729,76 +1710,59 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
   const [notes,setNotes]=useState("");
   const [treatmentDays,setTreatmentDays]=useState(0);
   const [audioBlobs,setAudioBlobs]=useState([]);
-  const [photoFiles,setPhotoFiles]=useState([]);
-  const [videoFiles,setVideoFiles]=useState([]);
   const [uploading,setUploading]=useState(false);
   const [recording,setRecording]=useState(false);
-  const [recSecs,setRecSecs]=useState(0);
   const [mediaRecorder,setMediaRecorder]=useState(null);
-  const audioChunksRef=useRef([]);
-  const timerRef=useRef(null);
+  const audioChunksRef = useRef([]);
   const [err,setErr]=useState("");
   const [saving,setSaving]=useState(false);
 
-  const startAudioRecording=async()=>{
-    try{
-      const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
-      const types=["audio/mp4","audio/aac","audio/webm;codecs=opus","audio/webm","audio/ogg"];
-      const mime=types.find(t=>{try{return MediaRecorder.isTypeSupported(t);}catch{return false;}})||"";
-      const mr=new MediaRecorder(stream,mime?{mimeType:mime}:{});
-      audioChunksRef.current=[];
-      mr.ondataavailable=e=>{if(e.data&&e.data.size>0)audioChunksRef.current.push(e.data);};
-      mr.onstop=()=>{
-        const usedMime=mime||mr.mimeType||"audio/webm";
-        const ext=usedMime.includes("mp4")||usedMime.includes("aac")?"m4a":"webm";
-        const blob=new Blob(audioChunksRef.current,{type:usedMime});
-        blob._ext=ext; blob._mime=usedMime;
-        setAudioBlobs(p=>[...p,blob]);
-        stream.getTracks().forEach(t=>t.stop());
-        clearInterval(timerRef.current);
-        setRecSecs(0);
-      };
-      mr.start(100);
-      setMediaRecorder(mr); setRecording(true); setRecSecs(0);
-      timerRef.current=setInterval(()=>setRecSecs(s=>s+1),1000);
-    }catch(e){
-      setRecording(false);
-      setErr(e.name==="NotAllowedError"?"Mikrofon izni verilmedi. Ayarlardan izin verin.":"Ses kaydı başlatılamadı: "+(e.message||e.name));
-    }
-  };
-  const stopAudioRecording=()=>{if(mediaRecorder){mediaRecorder.stop();setRecording(false);setMediaRecorder(null);}};
 
-  const uploadAudio=async(recId)=>{
-    const urls=[];
+  const startAudioRecording = async () => {
+    try {
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        alert("Bu cihaz ses kaydını desteklemiyor.");
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true, video:false});
+      // iOS/Safari uyumlu format seç
+      const mimeType = MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4"
+                     : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm"
+                     : "";
+      const mr = new MediaRecorder(stream, mimeType ? {mimeType} : {});
+      audioChunksRef.current = [];
+      mr.ondataavailable = e => { if(e.data && e.data.size>0) audioChunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, {type: mimeType||"audio/webm"});
+        setAudioBlobs(p=>[...p, blob]);
+        stream.getTracks().forEach(t=>t.stop());
+      };
+      mr.start(1000); // Her saniye veri topla
+      setMediaRecorder(mr);
+      setRecording(true);
+    } catch(e) {
+      setRecording(false);
+      if(e.name==="NotAllowedError"||e.name==="PermissionDeniedError") setErr("Mikrofon izni verilmedi. Tarayıcı ayarlarından izin verin.");
+      else if(e.name==="NotFoundError") setErr("Mikrofon bulunamadı.");
+      else if(e.name==="NotSupportedError") setErr("Bu tarayıcı ses kaydını desteklemiyor. Ses dosyası yükleyin.");
+      else setErr("Ses hatası: " + (e.message||e.name));
+    }
+  };
+
+  const stopAudioRecording = () => {
+    if(mediaRecorder) { mediaRecorder.stop(); setRecording(false); setMediaRecorder(null); }
+  };
+
+  const uploadAudio = async (recId) => {
+    setUploading(true);
+    const urls = [];
     for(let i=0;i<audioBlobs.length;i++){
-      const b=audioBlobs[i];
-      const path=`${recId}_audio_${Date.now()}_${i}.${b._ext||"webm"}`;
-      await sb.storage.from("health-audio").upload(path,b,{contentType:b._mime||"audio/webm"});
-      const {data:ud}=sb.storage.from("health-audio").getPublicUrl(path);
-      if(ud)urls.push(ud.publicUrl);
+      const path = `${recId}_audio_${Date.now()}_${i}.webm`;
+      await sb.storage.from("health-audio").upload(path, audioBlobs[i], {contentType:"audio/webm"});
+      const {data:ud} = sb.storage.from("health-audio").getPublicUrl(path);
+      if(ud) urls.push(ud.publicUrl);
     }
-    return urls;
-  };
-  const uploadHealthPhotos=async(recId)=>{
-    const urls=[];
-    for(let i=0;i<photoFiles.length;i++){
-      const f=photoFiles[i];
-      const path=`${recId}_photo_${Date.now()}_${i}.${f.name.split(".").pop()||"jpg"}`;
-      await sb.storage.from("health-photos").upload(path,f,{contentType:f.type});
-      const {data:ud}=sb.storage.from("health-photos").getPublicUrl(path);
-      if(ud)urls.push(ud.publicUrl);
-    }
-    return urls;
-  };
-  const uploadHealthVideos=async(recId)=>{
-    const urls=[];
-    for(let i=0;i<videoFiles.length;i++){
-      const f=videoFiles[i];
-      const path=`${recId}_video_${Date.now()}_${i}.${f.name.split(".").pop()||"mp4"}`;
-      await sb.storage.from("health-videos").upload(path,f,{contentType:f.type});
-      const {data:ud}=sb.storage.from("health-videos").getPublicUrl(path);
-      if(ud)urls.push(ud.publicUrl);
-    }
+    setUploading(false);
     return urls;
   };
 
@@ -1815,12 +1779,11 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     const { error } = await sb.from("health_records").insert({...fromHealth(rec), goat_ear_tag:earTag.trim()});
     if(error){setErr("Kayıt hatası: "+error.message);setSaving(false);return;}
     await addLog(rec.id, goatId, breed, "açılış", `${cond} — ${currentUser} tarafından açıldı`, currentUser);
-    const mediaUrls=[];
-    setUploading(true);
-    if(audioBlobs.length>0){const au=await uploadAudio(rec.id);if(au)mediaUrls.push(...au);}
-    if(photoFiles.length>0){const pu=await uploadHealthPhotos(rec.id);if(pu)mediaUrls.push(...pu);}
-    if(videoFiles.length>0){const vu=await uploadHealthVideos(rec.id);if(vu)mediaUrls.push(...vu);}
-    setUploading(false);
+    const mediaUrls = [];
+    if(audioBlobs.length>0){
+      const audioUrls = await uploadAudio(rec.id);
+      if(audioUrls) mediaUrls.push(...audioUrls);
+    }
     if(mediaUrls.length>0){
       await sb.from("health_records").update({media_urls: mediaUrls.join(",")}).eq("id", rec.id);
       rec.mediaUrls = mediaUrls.join(",");
@@ -1889,51 +1852,38 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     <StatusPicker value={status} onChange={setStatus}/>
     <FL>Notlar</FL>
     <VoiceInput value={notes} onChange={setNotes} placeholder="Notlar..." multiline rows={2}/>
-    <FL>Medya</FL>
-    <div style={{display:"flex",gap:6,marginBottom:6}}>
-      {!recording
-        ? <button type="button" onClick={startAudioRecording}
-            style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"rgba(239,68,68,.1)",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>
-            🎙️ Ses Kaydet
-          </button>
-        : <button type="button" onClick={stopAudioRecording}
-            style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"#EF4444",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-            <span style={{width:8,height:8,borderRadius:"50%",background:"#fff",display:"inline-block",animation:"pulse 1s infinite"}}/>
-            ⏹ Durdur ({recSecs}s)
-          </button>
-      }
-      <label style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #0EA5E9",background:"rgba(14,165,233,.1)",color:"#0EA5E9",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"center",display:"block"}}>
-        📷 Fotoğraf
-        <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>setPhotoFiles(p=>[...p,...Array.from(e.target.files||[])])}/>
-      </label>
-      <label style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #8B5CF6",background:"rgba(139,92,246,.1)",color:"#8B5CF6",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"center",display:"block"}}>
-        🎥 Video
-        <input type="file" accept="video/*" style={{display:"none"}} onChange={e=>setVideoFiles(p=>[...p,...Array.from(e.target.files||[])])}/>
-      </label>
+        {/* Ses Kaydı */}
+    <div style={{display:"flex",gap:6,marginBottom:4}}>
+      {typeof MediaRecorder !== "undefined" ? (
+        !recording
+          ? <button type="button" onClick={startAudioRecording}
+              style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"rgba(239,68,68,.1)",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+              🎙️ Ses Kaydı Başlat
+            </button>
+          : <button type="button" onClick={stopAudioRecording}
+              style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"#EF4444",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+              ⏹ Kaydı Durdur
+            </button>
+      ) : (
+        <label style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"rgba(239,68,68,.1)",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"center",display:"block"}}>
+          🎙️ Ses Dosyası Seç
+          <input type="file" accept="audio/*" style={{display:"none"}} onChange={e=>{
+            const files = Array.from(e.target.files||[]);
+            files.forEach(f=>{ const reader = new FileReader(); reader.onload=ev=>{ const blob=new Blob([ev.target.result],{type:f.type}); setAudioBlobs(p=>[...p,blob]); }; reader.readAsArrayBuffer(f); });
+          }}/>
+        </label>
+      )}
     </div>
-    {audioBlobs.length>0&&<div style={{marginBottom:6}}>
+    {audioBlobs.length>0&&<div style={{marginBottom:4}}>
       {audioBlobs.map((blob,i)=>(
-        <div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,padding:"5px 8px",background:"#FEF3C7",borderRadius:8}}>
+        <div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,padding:"6px 8px",background:"#FEF3C7",borderRadius:8}}>
           <audio controls src={URL.createObjectURL(blob)} style={{flex:1,height:32}}/>
           <button onClick={()=>setAudioBlobs(p=>p.filter((_,j)=>j!==i))} style={{background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:20,height:20,fontSize:12,cursor:"pointer",padding:0,lineHeight:"20px",textAlign:"center"}}>×</button>
         </div>
       ))}
     </div>}
-    {(photoFiles.length>0||videoFiles.length>0)&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:6}}>
-      {photoFiles.map((f,i)=>(
-        <div key={"p"+i} style={{position:"relative"}}>
-          <img src={URL.createObjectURL(f)} style={{width:56,height:56,objectFit:"cover",borderRadius:8,border:"1.5px solid #E5E7EB"}}/>
-          <button onClick={()=>setPhotoFiles(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:10,cursor:"pointer",padding:0,lineHeight:"18px",textAlign:"center"}}>×</button>
-        </div>
-      ))}
-      {videoFiles.map((f,i)=>(
-        <div key={"v"+i} style={{position:"relative",width:56,height:56,borderRadius:8,border:"1.5px solid #C4B5FD",background:"#EDE9FE",display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <span style={{fontSize:20}}>▶️</span>
-          <button onClick={()=>setVideoFiles(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:10,cursor:"pointer",padding:0,lineHeight:"18px",textAlign:"center"}}>×</button>
-        </div>
-      ))}
-    </div>}
-    {uploading&&<div style={{fontSize:11,color:"var(--primary,#8B5CF6)",marginBottom:4}}>⏳ Yükleniyor...</div>}
+
+    {uploading&&<div style={{fontSize:11,color:"var(--primary,#8B5CF6)",marginBottom:4}}>⏳ Medya yükleniyor...</div>}
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
       <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
@@ -4498,7 +4448,6 @@ function App(){
   const [bulkAddModal,setBulkAddModal]=useState(null);
   const [archiveConfirm,setArchiveConfirm]=useState(null);
   const [selHealthRec,setSelHealthRec]=useState(null);
-  const [saglikGonderRec,setSaglikGonderRec]=useState(null);
 
   useEffect(()=>{
     if(showLogin) return;
@@ -5093,7 +5042,6 @@ function App(){
       {vModal&&!isGuest&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
       {addGoatModal&&!isGuest&&<AddGoatModal breed={BREEDS.find(b=>b.id===(addGoatModal.breedId||addGoatModal))} defaultCategory={addGoatModal.defaultCategory||"anac"} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser}/>}
       {bulkAddModal&&!isGuest&&<BulkAddGoatModal breed={BREEDS.find(b=>b.id===bulkAddModal.breedId)} defaultCategory={bulkAddModal.defaultCategory||"anac"} onSave={saveBulkGoats} onClose={()=>setBulkAddModal(null)} currentUser={currentUser}/>}
-      {saglikGonderRec&&<SaglikGonderModal record={saglikGonderRec} goat={goats.find(g=>g.id===saglikGonderRec.goatId)||null} onClose={()=>setSaglikGonderRec(null)}/>}
       {selHealthRec&&<HealthDetailModal
         record={selHealthRec}
         goat={goats.find(g=>g.id===selHealthRec.goatId)||null}
@@ -5404,45 +5352,42 @@ function App(){
                         const hLogs=logs.filter(function(l){return l.healthRecordId===h.id;}).sort(function(a,b){return new Date(b.createdAt)-new Date(a.createdAt);});
                         const lastLog=hLogs[0];
                         return (
-                          <div key={h.id} style={{...S.card,marginBottom:5,overflow:"hidden",border:`1.5px solid ${breed.color}22`,borderLeft:`3px solid ${breed.color}`}}>
-                            <div style={{padding:12,cursor:"pointer"}} onClick={()=>setSelHealthRec(h)}>
-                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
-                                <div style={{flex:1}}>
-                                  <div style={{fontSize:11,fontWeight:700,color:breed.color,marginBottom:2}}>
-                                    {breed.emoji} {g?.name} <span style={{color:"#1A1A2E",fontWeight:900,fontFamily:"monospace"}}>({g?.earTag})</span>
+                          <div key={h.id} style={{...S.card,padding:12,marginBottom:5,cursor:"pointer",border:`1.5px solid ${breed.color}22`,borderLeft:`3px solid ${breed.color}`}}
+                            onClick={()=>setSelHealthRec(h)}>
+                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                              <div style={{flex:1}}>
+                                <div style={{fontSize:11,fontWeight:700,color:breed.color,marginBottom:2}}>
+                                  {breed.emoji} {g?.name} <span style={{color:"#9CA3AF",fontWeight:400}}>({g?.earTag})</span>
+                                </div>
+                                <div style={{fontWeight:700,fontSize:14,color:"#1A1A2E"}}>{h.condition}</div>
+                                {h.treatment&&<div style={{fontSize:12,color:"#1F2937",marginTop:3}}>💊 {h.treatment}</div>}
+                                {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
+
+                                <div style={{marginTop:6,background:"#F8F9FA",borderRadius:"0 8px 8px 0",padding:"5px 9px",fontSize:11,borderLeft:`3px solid ${breed.color}`}}>
+                                  <div style={{color:"#6B7280"}}>
+                                    <span style={{fontWeight:700,color:"#374151"}}>👤 Açan:</span> {h.createdByName||"—"} · 📅 {fmt(h.date)}
                                   </div>
-                                  <div style={{fontWeight:700,fontSize:14,color:"#1A1A2E"}}>{h.condition}</div>
-                                  {h.treatment&&<div style={{fontSize:12,color:"#1F2937",marginTop:3}}>💊 {h.treatment}</div>}
-                                  {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
-                                  <div style={{marginTop:6,background:"#F8F9FA",borderRadius:"0 8px 8px 0",padding:"5px 9px",fontSize:11,borderLeft:`3px solid ${breed.color}`}}>
-                                    <div style={{color:"#6B7280"}}>
-                                      <span style={{fontWeight:700,color:"#374151"}}>👤 Açan:</span> {h.createdByName||"—"} · {fmtDT(h.date+"T00:00:00")}
-                                    </div>
-                                    {lastLog&&(
-                                      <div style={{color:"#6B7280",marginTop:2}}>
-                                        <span style={{fontWeight:700,color:"#374151"}}>🩺 Son işlem:</span> {lastLog.userName||"—"} · {fmtDT(lastLog.createdAt)}
-                                      </div>
-                                    )}
-                                  </div>
-                                  {hDays.length>0&&(
-                                    <div style={{marginTop:5,display:"flex",gap:4,alignItems:"center"}}>
-                                      <span style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",padding:"2px 8px",borderRadius:8,fontWeight:700}}>
-                                        📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
-                                      </span>
+                                  {lastLog&&(
+                                    <div style={{color:"#6B7280",marginTop:2}}>
+                                      <span style={{fontWeight:700,color:"#374151"}}>🩺 Son işlem:</span> {lastLog.userName||"—"} · {fmtDT(lastLog.createdAt)}
                                     </div>
                                   )}
-                                  {h.mediaUrls&&h.mediaUrls.trim()&&<MediaCard urls={h.mediaUrls}/>}
-                                  {h.mediaUrls&&h.mediaUrls.trim()&&<AudioToggle urls={h.mediaUrls}/>}
                                 </div>
+
+                                {hDays.length>0&&(
+                                  <div style={{marginTop:5,display:"flex",gap:4,alignItems:"center"}}>
+                                    <span style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",padding:"2px 8px",borderRadius:8,fontWeight:700}}>
+                                      📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
+                                    </span>
+                                  </div>
+                                )}
+                                {h.mediaUrls&&h.mediaUrls.trim()&&(
+                                  <AudioToggle urls={h.mediaUrls}/>
+                                )}
+                              </div>
+                              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
                                 <StatusBadge status={h.status}/>
                               </div>
-                            </div>
-                            <div style={{display:"flex",borderTop:"1px solid #F0F0F0"}} onClick={e=>e.stopPropagation()}>
-                              <button onClick={()=>setSelHealthRec(h)} style={{flex:1,padding:"9px 0",border:"none",background:"transparent",fontSize:12,fontWeight:600,color:"#6B7280",cursor:"pointer",borderRight:"1px solid #F0F0F0"}}>✏️ Güncelle</button>
-                              <button onClick={()=>setSaglikGonderRec(h)} style={{flex:1,padding:"9px 0",border:"none",background:"transparent",fontSize:12,fontWeight:600,color:"#25D366",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.843L0 24l6.343-1.505A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.88 0-3.645-.5-5.178-1.378l-.37-.22-3.77.895.928-3.68-.242-.38A9.958 9.958 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-                                Gönder
-                              </button>
                             </div>
                           </div>
                         );
@@ -5502,43 +5447,26 @@ function App(){
                           const doneDays=hDays.filter(d=>d.done).length;
                           const lastLog=logs.filter(l=>l.healthRecordId===h.id).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt))[0];
                           return (
-                            <div key={h.id} style={{...S.card,marginBottom:5,overflow:"hidden",borderLeft:`3px solid ${b.color}`}}>
-                              <div style={{padding:"10px 12px",cursor:"pointer"}} onClick={()=>setSelHealthRec(h)}>
-                                <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
-                                  <div style={{flex:1}}>
-                                    <div style={{fontSize:12,fontWeight:700,color:b.color,marginBottom:2}}>
-                                      {g?.name?`${g.name} `:""}<span style={{color:"#1A1A2E",fontWeight:900,fontFamily:"monospace"}}>({h.goatEarTag||g?.earTag||"—"})</span>
-                                    </div>
-                                    <div style={{fontWeight:700,fontSize:13,color:"#1A1A2E"}}>{h.condition}</div>
-                                    {h.treatment&&<div style={{fontSize:11,color:"#1F2937",marginTop:3}}>💊 {h.treatment}</div>}
-                                    {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
-                                    <div style={{marginTop:6,background:"#F8F9FA",borderRadius:"0 8px 8px 0",padding:"5px 9px",fontSize:11,borderLeft:`3px solid ${b.color}`}}>
-                                      <div style={{color:"#6B7280"}}>
-                                        <span style={{fontWeight:700,color:"#374151"}}>👤 Açan:</span> {h.createdByName||"—"} · {fmtDT(h.date+"T00:00:00")}
-                                      </div>
-                                      {lastLog&&(
-                                        <div style={{color:"#6B7280",marginTop:2}}>
-                                          <span style={{fontWeight:700,color:"#374151"}}>🩺 Son işlem:</span> {lastLog.userName||"—"} · {fmtDT(lastLog.createdAt)}
-                                        </div>
-                                      )}
-                                    </div>
-                                    {hDays.length>0&&(
-                                      <div style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
-                                        📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
-                                      </div>
-                                    )}
-                                    {h.mediaUrls&&h.mediaUrls.trim()&&<MediaCard urls={h.mediaUrls}/>}
-                                    {h.mediaUrls&&h.mediaUrls.trim()&&<AudioToggle urls={h.mediaUrls}/>}
+                            <div key={h.id} style={{...S.card,padding:"10px 12px",marginBottom:5,cursor:"pointer"}}
+                              onClick={()=>setSelHealthRec(h)}>
+                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                                <div style={{flex:1}}>
+                                  <div style={{fontSize:12,fontWeight:700,color:b.color,marginBottom:2}}>
+                                    {g?.name ? `${g.name} ` : ""}<span style={{fontWeight:400,color:"#9CA3AF"}}>({h.goatEarTag||g?.earTag||"—"})</span>
                                   </div>
-                                  <StatusBadge status={h.status}/>
+                                  <div style={{fontWeight:700,fontSize:13,color:"#1A1A2E"}}>{h.condition}</div>
+                                  {h.treatment&&<div style={{fontSize:11,color:"#1F2937",marginTop:3}}>💊 {h.treatment}</div>}
+                                  {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
+                                  {hDays.length>0&&(
+                                    <div style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
+                                      📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
+                                    </div>
+                                  )}
+                                  {lastLog&&<div style={{fontSize:10,color:"#9CA3AF",marginTop:3}}>
+                                    🕐 Son: {lastLog.userName} · {fmtDT(lastLog.createdAt)}
+                                  </div>}
                                 </div>
-                              </div>
-                              <div style={{display:"flex",borderTop:"1px solid #F0F0F0"}} onClick={e=>e.stopPropagation()}>
-                                <button onClick={()=>setSelHealthRec(h)} style={{flex:1,padding:"9px 0",border:"none",background:"transparent",fontSize:12,fontWeight:600,color:"#6B7280",cursor:"pointer",borderRight:"1px solid #F0F0F0"}}>✏️ Güncelle</button>
-                                <button onClick={()=>setSaglikGonderRec(h)} style={{flex:1,padding:"9px 0",border:"none",background:"transparent",fontSize:12,fontWeight:600,color:"#25D366",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.843L0 24l6.343-1.505A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.88 0-3.645-.5-5.178-1.378l-.37-.22-3.77.895.928-3.68-.242-.38A9.958 9.958 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-                                  Gönder
-                                </button>
+                                <StatusBadge status={h.status}/>
                               </div>
                             </div>
                           );
