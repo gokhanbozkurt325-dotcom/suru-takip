@@ -1333,62 +1333,101 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
   const [status,    setStatus]    = useState(record.status);
   const [treatment, setTreatment] = useState(record.treatment||"");
   const [notes,     setNotes]     = useState(record.notes||"");
+  const [condition, setCondition] = useState(record.condition||"");
+  const [date,      setDate]      = useState(record.date||todayISO());
+  const [category,  setCategory]  = useState(record.category||"anac");
+  const [earTag,    setEarTag]    = useState(record.goatEarTag||goat?.earTag||"");
   const [saving,    setSaving]    = useState(false);
   const [showClose, setShowClose] = useState(false);
   const [closeReason, setCloseReason] = useState("");
   const [closeNote,   setCloseNote]   = useState("");
-  const [tab, setTab] = useState("detay");
-  const [treatmentChanged, setTreatmentChanged] = useState(false);
-  const [markingDay, setMarkingDay] = useState(null);
+  const [tab,         setTab]         = useState("detay");
+  const [markingDay,  setMarkingDay]  = useState(null);
+  const [newDayCount, setNewDayCount] = useState(0);
+  const [addingDays,  setAddingDays]  = useState(false);
+  const [localDays,   setLocalDays]   = useState(
+    treatmentDays.filter(d=>d.healthRecordId===record.id).sort((a,b)=>a.dayNumber-b.dayNumber)
+  );
 
   const recLogs = logs.filter(l=>l.healthRecordId===record.id).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
-  const recDays = treatmentDays.filter(d=>d.healthRecordId===record.id).sort((a,b)=>a.dayNumber-b.dayNumber);
   const today = todayISO();
 
   const markDay = async (day) => {
     if(day.done) return;
     setMarkingDay(day.id);
     const now = new Date().toISOString();
-    await sb.from("treatment_days").update({done:true, done_by:currentUser, done_at:now}).eq("id",day.id);
-    onTreatmentDayUpdate({...day, done:true, doneBy:currentUser, doneAt:now});
+    await sb.from("treatment_days").update({done:true,done_by:currentUser,done_at:now}).eq("id",day.id);
+    const updated = {...day,done:true,doneBy:currentUser,doneAt:now};
+    onTreatmentDayUpdate(updated);
+    setLocalDays(p=>p.map(d=>d.id===day.id?updated:d));
     setMarkingDay(null);
+  };
+
+  const addDays = async () => {
+    if(newDayCount<=0) return;
+    setAddingDays(true);
+    const base = localDays.length>0 ? localDays[localDays.length-1].plannedDate : date;
+    const newDays = [];
+    for(let i=0;i<newDayCount;i++){
+      const d = new Date(base);
+      d.setDate(d.getDate()+(localDays.length>0?i+1:i));
+      newDays.push({
+        id:"td"+Date.now()+i,
+        healthRecordId:record.id,
+        goatId:goat?.id||record.goatId,
+        breed:goat?.breed||record.breed,
+        dayNumber:localDays.length+i+1,
+        plannedDate:d.toISOString().slice(0,10),
+        done:false
+      });
+    }
+    await sb.from("treatment_days").insert(newDays.map(d=>({
+      id:d.id, health_record_id:d.healthRecordId, goat_id:d.goatId,
+      breed:d.breed, day_number:d.dayNumber, planned_date:d.plannedDate, done:false
+    })));
+    newDays.forEach(d=>onTreatmentDayUpdate(d));
+    setLocalDays(p=>[...p,...newDays]);
+    setNewDayCount(0);
+    setAddingDays(false);
   };
 
   const save = async () => {
     setSaving(true);
     const changes = [];
-    if (status!==record.status) changes.push(`Durum değişti: "${record.status}" → "${status}"`);
-    if (treatment!==record.treatment) changes.push(`Tedavi güncellendi`);
-    if (notes!==record.notes && notes) changes.push(`Not eklendi`);
-    const { error } = await sb.from("health_records").update({ status, treatment, notes }).eq("id", record.id);
-    if (!error) {
-      const detail = changes.length>0 ? changes.join(" · ") : "Kayıt güncellendi";
-      const gId = goat?.id || record.goatId;
-      const gBreed = goat?.breed || record.breed;
-      await addLog(record.id, gId, gBreed, "güncelleme", detail, currentUser);
-      const newLog = { id:"l"+Date.now(), healthRecordId:record.id, goatId:gId, breed:gBreed, action:"güncelleme", actionDetail:detail, userName:currentUser, createdAt:new Date().toISOString() };
-      onLogsUpdate(newLog);
-      onUpdate({ ...record, status, treatment, notes });
+    if(condition!==record.condition) changes.push(`Hastalık: "${record.condition}"→"${condition}"`);
+    if(status!==record.status) changes.push(`Durum: "${record.status}"→"${status}"`);
+    if(treatment!==record.treatment) changes.push("Tedavi güncellendi");
+    if(date!==record.date) changes.push("Tarih güncellendi");
+    if(earTag!==(record.goatEarTag||goat?.earTag||"")) changes.push("Küpe no güncellendi");
+    const {error} = await sb.from("health_records").update({
+      status, treatment, notes, condition, date, category, goat_ear_tag:earTag
+    }).eq("id",record.id);
+    if(!error){
+      const detail = changes.length>0?changes.join(" · "):"Kayıt güncellendi";
+      const gId=goat?.id||record.goatId; const gBreed=goat?.breed||record.breed;
+      await addLog(record.id,gId,gBreed,"güncelleme",detail,currentUser);
+      onLogsUpdate({id:"l"+Date.now(),healthRecordId:record.id,goatId:gId,breed:gBreed,action:"güncelleme",actionDetail:detail,userName:currentUser,createdAt:new Date().toISOString()});
+      onUpdate({...record,status,treatment,notes,condition,date,category,goatEarTag:earTag});
     }
     setSaving(false);
   };
 
   const finalize = async () => {
-    if (!closeReason) return;
+    if(!closeReason) return;
     setSaving(true);
     const report = {
       id:"r"+Date.now(), goatId:goat?.id||record.goatId, goatName:goat?.name||record.goatEarTag||"—", goatEarTag:goat?.earTag||record.goatEarTag||"—", breed:goat?.breed||record.breed,
       dateStarted:record.date, dateClosed:todayISO(), condition:record.condition,
       treatment, closeReason, closeNote, veterinarian:record.veterinarian, cost:"", createdByName:currentUser, notes
     };
-    await sb.from("health_records").update({ closed:true, status:closeReason==="Hayvan Öldü"?"öldü":"iyileşti" }).eq("id", record.id);
+    await sb.from("health_records").update({closed:true,status:closeReason==="Hayvan Öldü"?"öldü":"iyileşti"}).eq("id",record.id);
     await sb.from("reports").insert(fromReport(report));
-    await addLog(record.id, goat?.id||record.goatId, goat?.breed||record.breed, "sonlandırma", `Neden: ${closeReason}${closeNote?" — "+closeNote:""}`, currentUser);
-    onFinalize(record.id, report);
+    await addLog(record.id,goat?.id||record.goatId,goat?.breed||record.breed,"sonlandırma",`Neden: ${closeReason}${closeNote?" — "+closeNote:""}`,currentUser);
+    onFinalize(record.id,report);
     setSaving(false);
   };
 
-  if (showClose) return <ModalWrap title="📋 Kaydı Sonlandır" onClose={()=>setShowClose(false)}>
+  if(showClose) return <ModalWrap title="📋 Kaydı Sonlandır" onClose={()=>setShowClose(false)}>
     <div style={{background:"rgba(var(--primary-rgb),.08)",border:"1px solid #F0D49A",borderRadius:10,padding:10,fontSize:12,color:"#E8975A"}}>
       ⚠️ Bu kayıt sonlandırılacak ve rapor bölümüne taşınacak.
     </div>
@@ -1407,7 +1446,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
 
   return <ModalWrap title={`🩺 ${record.condition}`} onClose={onClose}>
     <div style={{background:"#F5F5F5",borderRadius:10,padding:10,fontSize:12}}>
-      {goat ? <><b>{goat.name}</b> · 🏷 {goat.earTag}</> : <><b>🏷 {record.goatEarTag||"—"}</b></>} · Başlangıç: {fmt(record.date)}
+      {goat?<><b>{goat.name}</b> · 🏷 {goat.earTag}</>:<><b>🏷 {record.goatEarTag||"—"}</b></>} · Başlangıç: {fmt(record.date)}
     </div>
     <div style={{display:"flex",background:"#F3F4F6",borderRadius:8,overflow:"hidden",marginTop:4}}>
       {[["detay","✏️ Güncelle"],["takvim","📅 Takvim"],["gecmis","📋 Geçmiş"]].map(([k,l])=>(
@@ -1415,99 +1454,93 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
       ))}
     </div>
 
-    {tab==="detay" && <>
+    {tab==="detay"&&<>
+      <FL>Küpe No</FL>
+      <EarTagInput value={earTag} onChange={setEarTag}/>
+
+      <FL>Hastalık / Durum</FL>
+      <VoiceInput value={condition} onChange={setCondition} placeholder="Hastalık adı..."/>
+
+      <FL>Kategori</FL>
+      <select value={category} onChange={e=>setCategory(e.target.value)} style={S.select}>
+        <option value="anac">🐐 Anaç</option>
+        <option value="oglak">🍼 Oğlak</option>
+      </select>
+
+      <FL>Tarih</FL>
+      <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...S.input,WebkitAppearance:"none"}}/>
+
       <FL>Durum</FL>
       <StatusPicker value={status} onChange={setStatus}/>
+
       <FL>Tedavi / Yapılan İşlem</FL>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,padding:"6px 10px",background:"#E8F5E9",borderRadius:8,border:"1px solid #D4E8C2"}}>
-        <input type="checkbox" id="sameTreatment" checked={!treatmentChanged}
-          onChange={e=>setTreatmentChanged(!e.target.checked)}
-          style={{width:16,height:16,cursor:"pointer"}}/>
-        <label htmlFor="sameTreatment" style={{fontSize:12,color:"#10B981",fontWeight:600,cursor:"pointer"}}>
-          Aynı tedavi devam ediyor (değişiklik yok)
-        </label>
-      </div>
-      <VoiceInput value={treatment} onChange={v=>{setTreatment(v);setTreatmentChanged(true);}} placeholder="İlaç, doz, işlem..." multiline rows={3}/>
+      <VoiceInput value={treatment} onChange={setTreatment} placeholder="İlaç, doz, işlem..." multiline rows={3}/>
+
       <FL>Notlar</FL>
       <VoiceInput value={notes} onChange={setNotes} placeholder="Not ekle..." multiline rows={2}/>
+
       <div style={{display:"flex",gap:8,marginTop:4}}>
         <button onClick={()=>setShowClose(true)} style={{...S.btnSm,background:"rgba(239,68,68,.1)",color:"#EF4444",padding:"10px 14px",fontSize:12}}>📋 Sonlandır</button>
         <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:1,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Güncelle"}</button>
       </div>
     </>}
 
-    {tab==="takvim" && (
-      <div>
-        {/* Tedavi notu özeti */}
-        {record.treatment && (
-          <div style={{background:"#E8F5E9",border:"1px solid #D4E8C2",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#10B981",marginBottom:2}}>💊 Tedavi</div>
-            <div style={{fontSize:12,color:"#1F2937"}}>{record.treatment}</div>
-          </div>
-        )}
-        {record.notes && (
-          <div style={{background:"#F5F5F5",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#6B7280",marginBottom:2}}>📝 Not</div>
-            <div style={{fontSize:12,color:"#6B7280"}}>{record.notes}</div>
-          </div>
-        )}
-        {recDays.length===0 && (
-          <div style={{textAlign:"center",padding:20,color:"#9CA3AF",fontSize:13}}>
-            <div style={{fontSize:32,marginBottom:8}}>📅</div>
-            Bu kayıt için tedavi takvimi oluşturulmamış.
-          </div>
-        )}
-        {recDays.map(day=>{
-          const isPast = day.plannedDate < today;
-          const isToday = day.plannedDate === today;
-          const isFuture = day.plannedDate > today;
-          const canMark = (isToday || isPast) && !day.done;
-          return (
-            <div key={day.id} style={{
-              borderRadius:12, padding:12, marginBottom:8,
-              background: day.done ? "#E3F0DC" : isToday ? "#EEF6FC" : isFuture ? "#F9F9F6" : "#FFF0EE",
-              border: `2px solid ${day.done?"#4A7C3F":isToday?"#2873A8":isPast?"#F5C0BA":"#E5E7EB"}`
-            }}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:800,fontSize:15,color:day.done?"#3D5A25":isToday?"#2873A8":isPast?"#BE3B31":"#8c8c7e"}}>
-                    {day.done?"✅":isToday?"🔵":isPast?"⚠️":"⏳"} {day.dayNumber}. Gün
-                  </div>
-                  <div style={{fontSize:11,color:"#9CA3AF",marginTop:2}}>
-                    📅 {fmt(day.plannedDate)}
-                    {isToday && <span style={{color:"#0EA5E9",fontWeight:700}}> — Bugün</span>}
-                  </div>
-                  {day.done && day.doneBy && (
-                    <div style={{fontSize:11,color:"#10B981",fontWeight:700,marginTop:4,background:"rgba(255,255,255,.7)",padding:"4px 8px",borderRadius:6,display:"inline-block"}}>
-                      👤 {day.doneBy} · {fmtDT(day.doneAt)}
-                    </div>
-                  )}
-                  {isPast && !day.done && (
-                    <div style={{fontSize:11,color:"#EF4444",fontWeight:600,marginTop:2}}>❌ Henüz yapılmadı</div>
-                  )}
-                  {isFuture && (
-                    <div style={{fontSize:11,color:"#6B7280",marginTop:2}}>⏳ {daysUntil(day.plannedDate)} gün sonra</div>
-                  )}
-                </div>
-                {canMark && (
-                  <button onClick={()=>markDay(day)} disabled={markingDay===day.id}
-                    style={{...S.btnPrimary,fontSize:12,padding:"10px 16px",opacity:markingDay===day.id?.6:1,borderRadius:10,marginLeft:8,flexShrink:0}}>
-                    {markingDay===day.id?"⏳":"✅ Yapıldı"}
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-        {recDays.length>0 && (
-          <div style={{background:"#F5F5F5",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#6B7280",marginTop:4}}>
-            {recDays.filter(d=>d.done).length}/{recDays.length} gün tamamlandı
-          </div>
-        )}
+    {tab==="takvim"&&<div>
+      <div style={{background:"#F0F9FF",border:"1px solid #BAE6FD",borderRadius:10,padding:10,marginBottom:12}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#0EA5E9",marginBottom:8}}>📅 Takvime Gün Ekle</div>
+        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
+          {[1,2,3,5,7,10,14].map(n=>(
+            <button key={n} onClick={()=>setNewDayCount(newDayCount===n?0:n)}
+              style={{padding:"6px 10px",borderRadius:8,border:"1.5px solid",borderColor:newDayCount===n?"#0EA5E9":"#E5E7EB",background:newDayCount===n?"#0EA5E9":"#fff",color:newDayCount===n?"#fff":"#374151",fontWeight:700,fontSize:12,cursor:"pointer",WebkitAppearance:"none"}}>
+              {n}
+            </button>
+          ))}
+        </div>
+        {newDayCount>0&&<button onClick={addDays} disabled={addingDays}
+          style={{...S.btnPrimary,width:"100%",padding:"10px",fontSize:13,opacity:addingDays?.6:1,background:"#0EA5E9",WebkitAppearance:"none"}}>
+          {addingDays?"Ekleniyor...":"➕ "+newDayCount+" Gün Ekle ("+(localDays.length+1)+".-"+(localDays.length+newDayCount)+". gün)"}
+        </button>}
       </div>
-    )}
-    {tab==="gecmis" && <div>
-      {recLogs.length===0 && <Empty text="Henüz işlem geçmişi yok"/>}
+
+      {localDays.length===0&&<div style={{textAlign:"center",padding:20,color:"#9CA3AF",fontSize:13}}>
+        <div style={{fontSize:32,marginBottom:8}}>📅</div>
+        Takvim yok. Yukarıdan gün ekleyin.
+      </div>}
+
+      {localDays.map(day=>{
+        const isPast=day.plannedDate<today, isToday=day.plannedDate===today, isFuture=day.plannedDate>today;
+        const canMark=(isToday||isPast)&&!day.done;
+        return (
+          <div key={day.id} style={{borderRadius:12,padding:12,marginBottom:8,
+            background:day.done?"#E3F0DC":isToday?"#EEF6FC":isFuture?"#F9F9F6":"#FFF0EE",
+            border:`2px solid ${day.done?"#4A7C3F":isToday?"#2873A8":isPast?"#F5C0BA":"#E5E7EB"}`}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:800,fontSize:15,color:day.done?"#3D5A25":isToday?"#2873A8":isPast?"#BE3B31":"#8c8c7e"}}>
+                  {day.done?"✅":isToday?"🔵":isPast?"⚠️":"⏳"} {day.dayNumber}. Gün
+                </div>
+                <div style={{fontSize:11,color:"#9CA3AF",marginTop:2}}>
+                  📅 {fmt(day.plannedDate)}{isToday&&<span style={{color:"#0EA5E9",fontWeight:700}}> — Bugün</span>}
+                </div>
+                {day.done&&day.doneBy&&<div style={{fontSize:11,color:"#10B981",fontWeight:700,marginTop:4,background:"rgba(255,255,255,.7)",padding:"4px 8px",borderRadius:6,display:"inline-block"}}>👤 {day.doneBy} · {fmtDT(day.doneAt)}</div>}
+                {isPast&&!day.done&&<div style={{fontSize:11,color:"#EF4444",fontWeight:600,marginTop:2}}>❌ Henüz yapılmadı</div>}
+                {isFuture&&<div style={{fontSize:11,color:"#6B7280",marginTop:2}}>⏳ {daysUntil(day.plannedDate)} gün sonra</div>}
+              </div>
+              {canMark&&<button onClick={()=>markDay(day)} disabled={markingDay===day.id}
+                style={{...S.btnPrimary,fontSize:12,padding:"10px 16px",opacity:markingDay===day.id?.6:1,borderRadius:10,marginLeft:8,flexShrink:0,WebkitAppearance:"none"}}>
+                {markingDay===day.id?"⏳":"✅ Yapıldı"}
+              </button>}
+            </div>
+          </div>
+        );
+      })}
+      {localDays.length>0&&<div style={{background:"#F5F5F5",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#6B7280",marginTop:4}}>
+        {localDays.filter(d=>d.done).length}/{localDays.length} gün tamamlandı
+      </div>}
+    </div>}
+
+    {tab==="gecmis"&&<div>
+      {recLogs.length===0&&<Empty text="Henüz işlem geçmişi yok"/>}
       {recLogs.map((l,i)=>(
         <div key={l.id} style={{display:"flex",gap:8,padding:"10px 0",borderBottom:i<recLogs.length-1?"1px solid #F2F0EA":"none"}}>
           <div style={{width:32,height:32,borderRadius:"50%",background:l.action==="sonlandırma"?"#FFF0EE":l.action==="açılış"?"#E3F0DC":"#EEF6FC",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>
