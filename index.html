@@ -188,6 +188,35 @@ function VaccineCalendar({ vaccineReports }) {
 }
 
 
+function AudioToggle({urls}) {
+  const [open, setOpen] = React.useState(false);
+  const list = (urls||"").split(",").map(u=>u.trim()).filter(Boolean);
+  if(!list.length) return null;
+  return (
+    <div style={{marginTop:6}} onClick={function(e){e.stopPropagation();}}>
+      <button
+        onClick={function(e){e.stopPropagation();setOpen(function(o){return !o;});}}
+        style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(139,92,246,.1)",border:"1.5px solid rgba(139,92,246,.25)",borderRadius:20,padding:"4px 12px",fontSize:12,fontWeight:600,color:"#7C3AED",cursor:"pointer",WebkitAppearance:"none"}}>
+        <span style={{fontSize:15}}>🎵</span>
+        <span>{open?"Kapat":"Ses Kaydı"} ({list.length})</span>
+        <span style={{fontSize:10,opacity:.7}}>{open?"▲":"▼"}</span>
+      </button>
+      {open&&(
+        <div style={{marginTop:6,display:"flex",flexDirection:"column",gap:4}}>
+          {list.map(function(url,i){
+            return (
+              <div key={i} style={{background:"#F5F3FF",borderRadius:10,padding:"6px 8px",border:"1px solid rgba(139,92,246,.15)"}}>
+                <div style={{fontSize:10,color:"#9CA3AF",marginBottom:3,fontWeight:600}}>Kayıt {i+1}</div>
+                <audio src={url} controls style={{width:"100%",height:36}}/>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function WeatherWidget() {
   const [weather, setWeather] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -4177,9 +4206,11 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
                       <a key={i} href={url} target="_blank" rel="noreferrer" style={{width:56,height:56,background:"#F3F4F6",borderRadius:8,border:"1.5px solid #E5E7EB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,textDecoration:"none"}}>▶️</a>
                     ))}
                   </div>
-                  {audios.map((url,i)=>(
-                    <audio key={i} src={url} controls style={{width:"100%",marginTop:6,height:32}}/>
-                  ))}
+                  {audios.length>0&&(
+                    <div style={{marginTop:6}} onClick={e=>e.stopPropagation()}>
+                      <AudioToggle urls={audios.join(",")}/>
+                    </div>
+                  )}
                 </div>
               )}
               </div>
@@ -5189,11 +5220,7 @@ function App(){
                                 {h.treatment&&<div style={{fontSize:12,color:"#1F2937",marginTop:4}}>💊 {h.treatment}</div>}
                                 {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
                                 {h.mediaUrls&&h.mediaUrls.trim()&&(
-                                  <div style={{marginTop:6}} onClick={function(e){e.stopPropagation();}}>
-                                    {h.mediaUrls.split(",").filter(function(u){return u.trim();}).map(function(url,i){
-                                      return <audio key={i} src={url} controls style={{width:"100%",height:32,marginTop:2}}/>;
-                                    })}
-                                  </div>
+                                  <AudioToggle urls={h.mediaUrls}/>
                                 )}
                                 {hDays.length>0&&(
                                   <div style={{marginTop:4,display:"flex",gap:4,alignItems:"center"}}>
