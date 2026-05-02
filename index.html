@@ -190,7 +190,7 @@ function VaccineCalendar({ vaccineReports }) {
 
 function AudioToggle({urls}) {
   const list = (urls||"").split(",").map(u=>u.trim()).filter(u=>
-    u && (u.includes("health-audio")||/\.(webm|mp3|wav|ogg|aac|m4a)/i.test(u))
+    u&&(u.includes("health-audio")||/\.(webm|mp3|wav|ogg|aac|m4a)/i.test(u))
   );
   if(!list.length) return null;
   return (
@@ -208,18 +208,18 @@ function AudioToggle({urls}) {
 function MediaCard({urls}) {
   const [open, setOpen] = React.useState(false);
   const photos = (urls||"").split(",").map(u=>u.trim()).filter(u=>
-    u && (u.includes("health-photos")||/\.(jpg|jpeg|png|gif|webp)/i.test(u))
+    u&&(u.includes("health-photos")||/\.(jpg|jpeg|png|gif|webp)/i.test(u))
   );
   const videos = (urls||"").split(",").map(u=>u.trim()).filter(u=>
-    u && (u.includes("health-videos")||/\.(mp4|mov|avi|mkv)/i.test(u))
+    u&&(u.includes("health-videos")||/\.(mp4|mov|avi|mkv)/i.test(u))
   );
-  if(!photos.length && !videos.length) return null;
+  if(!photos.length&&!videos.length) return null;
   const preview = photos.slice(0,3);
   const rest = photos.slice(3);
-  const hasMore = rest.length>0 || videos.length>0;
+  const hasMore = rest.length>0||videos.length>0;
   return (
     <div style={{marginTop:6}} onClick={e=>e.stopPropagation()}>
-      <div style={{display:"flex",gap:4,alignItems:"center",flexWrap:"wrap"}}>
+      <div style={{display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}>
         {preview.map((url,i)=>(
           <img key={i} src={url}
             onClick={e=>{e.stopPropagation();window.open(url,"_blank");}}
@@ -227,23 +227,20 @@ function MediaCard({urls}) {
         ))}
         {hasMore&&(
           <button onClick={e=>{e.stopPropagation();setOpen(o=>!o);}}
-            style={{height:54,minWidth:42,padding:"0 8px",borderRadius:6,border:"1.5px solid #0EA5E9",background:"rgba(14,165,233,.1)",color:"#0EA5E9",fontSize:11,fontWeight:700,cursor:"pointer",WebkitAppearance:"none"}}>
-            {open?"✕":"+"+( rest.length+videos.length)}
+            style={{width:54,height:54,borderRadius:6,border:"1.5px solid #0EA5E9",background:"rgba(14,165,233,.1)",color:"#0EA5E9",fontSize:11,fontWeight:700,cursor:"pointer",WebkitAppearance:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1}}>
+            {open?"✕":<><span style={{fontSize:15}}>📷</span><span>+{rest.length+videos.length}</span></>}
           </button>
         )}
       </div>
       {open&&(
-        <div style={{marginTop:6}}>
-          {rest.length>0&&(
-            <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6}}>
-              {rest.map((url,i)=>(
-                <img key={i} src={url} onClick={e=>{e.stopPropagation();window.open(url,"_blank");}}
-                  style={{width:72,height:72,objectFit:"cover",borderRadius:8,border:"1.5px solid #E5E7EB",cursor:"pointer"}}/>
-              ))}
-            </div>
-          )}
+        <div style={{marginTop:4,display:"flex",gap:4,flexWrap:"wrap"}}>
+          {rest.map((url,i)=>(
+            <img key={i} src={url}
+              onClick={e=>{e.stopPropagation();window.open(url,"_blank");}}
+              style={{width:72,height:72,objectFit:"cover",borderRadius:8,border:"1.5px solid #E5E7EB",cursor:"pointer"}}/>
+          ))}
           {videos.map((url,i)=>(
-            <video key={i} src={url} controls style={{width:"100%",borderRadius:8,marginBottom:4,maxHeight:200}}/>
+            <video key={i} src={url} controls style={{width:"100%",borderRadius:8,marginTop:4,maxHeight:200}}/>
           ))}
         </div>
       )}
@@ -5252,7 +5249,6 @@ function App(){
                                 <div style={{fontWeight:700,fontSize:14,color:"#1A1A2E"}}>{h.condition}</div>
                                 {h.treatment&&<div style={{fontSize:12,color:"#1F2937",marginTop:3}}>💊 {h.treatment}</div>}
                                 {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
-
                                 <div style={{marginTop:6,background:"#F8F9FA",borderRadius:"0 8px 8px 0",padding:"5px 9px",fontSize:11,borderLeft:`3px solid ${breed.color}`}}>
                                   <div style={{color:"#6B7280"}}>
                                     <span style={{fontWeight:700,color:"#374151"}}>👤 Açan:</span> {h.createdByName||"—"} · {fmtDT(h.date+"T00:00:00")}
@@ -5263,7 +5259,6 @@ function App(){
                                     </div>
                                   )}
                                 </div>
-
                                 {hDays.length>0&&(
                                   <div style={{marginTop:5,display:"flex",gap:4,alignItems:"center"}}>
                                     <span style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",padding:"2px 8px",borderRadius:8,fontWeight:700}}>
