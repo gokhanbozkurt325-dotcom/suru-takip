@@ -189,10 +189,8 @@ function VaccineCalendar({ vaccineReports }) {
 
 
 function AudioToggle({urls}) {
-  const [open, setOpen] = React.useState(false);
-  const list = (urls||"").split(",").map(u=>u.trim()).filter(u=>
-    u&&(u.includes("health-audio")||/\.(webm|mp3|wav|ogg|aac|m4a)/i.test(u))
-  );
+  const [open,setOpen]=React.useState(false);
+  const list=(urls||"").split(",").map(u=>u.trim()).filter(u=>u&&(u.includes("health-audio")||/\.(webm|mp3|wav|ogg|aac|m4a)/i.test(u)));
   if(!list.length) return null;
   return (
     <div style={{marginTop:6}} onClick={e=>e.stopPropagation()}>
@@ -211,17 +209,15 @@ function AudioToggle({urls}) {
 }
 
 function MediaCard({urls}) {
-  const [playUrl, setPlayUrl] = React.useState(null);
-  const all = (urls||"").split(",").map(u=>u.trim()).filter(Boolean);
-  const photos = all.filter(u=>u.includes("health-photos")||/\.(jpg|jpeg|png|gif|webp)/i.test(u));
-  const videos = all.filter(u=>u.includes("health-videos")||/\.(mp4|mov|avi|mkv)/i.test(u));
+  const [playUrl,setPlayUrl]=React.useState(null);
+  const photos=(urls||"").split(",").map(u=>u.trim()).filter(u=>u&&(u.includes("health-photos")||/\.(jpg|jpeg|png|gif|webp)/i.test(u)));
+  const videos=(urls||"").split(",").map(u=>u.trim()).filter(u=>u&&(u.includes("health-videos")||/\.(mp4|mov|avi|mkv)/i.test(u)));
   if(!photos.length&&!videos.length) return null;
   return (
     <div style={{marginTop:6}} onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
         {photos.map((url,i)=>(
-          <img key={"p"+i} src={url}
-            onClick={e=>{e.stopPropagation();window.open(url,"_blank");}}
+          <img key={"p"+i} src={url} onClick={e=>{e.stopPropagation();window.open(url,"_blank");}}
             style={{width:54,height:54,objectFit:"cover",borderRadius:6,border:"1.5px solid #E5E7EB",cursor:"pointer"}}/>
         ))}
         {videos.map((url,i)=>(
@@ -237,76 +233,65 @@ function MediaCard({urls}) {
   );
 }
 
-function SaglikGonderModal({record, goat, onClose}) {
-  var KISILER = [
-    {isim:"Veteriner Hekim", tel:"905426321183"},
-    {isim:"Şef",             tel:"905386430705"},
-    {isim:"Şef Yardımcısı",  tel:"905412633285"},
+function SaglikGonderModal({record,goat,onClose}) {
+  const KISILER=[
+    {isim:"Veteriner Hekim",tel:"905426321183"},
+    {isim:"Şef",tel:"905386430705"},
+    {isim:"Şef Yardımcısı",tel:"905412633285"},
   ];
-  const [secili,     setSecili]     = React.useState({});
-  const [gonderildi, setGonderildi] = React.useState({});
-  const [step,       setStep]       = React.useState("sec");
-
-  var all = record.mediaUrls ? record.mediaUrls.split(",").filter(function(u){return u.trim();}) : [];
-  var photos = all.filter(function(u){return u.includes("health-photos")||/\.(jpg|jpeg|png|gif|webp)/i.test(u);});
-  var videos = all.filter(function(u){return u.includes("health-videos")||/\.(mp4|mov|avi)/i.test(u);});
-  var audios = all.filter(function(u){return u.includes("health-audio")||/\.(webm|mp3|wav|ogg|aac|m4a)/i.test(u);});
-  var seciliSayisi = KISILER.filter(function(k){return secili[k.tel];}).length;
-
-  var mesajOlustur = function() {
-    var tarih = new Date().toLocaleString("tr-TR");
-    var satirlar = [
-      "🐐 SAĞLIK RAPORU — BURDUR CEZAEVİ HAYVANCILIK","",
+  const [secili,setSecili]=React.useState({});
+  const [gonderildi,setGonderildi]=React.useState({});
+  const [step,setStep]=React.useState("sec");
+  const all=(record.mediaUrls||"").split(",").map(u=>u.trim()).filter(Boolean);
+  const photos=all.filter(u=>u.includes("health-photos")||/\.(jpg|jpeg|png|gif|webp)/i.test(u));
+  const videos=all.filter(u=>u.includes("health-videos")||/\.(mp4|mov|avi)/i.test(u));
+  const audios=all.filter(u=>u.includes("health-audio")||/\.(webm|mp3|wav|ogg|aac|m4a)/i.test(u));
+  const seciliSayisi=KISILER.filter(k=>secili[k.tel]).length;
+  const mesaj=()=>{
+    const satirlar=["🐐 SAĞLIK RAPORU — BURDUR CEZAEVİ HAYVANCILIK","",
       "Hayvan: "+(goat?goat.name+" ("+goat.earTag+")":record.goatEarTag||"—"),
       "Hastalık: "+record.condition,
-      record.treatment?"💊 Tedavi: "+record.treatment:null,
-      record.notes?"📝 Not: "+record.notes:null,
+      record.treatment?"💊 "+record.treatment:null,
+      record.notes?"📝 "+record.notes:null,
       "Durum: "+record.status,
       "Açılış: "+record.date+(record.createdByName?" — "+record.createdByName:""),
-      "","📅 "+tarih,
+      "","📅 "+new Date().toLocaleString("tr-TR"),
     ].filter(Boolean);
-    if(photos.length){satirlar.push(""); satirlar.push("📷 Fotoğraflar:"); photos.forEach(function(u,i){satirlar.push((i+1)+". "+u);});}
-    if(videos.length){satirlar.push(""); satirlar.push("🎥 Videolar:"); videos.forEach(function(u,i){satirlar.push((i+1)+". "+u);});}
-    if(audios.length){satirlar.push(""); satirlar.push("🎵 Ses Kayıtları:"); audios.forEach(function(u,i){satirlar.push((i+1)+". "+u);});}
+    if(photos.length){satirlar.push(""); satirlar.push("📷 Fotoğraflar:"); photos.forEach((u,i)=>satirlar.push((i+1)+". "+u));}
+    if(videos.length){satirlar.push(""); satirlar.push("🎥 Videolar:"); videos.forEach((u,i)=>satirlar.push((i+1)+". "+u));}
+    if(audios.length){satirlar.push(""); satirlar.push("🎵 Ses:"); audios.forEach((u,i)=>satirlar.push((i+1)+". "+u));}
     return encodeURIComponent(satirlar.join("\n"));
   };
-
-  var gonderBir = function(tel) {
-    window.open("https://api.whatsapp.com/send?phone="+tel+"&text="+mesajOlustur(),"_blank");
-    setGonderildi(function(p){var y=Object.assign({},p);y[tel]=true;return y;});
+  const gonder=(tel)=>{
+    window.open("https://api.whatsapp.com/send?phone="+tel+"&text="+mesaj(),"_blank");
+    setGonderildi(p=>({...p,[tel]:true}));
   };
-
   return (
-    <div onClick={onClose} style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.75)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-      <div onClick={function(e){e.stopPropagation();}} style={{background:"#fff",borderRadius:22,padding:22,width:"100%",maxWidth:360,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 8px 40px rgba(0,0,0,.3)"}}>
-        {step==="sec" ? (
-          <div>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-              <div style={{width:40,height:40,borderRadius:"50%",background:"#ECFDF5",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>💬</div>
-              <div>
-                <div style={{fontWeight:800,fontSize:16,color:"#1A1A2E"}}>Sağlık Raporu Gönder</div>
-                <div style={{fontSize:11,color:"#9CA3AF"}}>WhatsApp üzerinden iletilecek</div>
-              </div>
-            </div>
-            <div style={{background:"#F5F5F5",borderRadius:12,padding:"10px 12px",marginBottom:12,fontSize:12}}>
-              <div style={{fontWeight:700,fontSize:14,color:"#1A1A2E",marginBottom:4}}>🐐 {goat?goat.name+" ("+goat.earTag+")":record.goatEarTag||"—"}</div>
-              <div style={{color:"#374151",marginBottom:2}}>🦠 {record.condition}</div>
-              {record.treatment&&<div style={{color:"#374151",marginBottom:2}}>💊 {record.treatment}</div>}
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:20,padding:20,width:"100%",maxWidth:360,maxHeight:"90vh",overflowY:"auto"}}>
+        {step==="sec"?(
+          <>
+            <div style={{fontWeight:800,fontSize:16,color:"#1A1A2E",marginBottom:4}}>💬 Sağlık Raporu Gönder</div>
+            <div style={{fontSize:11,color:"#9CA3AF",marginBottom:12}}>WhatsApp üzerinden gönderilecek</div>
+            <div style={{background:"#F5F5F5",borderRadius:10,padding:"10px 12px",marginBottom:12,fontSize:12}}>
+              <div style={{fontWeight:700,fontSize:13,color:"#1A1A2E",marginBottom:2}}>🐐 {goat?goat.name+" ("+goat.earTag+")":record.goatEarTag||"—"}</div>
+              <div style={{color:"#374151"}}>🦠 {record.condition}</div>
+              {record.treatment&&<div style={{color:"#374151"}}>💊 {record.treatment}</div>}
               <div style={{color:"#6B7280",marginTop:4,fontSize:11}}>
-                {photos.length>0&&<span style={{marginRight:8}}>📷 {photos.length}</span>}
-                {videos.length>0&&<span style={{marginRight:8}}>🎥 {videos.length}</span>}
-                {audios.length>0&&<span>🎵 {audios.length}</span>}
-                {all.length===0&&<span style={{color:"#D1D5DB"}}>Medya yok</span>}
+                {photos.length>0&&<span style={{marginRight:6}}>📷{photos.length}</span>}
+                {videos.length>0&&<span style={{marginRight:6}}>🎥{videos.length}</span>}
+                {audios.length>0&&<span>🎵{audios.length}</span>}
+                {all.length===0&&"Medya yok"}
               </div>
             </div>
-            <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:8,textTransform:"uppercase",letterSpacing:".4px"}}>Kime gönderilsin?</div>
-            {KISILER.map(function(k){
-              var sec=!!secili[k.tel];
+            <div style={{fontSize:11,fontWeight:700,color:"#6B7280",marginBottom:8,textTransform:"uppercase",letterSpacing:".4px"}}>Kime?</div>
+            {KISILER.map(k=>{
+              const sec=!!secili[k.tel];
               return (
-                <button key={k.tel} onClick={function(){setSecili(function(p){var y=Object.assign({},p);y[k.tel]=!y[k.tel];return y;});}}
+                <button key={k.tel} onClick={()=>setSecili(p=>({...p,[k.tel]:!p[k.tel]}))}
                   style={{width:"100%",padding:"11px 14px",marginBottom:6,borderRadius:12,border:"2px solid "+(sec?"#25D366":"#E5E7EB"),background:sec?"#ECFDF5":"#FAFAFA",display:"flex",alignItems:"center",gap:10,cursor:"pointer",WebkitAppearance:"none"}}>
-                  <div style={{width:22,height:22,borderRadius:6,border:"2px solid "+(sec?"#25D366":"#D1D5DB"),background:sec?"#25D366":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    {sec&&<span style={{color:"#fff",fontSize:14,fontWeight:700,lineHeight:1}}>✓</span>}
+                  <div style={{width:22,height:22,borderRadius:6,border:"2px solid "+(sec?"#25D366":"#D1D5DB"),background:sec?"#25D366":"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:"#fff",fontWeight:700,fontSize:14}}>
+                    {sec?"✓":""}
                   </div>
                   <div style={{textAlign:"left"}}>
                     <div style={{fontWeight:700,fontSize:14,color:sec?"#065F46":"#111827"}}>{k.isim}</div>
@@ -316,41 +301,32 @@ function SaglikGonderModal({record, goat, onClose}) {
               );
             })}
             <div style={{display:"flex",gap:8,marginTop:12}}>
-              <button onClick={onClose} style={{flex:1,padding:"11px",borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:13,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>İptal</button>
-              <button onClick={function(){if(seciliSayisi>0)setStep("gonder");}} disabled={seciliSayisi===0}
-                style={{flex:2,padding:"11px",borderRadius:12,border:"none",background:seciliSayisi>0?"#25D366":"#F3F4F6",color:seciliSayisi>0?"#fff":"#9CA3AF",fontWeight:700,fontSize:13,cursor:seciliSayisi>0?"pointer":"not-allowed",WebkitAppearance:"none"}}>
-                {seciliSayisi>0?"İleri → ("+seciliSayisi+" kişi)":"Kişi seçin"}
+              <button onClick={onClose} style={{flex:1,padding:11,borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:13,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>İptal</button>
+              <button onClick={()=>seciliSayisi>0&&setStep("gonder")} disabled={!seciliSayisi}
+                style={{flex:2,padding:11,borderRadius:12,border:"none",background:seciliSayisi?"#25D366":"#F3F4F6",color:seciliSayisi?"#fff":"#9CA3AF",fontWeight:700,fontSize:13,cursor:seciliSayisi?"pointer":"default",WebkitAppearance:"none"}}>
+                {seciliSayisi?"İleri ("+seciliSayisi+" kişi)":"Kişi seçin"}
               </button>
             </div>
-          </div>
-        ) : (
-          <div>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-              <div style={{fontSize:28}}>📱</div>
-              <div>
-                <div style={{fontWeight:800,fontSize:16,color:"#1A1A2E"}}>Mesajları Gönder</div>
-                <div style={{fontSize:11,color:"#9CA3AF"}}>Butona tıkla → WhatsApp açılır → Gönder</div>
-              </div>
-            </div>
-            <div style={{background:"#ECFDF5",borderRadius:10,padding:"8px 12px",marginBottom:12,fontSize:12,color:"#065F46",border:"1px solid #6EE7B7"}}>
-              🐐 <b>{goat?goat.name+" ("+goat.earTag+")":record.goatEarTag}</b> — {record.condition}
-            </div>
-            {KISILER.filter(function(k){return secili[k.tel];}).map(function(k){
-              var gnd=!!gonderildi[k.tel];
+          </>
+        ):(
+          <>
+            <div style={{fontWeight:800,fontSize:16,color:"#1A1A2E",marginBottom:4}}>📱 Gönder</div>
+            <div style={{fontSize:11,color:"#9CA3AF",marginBottom:12}}>Butona bas → WhatsApp açılır → Gönder'e bas</div>
+            {KISILER.filter(k=>secili[k.tel]).map(k=>{
+              const gnd=!!gonderildi[k.tel];
               return (
-                <button key={k.tel} onClick={function(){gonderBir(k.tel);}}
+                <button key={k.tel} onClick={()=>gonder(k.tel)}
                   style={{width:"100%",padding:"13px 16px",marginBottom:8,borderRadius:12,border:gnd?"2px solid #A7F3D0":"none",background:gnd?"#ECFDF5":"#25D366",color:gnd?"#059669":"#fff",fontWeight:700,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",WebkitAppearance:"none"}}>
                   <span>{gnd?"✅":"📲"} {k.isim}</span>
-                  <span style={{fontSize:12,opacity:.85}}>{gnd?"Gönderildi":"WhatsApp'ta Aç →"}</span>
+                  <span style={{fontSize:12,opacity:.85}}>{gnd?"Gönderildi":"Aç →"}</span>
                 </button>
               );
             })}
-            <div style={{fontSize:11,color:"#9CA3AF",textAlign:"center",marginBottom:12}}>Butona tıkla → WhatsApp açılır → Gönder tuşuna bas</div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={function(){setStep("sec");setGonderildi({});}} style={{flex:1,padding:"10px",borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:12,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>← Geri</button>
-              <button onClick={onClose} style={{flex:2,padding:"10px",borderRadius:12,border:"none",background:"#374151",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",WebkitAppearance:"none"}}>✅ Tamamlandı</button>
+            <div style={{display:"flex",gap:8,marginTop:4}}>
+              <button onClick={()=>{setStep("sec");setGonderildi({});}} style={{flex:1,padding:10,borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:12,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>← Geri</button>
+              <button onClick={onClose} style={{flex:2,padding:10,borderRadius:12,border:"none",background:"#374151",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",WebkitAppearance:"none"}}>✅ Tamam</button>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
@@ -5364,19 +5340,15 @@ function App(){
                                     <div style={{color:"#6B7280"}}>
                                       <span style={{fontWeight:700,color:"#374151"}}>👤 Açan:</span> {h.createdByName||"—"} · {fmtDT(h.date+"T00:00:00")}
                                     </div>
-                                    {lastLog&&(
-                                      <div style={{color:"#6B7280",marginTop:2}}>
-                                        <span style={{fontWeight:700,color:"#374151"}}>🩺 Son işlem:</span> {lastLog.userName||"—"} · {fmtDT(lastLog.createdAt)}
-                                      </div>
-                                    )}
+                                    {lastLog&&<div style={{color:"#6B7280",marginTop:2}}>
+                                      <span style={{fontWeight:700,color:"#374151"}}>🩺 Son işlem:</span> {lastLog.userName||"—"} · {fmtDT(lastLog.createdAt)}
+                                    </div>}
                                   </div>
-                                  {hDays.length>0&&(
-                                    <div style={{marginTop:5}}>
-                                      <span style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",padding:"2px 8px",borderRadius:8,fontWeight:700}}>
-                                        📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
-                                      </span>
-                                    </div>
-                                  )}
+                                  {hDays.length>0&&<div style={{marginTop:5}}>
+                                    <span style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",padding:"2px 8px",borderRadius:8,fontWeight:700}}>
+                                      📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
+                                    </span>
+                                  </div>}
                                   {h.mediaUrls&&h.mediaUrls.trim()&&<MediaCard urls={h.mediaUrls}/>}
                                   {h.mediaUrls&&h.mediaUrls.trim()&&<AudioToggle urls={h.mediaUrls}/>}
                                 </div>
@@ -5459,17 +5431,13 @@ function App(){
                                       <div style={{color:"#6B7280"}}>
                                         <span style={{fontWeight:700,color:"#374151"}}>👤 Açan:</span> {h.createdByName||"—"} · {fmtDT(h.date+"T00:00:00")}
                                       </div>
-                                      {lastLog&&(
-                                        <div style={{color:"#6B7280",marginTop:2}}>
-                                          <span style={{fontWeight:700,color:"#374151"}}>🩺 Son işlem:</span> {lastLog.userName||"—"} · {fmtDT(lastLog.createdAt)}
-                                        </div>
-                                      )}
+                                      {lastLog&&<div style={{color:"#6B7280",marginTop:2}}>
+                                        <span style={{fontWeight:700,color:"#374151"}}>🩺 Son işlem:</span> {lastLog.userName||"—"} · {fmtDT(lastLog.createdAt)}
+                                      </div>}
                                     </div>
-                                    {hDays.length>0&&(
-                                      <div style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
-                                        📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
-                                      </div>
-                                    )}
+                                    {hDays.length>0&&<div style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
+                                      📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
+                                    </div>}
                                     {h.mediaUrls&&h.mediaUrls.trim()&&<MediaCard urls={h.mediaUrls}/>}
                                     {h.mediaUrls&&h.mediaUrls.trim()&&<AudioToggle urls={h.mediaUrls}/>}
                                   </div>
