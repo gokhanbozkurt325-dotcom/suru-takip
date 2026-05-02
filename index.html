@@ -189,59 +189,62 @@ function VaccineCalendar({ vaccineReports }) {
 
 
 function AudioToggle({urls}) {
-  const list = (urls||"").split(",").map(function(u){return u.trim();}).filter(function(u){
-    return u&&(u.includes("health-audio")||/\.(webm|mp3|wav|ogg|aac|m4a)/i.test(u));
-  });
+  const list = (urls||"").split(",").map(u=>u.trim()).filter(u=>
+    u && (u.includes("health-audio")||/\.(webm|mp3|wav|ogg|aac|m4a)/i.test(u))
+  );
   if(!list.length) return null;
   return (
-    <div style={{marginTop:6}} onClick={function(e){e.stopPropagation();}}>
-      {list.map(function(url,i){
-        return (
-          <div key={i} style={{marginBottom:4,background:"#FEF2F2",borderRadius:8,padding:"5px 8px",border:"1px solid rgba(239,68,68,.15)"}}>
-            <div style={{fontSize:10,color:"#DC2626",fontWeight:700,marginBottom:2}}>🎵 Ses Kaydı {list.length>1?i+1:""}</div>
-            <audio src={url} controls style={{width:"100%",height:32}}/>
-          </div>
-        );
-      })}
+    <div style={{marginTop:6}} onClick={e=>e.stopPropagation()}>
+      {list.map((url,i)=>(
+        <div key={i} style={{marginBottom:4,background:"#FEF2F2",borderRadius:8,padding:"5px 8px",border:"1px solid rgba(239,68,68,.15)"}}>
+          <div style={{fontSize:10,color:"#DC2626",fontWeight:700,marginBottom:2}}>🎵 Ses{list.length>1?" "+(i+1):""}</div>
+          <audio src={url} controls style={{width:"100%",height:32}}/>
+        </div>
+      ))}
     </div>
   );
 }
 
 function MediaCard({urls}) {
   const [open, setOpen] = React.useState(false);
-  const list = (urls||"").split(",").map(function(u){return u.trim();}).filter(Boolean);
-  const photos = list.filter(function(u){return u.includes("health-photos")||/\.(jpg|jpeg|png|gif|webp)/i.test(u);});
-  const videos = list.filter(function(u){return u.includes("health-videos")||/\.(mp4|mov|avi|mkv)/i.test(u);});
+  const photos = (urls||"").split(",").map(u=>u.trim()).filter(u=>
+    u && (u.includes("health-photos")||/\.(jpg|jpeg|png|gif|webp)/i.test(u))
+  );
+  const videos = (urls||"").split(",").map(u=>u.trim()).filter(u=>
+    u && (u.includes("health-videos")||/\.(mp4|mov|avi|mkv)/i.test(u))
+  );
   if(!photos.length && !videos.length) return null;
   const preview = photos.slice(0,3);
+  const rest = photos.slice(3);
+  const hasMore = rest.length>0 || videos.length>0;
   return (
-    <div style={{marginTop:6}} onClick={function(e){e.stopPropagation();}}>
+    <div style={{marginTop:6}} onClick={e=>e.stopPropagation()}>
       <div style={{display:"flex",gap:4,alignItems:"center",flexWrap:"wrap"}}>
-        {preview.map(function(url,i){
-          return (
-            <img key={i} src={url} onClick={function(e){e.stopPropagation();setOpen(true);}}
-              style={{width:52,height:52,objectFit:"cover",borderRadius:6,border:"1.5px solid #E5E7EB",cursor:"pointer"}}/>
-          );
-        })}
-        {(photos.length>3||videos.length>0)&&(
-          <button onClick={function(e){e.stopPropagation();setOpen(function(o){return !o;});}}
-            style={{height:52,padding:"0 10px",borderRadius:6,border:"1.5px solid #0EA5E9",background:"rgba(14,165,233,.1)",color:"#0EA5E9",fontSize:11,fontWeight:700,cursor:"pointer",WebkitAppearance:"none"}}>
-            {open?"✕":"+"+(photos.length+videos.length-preview.length)+" daha"}
+        {preview.map((url,i)=>(
+          <img key={i} src={url}
+            onClick={e=>{e.stopPropagation();window.open(url,"_blank");}}
+            style={{width:54,height:54,objectFit:"cover",borderRadius:6,border:"1.5px solid #E5E7EB",cursor:"pointer"}}/>
+        ))}
+        {hasMore&&(
+          <button onClick={e=>{e.stopPropagation();setOpen(o=>!o);}}
+            style={{height:54,minWidth:42,padding:"0 8px",borderRadius:6,border:"1.5px solid #0EA5E9",background:"rgba(14,165,233,.1)",color:"#0EA5E9",fontSize:11,fontWeight:700,cursor:"pointer",WebkitAppearance:"none"}}>
+            {open?"✕":"+"+( rest.length+videos.length)}
           </button>
         )}
       </div>
       {open&&(
         <div style={{marginTop:6}}>
-          {photos.length>3&&(
+          {rest.length>0&&(
             <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6}}>
-              {photos.slice(3).map(function(url,i){
-                return <a key={i} href={url} target="_blank" rel="noreferrer"><img src={url} style={{width:72,height:72,objectFit:"cover",borderRadius:8,border:"1.5px solid #E5E7EB"}}/></a>;
-              })}
+              {rest.map((url,i)=>(
+                <img key={i} src={url} onClick={e=>{e.stopPropagation();window.open(url,"_blank");}}
+                  style={{width:72,height:72,objectFit:"cover",borderRadius:8,border:"1.5px solid #E5E7EB",cursor:"pointer"}}/>
+              ))}
             </div>
           )}
-          {videos.map(function(url,i){
-            return <video key={i} src={url} controls style={{width:"100%",borderRadius:8,marginBottom:4,maxHeight:180}}/>;
-          })}
+          {videos.map((url,i)=>(
+            <video key={i} src={url} controls style={{width:"100%",borderRadius:8,marginBottom:4,maxHeight:200}}/>
+          ))}
         </div>
       )}
     </div>
@@ -1597,82 +1600,59 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
   const [notes,setNotes]=useState("");
   const [treatmentDays,setTreatmentDays]=useState(0);
   const [audioBlobs,setAudioBlobs]=useState([]);
-  const [photoFiles,setPhotoFiles]=useState([]);
-  const [videoFiles,setVideoFiles]=useState([]);
   const [uploading,setUploading]=useState(false);
   const [recording,setRecording]=useState(false);
   const [mediaRecorder,setMediaRecorder]=useState(null);
   const audioChunksRef = useRef([]);
-  const audioFileRef = useRef();
-  const photoFileRef = useRef();
-  const videoFileRef = useRef();
   const [err,setErr]=useState("");
   const [saving,setSaving]=useState(false);
 
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
   const startAudioRecording = async () => {
     try {
-      if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){setErr("Mikrofon desteklenmiyor, ses dosyası seçin.");return;}
-      const stream = await navigator.mediaDevices.getUserMedia({audio:true,video:false});
-      const types=["audio/mp4","audio/aac","audio/webm;codecs=opus","audio/webm","audio/ogg"];
-      const mimeType=types.find(t=>MediaRecorder.isTypeSupported(t))||"";
-      const mr=new MediaRecorder(stream,mimeType?{mimeType}:{});
-      audioChunksRef.current=[];
-      mr.ondataavailable=e=>{if(e.data&&e.data.size>0)audioChunksRef.current.push(e.data);};
-      mr.onstop=()=>{
-        const mime=mimeType||"audio/webm";
-        const ext=mime.includes("mp4")||mime.includes("aac")?"m4a":"webm";
-        const blob=new Blob(audioChunksRef.current,{type:mime});
-        blob._ext=ext; blob._mime=mime;
-        setAudioBlobs(p=>[...p,blob]);
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        alert("Bu cihaz ses kaydını desteklemiyor.");
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true, video:false});
+      // iOS/Safari uyumlu format seç
+      const mimeType = MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4"
+                     : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm"
+                     : "";
+      const mr = new MediaRecorder(stream, mimeType ? {mimeType} : {});
+      audioChunksRef.current = [];
+      mr.ondataavailable = e => { if(e.data && e.data.size>0) audioChunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, {type: mimeType||"audio/webm"});
+        setAudioBlobs(p=>[...p, blob]);
         stream.getTracks().forEach(t=>t.stop());
       };
-      mr.start(250);
-      setMediaRecorder(mr); setRecording(true);
+      mr.start(1000); // Her saniye veri topla
+      setMediaRecorder(mr);
+      setRecording(true);
     } catch(e) {
       setRecording(false);
-      if(e.name==="NotAllowedError") setErr("Mikrofon izni verilmedi.");
-      else setErr("Ses hatası: "+(e.message||e.name));
+      if(e.name==="NotAllowedError"||e.name==="PermissionDeniedError") setErr("Mikrofon izni verilmedi. Tarayıcı ayarlarından izin verin.");
+      else if(e.name==="NotFoundError") setErr("Mikrofon bulunamadı.");
+      else if(e.name==="NotSupportedError") setErr("Bu tarayıcı ses kaydını desteklemiyor. Ses dosyası yükleyin.");
+      else setErr("Ses hatası: " + (e.message||e.name));
     }
   };
 
-  const stopAudioRecording=()=>{if(mediaRecorder){mediaRecorder.stop();setRecording(false);setMediaRecorder(null);}};
+  const stopAudioRecording = () => {
+    if(mediaRecorder) { mediaRecorder.stop(); setRecording(false); setMediaRecorder(null); }
+  };
 
-  const uploadAudio=async(recId)=>{
-    const urls=[];
+  const uploadAudio = async (recId) => {
+    setUploading(true);
+    const urls = [];
     for(let i=0;i<audioBlobs.length;i++){
-      const blob=audioBlobs[i];
-      const ext=blob._ext||"webm"; const mime=blob._mime||"audio/webm";
-      const path=`${recId}_audio_${Date.now()}_${i}.${ext}`;
-      await sb.storage.from("health-audio").upload(path,blob,{contentType:mime});
-      const {data:ud}=sb.storage.from("health-audio").getPublicUrl(path);
-      if(ud)urls.push(ud.publicUrl);
+      const path = `${recId}_audio_${Date.now()}_${i}.webm`;
+      await sb.storage.from("health-audio").upload(path, audioBlobs[i], {contentType:"audio/webm"});
+      const {data:ud} = sb.storage.from("health-audio").getPublicUrl(path);
+      if(ud) urls.push(ud.publicUrl);
     }
-    return urls;
-  };
-
-  const uploadPhotos=async(recId)=>{
-    const urls=[];
-    for(let i=0;i<photoFiles.length;i++){
-      const f=photoFiles[i]; const ext=f.name.split(".").pop()||"jpg";
-      const path=`${recId}_photo_${Date.now()}_${i}.${ext}`;
-      await sb.storage.from("health-photos").upload(path,f,{contentType:f.type});
-      const {data:ud}=sb.storage.from("health-photos").getPublicUrl(path);
-      if(ud)urls.push(ud.publicUrl);
-    }
-    return urls;
-  };
-
-  const uploadVideos=async(recId)=>{
-    const urls=[];
-    for(let i=0;i<videoFiles.length;i++){
-      const f=videoFiles[i]; const ext=f.name.split(".").pop()||"mp4";
-      const path=`${recId}_video_${Date.now()}_${i}.${ext}`;
-      await sb.storage.from("health-videos").upload(path,f,{contentType:f.type});
-      const {data:ud}=sb.storage.from("health-videos").getPublicUrl(path);
-      if(ud)urls.push(ud.publicUrl);
-    }
+    setUploading(false);
     return urls;
   };
 
@@ -1690,9 +1670,10 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     if(error){setErr("Kayıt hatası: "+error.message);setSaving(false);return;}
     await addLog(rec.id, goatId, breed, "açılış", `${cond} — ${currentUser} tarafından açıldı`, currentUser);
     const mediaUrls = [];
-    if(audioBlobs.length>0){const au=await uploadAudio(rec.id);if(au)mediaUrls.push(...au);}
-    if(photoFiles.length>0){const pu=await uploadPhotos(rec.id);if(pu)mediaUrls.push(...pu);}
-    if(videoFiles.length>0){const vu=await uploadVideos(rec.id);if(vu)mediaUrls.push(...vu);}
+    if(audioBlobs.length>0){
+      const audioUrls = await uploadAudio(rec.id);
+      if(audioUrls) mediaUrls.push(...audioUrls);
+    }
     if(mediaUrls.length>0){
       await sb.from("health_records").update({media_urls: mediaUrls.join(",")}).eq("id", rec.id);
       rec.mediaUrls = mediaUrls.join(",");
@@ -1761,65 +1742,38 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     <StatusPicker value={status} onChange={setStatus}/>
     <FL>Notlar</FL>
     <VoiceInput value={notes} onChange={setNotes} placeholder="Notlar..." multiline rows={2}/>
-        {/* Medya */}
-    <FL>Medya</FL>
-    <div style={{display:"flex",gap:6,marginBottom:6}}>
-      {isIOS ? (
+        {/* Ses Kaydı */}
+    <div style={{display:"flex",gap:6,marginBottom:4}}>
+      {typeof MediaRecorder !== "undefined" ? (
+        !recording
+          ? <button type="button" onClick={startAudioRecording}
+              style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"rgba(239,68,68,.1)",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+              🎙️ Ses Kaydı Başlat
+            </button>
+          : <button type="button" onClick={stopAudioRecording}
+              style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"#EF4444",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>
+              ⏹ Kaydı Durdur
+            </button>
+      ) : (
         <label style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"rgba(239,68,68,.1)",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"center",display:"block"}}>
-          🎙️ Ses Seç
-          <input ref={audioFileRef} type="file" accept="audio/*,video/*" capture="microphone" style={{display:"none"}} onChange={e=>{
-            Array.from(e.target.files||[]).forEach(f=>{
-              const reader=new FileReader();
-              reader.onload=ev=>{const blob=new Blob([ev.target.result],{type:f.type});blob._ext=f.name.split(".").pop()||"m4a";blob._mime=f.type;setAudioBlobs(p=>[...p,blob]);};
-              reader.readAsArrayBuffer(f);
-            });
+          🎙️ Ses Dosyası Seç
+          <input type="file" accept="audio/*" style={{display:"none"}} onChange={e=>{
+            const files = Array.from(e.target.files||[]);
+            files.forEach(f=>{ const reader = new FileReader(); reader.onload=ev=>{ const blob=new Blob([ev.target.result],{type:f.type}); setAudioBlobs(p=>[...p,blob]); }; reader.readAsArrayBuffer(f); });
           }}/>
         </label>
-      ) : !recording ? (
-        <button type="button" onClick={startAudioRecording}
-          style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"rgba(239,68,68,.1)",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>
-          🎙️ Ses Kaydet
-        </button>
-      ) : (
-        <button type="button" onClick={stopAudioRecording}
-          style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"#EF4444",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>
-          ⏹ Durdur
-        </button>
       )}
-      <label style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #0EA5E9",background:"rgba(14,165,233,.1)",color:"#0EA5E9",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"center",display:"block"}}>
-        📷 Fotoğraf
-        <input ref={photoFileRef} type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>setPhotoFiles(p=>[...p,...Array.from(e.target.files||[])])}/>
-      </label>
-      <label style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #8B5CF6",background:"rgba(139,92,246,.1)",color:"#8B5CF6",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"center",display:"block"}}>
-        🎥 Video
-        <input ref={videoFileRef} type="file" accept="video/*" style={{display:"none"}} onChange={e=>setVideoFiles(p=>[...p,...Array.from(e.target.files||[])])}/>
-      </label>
     </div>
-    {audioBlobs.length>0&&<div style={{marginBottom:6}}>
+    {audioBlobs.length>0&&<div style={{marginBottom:4}}>
       {audioBlobs.map((blob,i)=>(
-        <div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,padding:"5px 8px",background:"#FEF3C7",borderRadius:8}}>
+        <div key={i} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,padding:"6px 8px",background:"#FEF3C7",borderRadius:8}}>
           <audio controls src={URL.createObjectURL(blob)} style={{flex:1,height:32}}/>
           <button onClick={()=>setAudioBlobs(p=>p.filter((_,j)=>j!==i))} style={{background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:20,height:20,fontSize:12,cursor:"pointer",padding:0,lineHeight:"20px",textAlign:"center"}}>×</button>
         </div>
       ))}
     </div>}
-    {photoFiles.length>0&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:6}}>
-      {photoFiles.map((f,i)=>(
-        <div key={i} style={{position:"relative"}}>
-          <img src={URL.createObjectURL(f)} style={{width:60,height:60,objectFit:"cover",borderRadius:8,border:"1.5px solid #E5E7EB"}}/>
-          <button onClick={()=>setPhotoFiles(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:10,cursor:"pointer",padding:0,lineHeight:"18px",textAlign:"center"}}>×</button>
-        </div>
-      ))}
-    </div>}
-    {videoFiles.length>0&&<div style={{marginBottom:6}}>
-      {videoFiles.map((f,i)=>(
-        <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 8px",background:"#EDE9FE",borderRadius:8,marginBottom:4}}>
-          <span style={{fontSize:12,flex:1}}>🎥 {f.name}</span>
-          <button onClick={()=>setVideoFiles(p=>p.filter((_,j)=>j!==i))} style={{background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:20,height:20,fontSize:12,cursor:"pointer",padding:0,lineHeight:"20px",textAlign:"center"}}>×</button>
-        </div>
-      ))}
-    </div>}
-    {uploading&&<div style={{fontSize:11,color:"var(--primary,#8B5CF6)",marginBottom:4}}>⏳ Yükleniyor...</div>}
+
+    {uploading&&<div style={{fontSize:11,color:"var(--primary,#8B5CF6)",marginBottom:4}}>⏳ Medya yükleniyor...</div>}
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
       <button onClick={save} disabled={saving} style={{...S.btnPrimary,flex:2,padding:12,opacity:saving?.6:1}}>{saving?"Kaydediliyor...":"💾 Kaydet"}</button>
@@ -5292,12 +5246,13 @@ function App(){
                             onClick={()=>setSelHealthRec(h)}>
                             <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                               <div style={{flex:1}}>
-                                <div style={{fontSize:12,fontWeight:700,color:breed.color,marginBottom:2}}>
+                                <div style={{fontSize:11,fontWeight:700,color:breed.color,marginBottom:2}}>
                                   {breed.emoji} {g?.name} <span style={{color:"#1A1A2E",fontWeight:900,fontFamily:"monospace"}}>({g?.earTag})</span>
                                 </div>
                                 <div style={{fontWeight:700,fontSize:14,color:"#1A1A2E"}}>{h.condition}</div>
                                 {h.treatment&&<div style={{fontSize:12,color:"#1F2937",marginTop:3}}>💊 {h.treatment}</div>}
                                 {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
+
                                 <div style={{marginTop:6,background:"#F8F9FA",borderRadius:"0 8px 8px 0",padding:"5px 9px",fontSize:11,borderLeft:`3px solid ${breed.color}`}}>
                                   <div style={{color:"#6B7280"}}>
                                     <span style={{fontWeight:700,color:"#374151"}}>👤 Açan:</span> {h.createdByName||"—"} · {fmtDT(h.date+"T00:00:00")}
@@ -5308,6 +5263,7 @@ function App(){
                                     </div>
                                   )}
                                 </div>
+
                                 {hDays.length>0&&(
                                   <div style={{marginTop:5,display:"flex",gap:4,alignItems:"center"}}>
                                     <span style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",padding:"2px 8px",borderRadius:8,fontWeight:700}}>
