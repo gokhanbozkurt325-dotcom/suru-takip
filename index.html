@@ -859,36 +859,6 @@ function GoatMatchGame() {
   );
 }
 
-function VideoThumb({url}) {
-  const [play, setPlay] = React.useState(false);
-  if(play) return <video src={url} controls autoPlay style={{width:"100%",borderRadius:8,marginTop:4,maxHeight:200}}/>;
-  return (
-    <div onClick={e=>{e.stopPropagation();setPlay(true);}}
-      style={{width:56,height:56,background:"#EDE9FE",borderRadius:8,border:"1.5px solid #C4B5FD",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",gap:1}}>
-      <span style={{fontSize:20}}>▶️</span>
-      <span style={{fontSize:8,color:"#7C3AED",fontWeight:700}}>VİDEO</span>
-    </div>
-  );
-}
-
-function AudioBar({urls}) {
-  const [open, setOpen] = React.useState(false);
-  return (
-    <div style={{marginTop:6}}>
-      <button onClick={e=>{e.stopPropagation();setOpen(o=>!o);}}
-        style={{display:"inline-flex",alignItems:"center",gap:4,background:open?"rgba(239,68,68,.15)":"rgba(239,68,68,.08)",border:"1.5px solid rgba(239,68,68,.3)",borderRadius:20,padding:"3px 10px",fontSize:11,fontWeight:700,color:"#DC2626",cursor:"pointer",WebkitAppearance:"none"}}>
-        🎵 Ses ({urls.length}) {open?"▲":"▼"}
-      </button>
-      {open&&urls.map((url,i)=>(
-        <div key={i} style={{marginTop:4,background:"#FEF2F2",borderRadius:8,padding:"4px 8px",border:"1px solid rgba(239,68,68,.15)"}}>
-          <div style={{fontSize:9,color:"#DC2626",fontWeight:700,marginBottom:2}}>🎙 Kayıt{urls.length>1?" "+(i+1):""}</div>
-          <audio src={url} controls style={{width:"100%",height:32}}/>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function SaglikGonderModal({record, goat, onClose}) {
   var KISILER = [
     {isim:"Veteriner Hekim", tel:"905426321183"},
@@ -903,10 +873,9 @@ function SaglikGonderModal({record, goat, onClose}) {
   var photos = mediaList.filter(function(u){return u.includes("health-photos")||/\.(jpg|jpeg|png|gif|webp)/i.test(u);});
   var videos = mediaList.filter(function(u){return u.includes("health-videos")||/\.(mp4|mov|avi)/i.test(u);});
   var audios = mediaList.filter(function(u){return u.includes("health-audio")||/\.(webm|mp3|wav|ogg|aac|m4a)/i.test(u);});
-
   var seciliSayisi = KISILER.filter(function(k){return secili[k.tel];}).length;
 
-  var mesajOlustur = function(tel) {
+  var mesajOlustur = function() {
     var tarih = new Date().toLocaleString("tr-TR");
     var satirlar = [
       "🐐 SAĞLIK RAPORU — BURDUR CEZAEVİ HAYVANCILIK",
@@ -918,53 +887,40 @@ function SaglikGonderModal({record, goat, onClose}) {
       "Durum: " + record.status,
       "Açılış: " + record.date + (record.createdByName ? " — " + record.createdByName : ""),
       "",
-      "📅 Tarih: " + tarih,
+      "📅 " + tarih,
     ].filter(Boolean);
-    if(photos.length>0){
-      satirlar.push("");
-      satirlar.push("📷 Fotoğraflar (" + photos.length + "):");
-      photos.forEach(function(url,i){ satirlar.push((i+1)+". " + url); });
-    }
-    if(videos.length>0){
-      satirlar.push("");
-      satirlar.push("🎥 Videolar (" + videos.length + "):");
-      videos.forEach(function(url,i){ satirlar.push((i+1)+". " + url); });
-    }
-    if(audios.length>0){
-      satirlar.push("");
-      satirlar.push("🎵 Ses Kayıtları (" + audios.length + "):");
-      audios.forEach(function(url,i){ satirlar.push((i+1)+". " + url); });
-    }
+    if(photos.length>0){ satirlar.push(""); satirlar.push("📷 Fotoğraflar:"); photos.forEach(function(u,i){ satirlar.push((i+1)+". "+u); }); }
+    if(videos.length>0){ satirlar.push(""); satirlar.push("🎥 Videolar:"); videos.forEach(function(u,i){ satirlar.push((i+1)+". "+u); }); }
+    if(audios.length>0){ satirlar.push(""); satirlar.push("🎵 Ses Kayıtları:"); audios.forEach(function(u,i){ satirlar.push((i+1)+". "+u); }); }
     return encodeURIComponent(satirlar.join("\n"));
   };
 
   var gonderBir = function(tel) {
-    var mesaj = mesajOlustur(tel);
-    window.open("https://api.whatsapp.com/send?phone="+tel+"&text="+mesaj, "_blank");
+    window.open("https://api.whatsapp.com/send?phone="+tel+"&text="+mesajOlustur(), "_blank");
     setGonderildi(function(prev){var y=Object.assign({},prev);y[tel]=true;return y;});
+  };
+
+  var WaIcon = function(color) {
+    return React.createElement("svg",{width:16,height:16,viewBox:"0 0 24 24",fill:color||"#25D366"},
+      React.createElement("path",{d:"M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"}),
+      React.createElement("path",{d:"M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.843L0 24l6.343-1.505A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.88 0-3.645-.5-5.178-1.378l-.37-.22-3.77.895.928-3.68-.242-.38A9.958 9.958 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"})
+    );
   };
 
   return (
     <div onClick={onClose} style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.75)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-      <div onClick={function(e){e.stopPropagation();}} style={{background:"#FFFFFF",borderRadius:22,padding:22,width:"100%",maxWidth:360,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 8px 40px rgba(0,0,0,.3)"}}>
-
+      <div onClick={function(e){e.stopPropagation();}} style={{background:"#fff",borderRadius:22,padding:22,width:"100%",maxWidth:360,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 8px 40px rgba(0,0,0,.3)"}}>
         {step==="sec" ? (
           <div>
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-              <div style={{width:40,height:40,borderRadius:"50%",background:"#ECFDF5",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.843L0 24l6.343-1.505A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.88 0-3.645-.5-5.178-1.378l-.37-.22-3.77.895.928-3.68-.242-.38A9.958 9.958 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-              </div>
+              <div style={{width:40,height:40,borderRadius:"50%",background:"#ECFDF5",display:"flex",alignItems:"center",justifyContent:"center"}}>{WaIcon("#25D366")}</div>
               <div>
                 <div style={{fontWeight:800,fontSize:16,color:"#1A1A2E"}}>Sağlık Raporu Gönder</div>
-                <div style={{fontSize:11,color:"#9CA3AF"}}>WhatsApp üzerinden gönderilecek</div>
+                <div style={{fontSize:11,color:"#9CA3AF"}}>WhatsApp üzerinden iletilecek</div>
               </div>
             </div>
-
-            {/* Kayıt özeti */}
             <div style={{background:"#F5F5F5",borderRadius:12,padding:"10px 12px",marginBottom:12,fontSize:12}}>
-              <div style={{fontWeight:700,fontSize:14,color:"#1A1A2E",marginBottom:4}}>
-                🐐 {goat?goat.name+" ("+goat.earTag+")":record.goatEarTag||"—"}
-              </div>
+              <div style={{fontWeight:700,fontSize:14,color:"#1A1A2E",marginBottom:4}}>🐐 {goat?goat.name+" ("+goat.earTag+")":record.goatEarTag||"—"}</div>
               <div style={{color:"#374151",marginBottom:2}}>🦠 {record.condition}</div>
               {record.treatment&&<div style={{color:"#374151",marginBottom:2}}>💊 {record.treatment}</div>}
               <div style={{color:"#6B7280",marginTop:4,fontSize:11}}>
@@ -974,7 +930,6 @@ function SaglikGonderModal({record, goat, onClose}) {
                 {mediaList.length===0&&<span style={{color:"#D1D5DB"}}>Medya yok</span>}
               </div>
             </div>
-
             <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:8,textTransform:"uppercase",letterSpacing:".4px"}}>Kime gönderilsin?</div>
             {KISILER.map(function(k){
               var sec=!!secili[k.tel];
@@ -990,15 +945,13 @@ function SaglikGonderModal({record, goat, onClose}) {
                       <div style={{fontSize:11,color:"#9CA3AF"}}>{k.tel.replace("90","0").replace(/(\d{4})(\d{3})(\d{2})(\d{2})$/,"$1 $2 $3 $4")}</div>
                     </div>
                   </div>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill={sec?"#25D366":"#D1D5DB"}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.843L0 24l6.343-1.505A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.88 0-3.645-.5-5.178-1.378l-.37-.22-3.77.895.928-3.68-.242-.38A9.958 9.958 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                  {WaIcon(sec?"#25D366":"#D1D5DB")}
                 </button>
               );
             })}
-
             <div style={{display:"flex",gap:8,marginTop:12}}>
               <button onClick={onClose} style={{flex:1,padding:"11px",borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:13,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>İptal</button>
-              <button onClick={function(){if(seciliSayisi>0)setStep("gonder");}}
-                disabled={seciliSayisi===0}
+              <button onClick={function(){if(seciliSayisi>0)setStep("gonder");}} disabled={seciliSayisi===0}
                 style={{flex:2,padding:"11px",borderRadius:12,border:"none",background:seciliSayisi>0?"#25D366":"#F3F4F6",color:seciliSayisi>0?"#fff":"#9CA3AF",fontWeight:700,fontSize:13,cursor:seciliSayisi>0?"pointer":"not-allowed",WebkitAppearance:"none"}}>
                 {seciliSayisi>0?"İleri → ("+seciliSayisi+" kişi)":"Kişi seçin"}
               </button>
@@ -1010,12 +963,12 @@ function SaglikGonderModal({record, goat, onClose}) {
               <div style={{fontSize:28}}>📱</div>
               <div>
                 <div style={{fontWeight:800,fontSize:16,color:"#1A1A2E"}}>Mesajları Gönder</div>
-                <div style={{fontSize:11,color:"#9CA3AF"}}>Her butona tıklayın → WhatsApp'ta Gönder'e basın</div>
+                <div style={{fontSize:11,color:"#9CA3AF"}}>Butona tıkla → WhatsApp açılır → Gönder</div>
               </div>
             </div>
             <div style={{background:"#ECFDF5",borderRadius:10,padding:"8px 12px",marginBottom:12,fontSize:12,color:"#065F46",border:"1px solid #6EE7B7"}}>
               🐐 <b>{goat?goat.name+" ("+goat.earTag+")":record.goatEarTag}</b> — {record.condition}
-              {mediaList.length>0&&<span style={{color:"#059669",marginLeft:8}}>· {photos.length>0?photos.length+"📷":""} {videos.length>0?videos.length+"🎥":""} {audios.length>0?audios.length+"🎵":""}</span>}
+              {mediaList.length>0&&<span style={{color:"#059669",marginLeft:6}}>· {photos.length>0?photos.length+"📷 ":""}{videos.length>0?videos.length+"🎥 ":""}{audios.length>0?audios.length+"🎵":""}</span>}
             </div>
             {KISILER.filter(function(k){return secili[k.tel];}).map(function(k){
               var gnd=!!gonderildi[k.tel];
@@ -1027,9 +980,7 @@ function SaglikGonderModal({record, goat, onClose}) {
                 </button>
               );
             })}
-            <div style={{fontSize:11,color:"#9CA3AF",textAlign:"center",marginBottom:12}}>
-              Butona tıkla → WhatsApp açılır → Gönder tuşuna bas
-            </div>
+            <div style={{fontSize:11,color:"#9CA3AF",textAlign:"center",marginBottom:12}}>Butona tıkla → WhatsApp açılır → Gönder tuşuna bas</div>
             <div style={{display:"flex",gap:8}}>
               <button onClick={function(){setStep("sec");setGonderildi({});}} style={{flex:1,padding:"10px",borderRadius:12,border:"1.5px solid #E5E7EB",background:"#F9FAFB",fontWeight:600,fontSize:12,cursor:"pointer",color:"#6B7280",WebkitAppearance:"none"}}>← Geri</button>
               <button onClick={onClose} style={{flex:2,padding:"10px",borderRadius:12,border:"none",background:"#374151",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer",WebkitAppearance:"none"}}>✅ Tamamlandı</button>
@@ -4267,7 +4218,6 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
 function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHealth,onUpdateHealth,onFinalizeHealth,onLogsUpdate,onTreatmentDayUpdate,detailTab,setDetailTab,currentUser}){
   const b=BREEDS.find(x=>x.id===goat.breed);
   const [selRecord,setSelRecord]=useState(null);
-  const [saglikGonder,setSaglikGonder]=useState(null);
   const [mediaTabs,setMediaTabs]=useState({});
   const setMediaTab=(id,tab)=>setMediaTabs(p=>({...p,[id]:tab}));
   const [healthPhotos,setHealthPhotos]=useState({});
@@ -4313,7 +4263,6 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
           <button onClick={()=>setViewHealthPhotos(null)} style={{marginTop:16,background:"#fff",border:"none",borderRadius:10,padding:"10px 28px",fontWeight:700,fontSize:14,cursor:"pointer"}}>Kapat</button>
         </div>
       )}
-      {saglikGonder&&<SaglikGonderModal record={saglikGonder} goat={goat} onClose={()=>setSaglikGonder(null)}/>}
       {selRecordObj && (
         <HealthDetailModal
           record={selRecordObj} goat={goat} logs={logs} treatmentDays={treatmentDays} currentUser={currentUser}
@@ -4433,35 +4382,52 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
                 {lastLog&&<div style={{fontSize:11,color:"#9CA3AF"}}>
                   🕐 Son işlem: <span style={{fontWeight:600,color:"#374151"}}>{lastLog.createdBy||""}</span> — {fmtDT(lastLog.createdAt)}
                 </div>}
+                {healthPhotos[h.id]&&healthPhotos[h.id].length>0&&(
+                  <button onClick={function(e){e.stopPropagation();setViewHealthPhotos(healthPhotos[h.id]);}}
+                    style={{marginTop:6,background:"rgba(14,165,233,.1)",color:"#0EA5E9",border:"none",borderRadius:8,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                    📷 {healthPhotos[h.id].length} Medya
+                  </button>
+                )}
               {mediaList.length>0&&(
                 <div style={{marginTop:8,paddingTop:8,borderTop:"1px solid #F5F5F5"}} onClick={e=>e.stopPropagation()}>
                   <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
                     {photos.map((url,i)=>(
-                      <img key={i} src={url}
-                        onClick={e=>{e.stopPropagation();window.open(url,"_blank");}}
-                        style={{width:56,height:56,objectFit:"cover",borderRadius:8,border:"1.5px solid #E5E7EB",cursor:"pointer"}}/>
+                      <a key={i} href={url} target="_blank" rel="noreferrer">
+                        <img src={url} style={{width:56,height:56,objectFit:"cover",borderRadius:8,border:"1.5px solid #E5E7EB"}}/>
+                      </a>
                     ))}
                     {videos.map((url,i)=>(
-                      <VideoThumb key={i} url={url}/>
+                      <a key={i} href={url} target="_blank" rel="noreferrer" style={{width:56,height:56,background:"#F3F4F6",borderRadius:8,border:"1.5px solid #E5E7EB",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,textDecoration:"none"}}>▶️</a>
                     ))}
                   </div>
-                  {audios.length>0&&<AudioBar urls={audios}/>}
+                  {audios.map((url,i)=>(
+                    <audio key={i} src={url} controls style={{width:"100%",marginTop:6,height:32}}/>
+                  ))}
                 </div>
               )}
               </div>
 
-              {/* Alt butonlar: Güncelle + Gönder */}
-              <div style={{display:"flex",borderTop:"1px solid #F0F0F0"}} onClick={e=>e.stopPropagation()}>
-                <button onClick={()=>setSelRecord(h.id)}
-                  style={{flex:1,padding:"9px 0",border:"none",background:"transparent",fontSize:12,fontWeight:600,color:"#6B7280",cursor:"pointer",borderRight:"1px solid #F0F0F0"}}>
-                  ✏️ Güncelle
-                </button>
-                <button onClick={()=>setSaglikGonder(h)}
-                  style={{flex:1,padding:"9px 0",border:"none",background:"transparent",fontSize:12,fontWeight:600,color:"#25D366",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.843L0 24l6.343-1.505A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.88 0-3.645-.5-5.178-1.378l-.37-.22-3.77.895.928-3.68-.242-.38A9.958 9.958 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-                  Gönder
-                </button>
-              </div>
+              {/* Medya sekmeleri */}
+              {mediaList.length>0&&(
+                <div style={{borderTop:"1px solid #F0F0F0"}} onClick={e=>e.stopPropagation()}>
+                  <div style={{display:"flex",borderBottom:"1px solid #F0F0F0"}}>
+                    {photos.length>0&&<button onClick={()=>setMediaTab(h.id,"foto")} style={{flex:1,padding:"8px 0",fontSize:12,fontWeight:activeTab==="foto"?600:400,color:activeTab==="foto"?"var(--primary,#8B5CF6)":"#9CA3AF",background:"none",border:"none",borderBottom:activeTab==="foto"?"2px solid var(--primary,#8B5CF6)":"2px solid transparent",cursor:"pointer"}}>Foto ({photos.length})</button>}
+                    {videos.length>0&&<button onClick={()=>setMediaTab(h.id,"video")} style={{flex:1,padding:"8px 0",fontSize:12,fontWeight:activeTab==="video"?600:400,color:activeTab==="video"?"var(--primary,#8B5CF6)":"#9CA3AF",background:"none",border:"none",borderBottom:activeTab==="video"?"2px solid var(--primary,#8B5CF6)":"2px solid transparent",cursor:"pointer"}}>Video ({videos.length})</button>}
+                    {audios.length>0&&<button onClick={()=>setMediaTab(h.id,"ses")} style={{flex:1,padding:"8px 0",fontSize:12,fontWeight:activeTab==="ses"?600:400,color:activeTab==="ses"?"var(--primary,#8B5CF6)":"#9CA3AF",background:"none",border:"none",borderBottom:activeTab==="ses"?"2px solid var(--primary,#8B5CF6)":"2px solid transparent",cursor:"pointer"}}>Ses ({audios.length})</button>}
+                  </div>
+                  <div style={{padding:"10px 12px"}}>
+                    {activeTab==="foto"&&<div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                      {photos.map((url,i)=><a key={i} href={url} target="_blank" rel="noreferrer"><img src={url} style={{width:72,height:72,objectFit:"cover",borderRadius:10,border:"1.5px solid #E5E7EB"}}/></a>)}
+                    </div>}
+                    {activeTab==="video"&&<div>
+                      {videos.map((url,i)=><video key={i} src={url} controls style={{width:"100%",borderRadius:10,border:"1.5px solid #E5E7EB",marginBottom:4,maxHeight:180}}/>)}
+                    </div>}
+                    {activeTab==="ses"&&<div>
+                      {audios.map((url,i)=><audio key={i} src={url} controls style={{width:"100%",marginBottom:4}}/>)}
+                    </div>}
+                  </div>
+                </div>
+              )}
             </div>
             );
           })}
@@ -4532,6 +4498,7 @@ function App(){
   const [bulkAddModal,setBulkAddModal]=useState(null);
   const [archiveConfirm,setArchiveConfirm]=useState(null);
   const [selHealthRec,setSelHealthRec]=useState(null);
+  const [saglikGonderRec,setSaglikGonderRec]=useState(null);
 
   useEffect(()=>{
     if(showLogin) return;
@@ -5126,6 +5093,7 @@ function App(){
       {vModal&&!isGuest&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
       {addGoatModal&&!isGuest&&<AddGoatModal breed={BREEDS.find(b=>b.id===(addGoatModal.breedId||addGoatModal))} defaultCategory={addGoatModal.defaultCategory||"anac"} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser}/>}
       {bulkAddModal&&!isGuest&&<BulkAddGoatModal breed={BREEDS.find(b=>b.id===bulkAddModal.breedId)} defaultCategory={bulkAddModal.defaultCategory||"anac"} onSave={saveBulkGoats} onClose={()=>setBulkAddModal(null)} currentUser={currentUser}/>}
+      {saglikGonderRec&&<SaglikGonderModal record={saglikGonderRec} goat={goats.find(g=>g.id===saglikGonderRec.goatId)||null} onClose={()=>setSaglikGonderRec(null)}/>}
       {selHealthRec&&<HealthDetailModal
         record={selHealthRec}
         goat={goats.find(g=>g.id===selHealthRec.goatId)||null}
@@ -5436,39 +5404,45 @@ function App(){
                         const hLogs=logs.filter(function(l){return l.healthRecordId===h.id;}).sort(function(a,b){return new Date(b.createdAt)-new Date(a.createdAt);});
                         const lastLog=hLogs[0];
                         return (
-                          <div key={h.id} style={{...S.card,padding:12,marginBottom:5,cursor:"pointer",border:`1.5px solid ${breed.color}22`,borderLeft:`3px solid ${breed.color}`}}
-                            onClick={()=>setSelHealthRec(h)}>
-                            <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
-                              <div style={{flex:1}}>
-                                <div style={{fontSize:11,fontWeight:700,color:breed.color,marginBottom:2}}>
-                                  {breed.emoji} {g?.name} <span style={{color:"#1A1A2E",fontWeight:900,fontFamily:"monospace"}}>({g?.earTag})</span>
-                                </div>
-                                <div style={{fontWeight:700,fontSize:14,color:"#1A1A2E"}}>{h.condition}</div>
-                                {h.treatment&&<div style={{fontSize:12,color:"#1F2937",marginTop:3}}>💊 {h.treatment}</div>}
-                                {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
-                                <div style={{marginTop:6,background:"#F8F9FA",borderRadius:"0 8px 8px 0",padding:"5px 9px",fontSize:11,borderLeft:`3px solid ${breed.color}`}}>
-                                  <div style={{color:"#6B7280"}}>
-                                    <span style={{fontWeight:700,color:"#374151"}}>👤 Açan:</span> {h.createdByName||"—"} · {fmtDT(h.date+"T00:00:00")}
+                          <div key={h.id} style={{...S.card,marginBottom:5,overflow:"hidden",border:`1.5px solid ${breed.color}22`,borderLeft:`3px solid ${breed.color}`}}>
+                            <div style={{padding:12,cursor:"pointer"}} onClick={()=>setSelHealthRec(h)}>
+                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                                <div style={{flex:1}}>
+                                  <div style={{fontSize:11,fontWeight:700,color:breed.color,marginBottom:2}}>
+                                    {breed.emoji} {g?.name} <span style={{color:"#1A1A2E",fontWeight:900,fontFamily:"monospace"}}>({g?.earTag})</span>
                                   </div>
-                                  {lastLog&&(
-                                    <div style={{color:"#6B7280",marginTop:2}}>
-                                      <span style={{fontWeight:700,color:"#374151"}}>🩺 Son işlem:</span> {lastLog.userName||"—"} · {fmtDT(lastLog.createdAt)}
+                                  <div style={{fontWeight:700,fontSize:14,color:"#1A1A2E"}}>{h.condition}</div>
+                                  {h.treatment&&<div style={{fontSize:12,color:"#1F2937",marginTop:3}}>💊 {h.treatment}</div>}
+                                  {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
+                                  <div style={{marginTop:6,background:"#F8F9FA",borderRadius:"0 8px 8px 0",padding:"5px 9px",fontSize:11,borderLeft:`3px solid ${breed.color}`}}>
+                                    <div style={{color:"#6B7280"}}>
+                                      <span style={{fontWeight:700,color:"#374151"}}>👤 Açan:</span> {h.createdByName||"—"} · {fmtDT(h.date+"T00:00:00")}
+                                    </div>
+                                    {lastLog&&(
+                                      <div style={{color:"#6B7280",marginTop:2}}>
+                                        <span style={{fontWeight:700,color:"#374151"}}>🩺 Son işlem:</span> {lastLog.userName||"—"} · {fmtDT(lastLog.createdAt)}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {hDays.length>0&&(
+                                    <div style={{marginTop:5,display:"flex",gap:4,alignItems:"center"}}>
+                                      <span style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",padding:"2px 8px",borderRadius:8,fontWeight:700}}>
+                                        📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
+                                      </span>
                                     </div>
                                   )}
+                                  {h.mediaUrls&&h.mediaUrls.trim()&&<MediaCard urls={h.mediaUrls}/>}
+                                  {h.mediaUrls&&h.mediaUrls.trim()&&<AudioToggle urls={h.mediaUrls}/>}
                                 </div>
-                                {hDays.length>0&&(
-                                  <div style={{marginTop:5,display:"flex",gap:4,alignItems:"center"}}>
-                                    <span style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",padding:"2px 8px",borderRadius:8,fontWeight:700}}>
-                                      📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
-                                    </span>
-                                  </div>
-                                )}
-                                {h.mediaUrls&&h.mediaUrls.trim()&&<MediaCard urls={h.mediaUrls}/>}
-                                {h.mediaUrls&&h.mediaUrls.trim()&&<AudioToggle urls={h.mediaUrls}/>}
-                              </div>
-                              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
                                 <StatusBadge status={h.status}/>
                               </div>
+                            </div>
+                            <div style={{display:"flex",borderTop:"1px solid #F0F0F0"}} onClick={e=>e.stopPropagation()}>
+                              <button onClick={()=>setSelHealthRec(h)} style={{flex:1,padding:"9px 0",border:"none",background:"transparent",fontSize:12,fontWeight:600,color:"#6B7280",cursor:"pointer",borderRight:"1px solid #F0F0F0"}}>✏️ Güncelle</button>
+                              <button onClick={()=>setSaglikGonderRec(h)} style={{flex:1,padding:"9px 0",border:"none",background:"transparent",fontSize:12,fontWeight:600,color:"#25D366",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.843L0 24l6.343-1.505A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.88 0-3.645-.5-5.178-1.378l-.37-.22-3.77.895.928-3.68-.242-.38A9.958 9.958 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                                Gönder
+                              </button>
                             </div>
                           </div>
                         );
@@ -5528,35 +5502,43 @@ function App(){
                           const doneDays=hDays.filter(d=>d.done).length;
                           const lastLog=logs.filter(l=>l.healthRecordId===h.id).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt))[0];
                           return (
-                            <div key={h.id} style={{...S.card,padding:"10px 12px",marginBottom:5,cursor:"pointer",borderLeft:`3px solid ${b.color}`}}
-                              onClick={()=>setSelHealthRec(h)}>
-                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
-                                <div style={{flex:1}}>
-                                  <div style={{fontSize:12,fontWeight:700,color:b.color,marginBottom:2}}>
-                                    {g?.name?`${g.name} `:""}<span style={{color:"#1A1A2E",fontWeight:900,fontFamily:"monospace"}}>({h.goatEarTag||g?.earTag||"—"})</span>
-                                  </div>
-                                  <div style={{fontWeight:700,fontSize:13,color:"#1A1A2E"}}>{h.condition}</div>
-                                  {h.treatment&&<div style={{fontSize:11,color:"#1F2937",marginTop:3}}>💊 {h.treatment}</div>}
-                                  {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
-                                  <div style={{marginTop:6,background:"#F8F9FA",borderRadius:"0 8px 8px 0",padding:"5px 9px",fontSize:11,borderLeft:`3px solid ${b.color}`}}>
-                                    <div style={{color:"#6B7280"}}>
-                                      <span style={{fontWeight:700,color:"#374151"}}>👤 Açan:</span> {h.createdByName||"—"} · {fmtDT(h.date+"T00:00:00")}
+                            <div key={h.id} style={{...S.card,marginBottom:5,overflow:"hidden",borderLeft:`3px solid ${b.color}`}}>
+                              <div style={{padding:"10px 12px",cursor:"pointer"}} onClick={()=>setSelHealthRec(h)}>
+                                <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                                  <div style={{flex:1}}>
+                                    <div style={{fontSize:12,fontWeight:700,color:b.color,marginBottom:2}}>
+                                      {g?.name?`${g.name} `:""}<span style={{color:"#1A1A2E",fontWeight:900,fontFamily:"monospace"}}>({h.goatEarTag||g?.earTag||"—"})</span>
                                     </div>
-                                    {lastLog&&(
-                                      <div style={{color:"#6B7280",marginTop:2}}>
-                                        <span style={{fontWeight:700,color:"#374151"}}>🩺 Son işlem:</span> {lastLog.userName||"—"} · {fmtDT(lastLog.createdAt)}
+                                    <div style={{fontWeight:700,fontSize:13,color:"#1A1A2E"}}>{h.condition}</div>
+                                    {h.treatment&&<div style={{fontSize:11,color:"#1F2937",marginTop:3}}>💊 {h.treatment}</div>}
+                                    {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
+                                    <div style={{marginTop:6,background:"#F8F9FA",borderRadius:"0 8px 8px 0",padding:"5px 9px",fontSize:11,borderLeft:`3px solid ${b.color}`}}>
+                                      <div style={{color:"#6B7280"}}>
+                                        <span style={{fontWeight:700,color:"#374151"}}>👤 Açan:</span> {h.createdByName||"—"} · {fmtDT(h.date+"T00:00:00")}
+                                      </div>
+                                      {lastLog&&(
+                                        <div style={{color:"#6B7280",marginTop:2}}>
+                                          <span style={{fontWeight:700,color:"#374151"}}>🩺 Son işlem:</span> {lastLog.userName||"—"} · {fmtDT(lastLog.createdAt)}
+                                        </div>
+                                      )}
+                                    </div>
+                                    {hDays.length>0&&(
+                                      <div style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
+                                        📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
                                       </div>
                                     )}
+                                    {h.mediaUrls&&h.mediaUrls.trim()&&<MediaCard urls={h.mediaUrls}/>}
+                                    {h.mediaUrls&&h.mediaUrls.trim()&&<AudioToggle urls={h.mediaUrls}/>}
                                   </div>
-                                  {hDays.length>0&&(
-                                    <div style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",display:"inline-block",padding:"2px 8px",borderRadius:6,marginTop:4,fontWeight:600}}>
-                                      📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
-                                    </div>
-                                  )}
-                                  {h.mediaUrls&&h.mediaUrls.trim()&&<MediaCard urls={h.mediaUrls}/>}
-                                  {h.mediaUrls&&h.mediaUrls.trim()&&<AudioToggle urls={h.mediaUrls}/>}
+                                  <StatusBadge status={h.status}/>
                                 </div>
-                                <StatusBadge status={h.status}/>
+                              </div>
+                              <div style={{display:"flex",borderTop:"1px solid #F0F0F0"}} onClick={e=>e.stopPropagation()}>
+                                <button onClick={()=>setSelHealthRec(h)} style={{flex:1,padding:"9px 0",border:"none",background:"transparent",fontSize:12,fontWeight:600,color:"#6B7280",cursor:"pointer",borderRight:"1px solid #F0F0F0"}}>✏️ Güncelle</button>
+                                <button onClick={()=>setSaglikGonderRec(h)} style={{flex:1,padding:"9px 0",border:"none",background:"transparent",fontSize:12,fontWeight:600,color:"#25D366",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:5}}>
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.843L0 24l6.343-1.505A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.88 0-3.645-.5-5.178-1.378l-.37-.22-3.77.895.928-3.68-.242-.38A9.958 9.958 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                                  Gönder
+                                </button>
                               </div>
                             </div>
                           );
