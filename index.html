@@ -193,10 +193,10 @@ function AudioToggle({urls}) {
   const list = (urls||"").split(",").map(function(u){return u.trim();}).filter(Boolean);
   if(!list.length) return null;
   return (
-    <div style={{marginTop:6}} onClick={function(e){e.stopPropagation();}}>
+    <div style={{marginTop:8}} onClick={function(e){e.stopPropagation();}}>
       <button
         onClick={function(e){e.stopPropagation();setOpen(function(o){return !o;});}}
-        style={{display:"inline-flex",alignItems:"center",gap:5,background:open?"rgba(139,92,246,.18)":"rgba(139,92,246,.1)",border:"1.5px solid rgba(139,92,246,.3)",borderRadius:20,padding:"4px 12px",fontSize:12,fontWeight:700,color:"#7C3AED",cursor:"pointer",WebkitAppearance:"none",transition:"all .2s"}}>
+        style={{display:"inline-flex",alignItems:"center",gap:5,background:open?"rgba(139,92,246,.18)":"rgba(139,92,246,.1)",border:"1.5px solid rgba(139,92,246,.3)",borderRadius:20,padding:"4px 12px",fontSize:12,fontWeight:700,color:"#7C3AED",cursor:"pointer",WebkitAppearance:"none"}}>
         <span style={{fontSize:14}}>🎵</span>
         <span>Ses Kaydı ({list.length})</span>
         <span style={{fontSize:11,opacity:.6}}>{open?"▲":"▼"}</span>
@@ -5208,7 +5208,7 @@ function App(){
                         const hLogs=logs.filter(function(l){return l.healthRecordId===h.id;}).sort(function(a,b){return new Date(b.createdAt)-new Date(a.createdAt);});
                         const lastLog=hLogs[0];
                         return (
-                          <div key={h.id} style={{...S.card,padding:12,marginBottom:5,cursor:"pointer",border:`1.5px solid ${breed.color}22`}}
+                          <div key={h.id} style={{...S.card,padding:12,marginBottom:5,cursor:"pointer",border:`1.5px solid ${breed.color}22`,borderLeft:`3px solid ${breed.color}`}}
                             onClick={()=>setSelHealthRec(h)}>
                             <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
                               <div style={{flex:1}}>
@@ -5216,23 +5216,22 @@ function App(){
                                   {breed.emoji} {g?.name} <span style={{color:"#9CA3AF",fontWeight:400}}>({g?.earTag})</span>
                                 </div>
                                 <div style={{fontWeight:700,fontSize:14,color:"#1A1A2E"}}>{h.condition}</div>
-                                {h.treatment&&<div style={{fontSize:12,color:"#1F2937",marginTop:4}}>💊 {h.treatment}</div>}
+                                {h.treatment&&<div style={{fontSize:12,color:"#1F2937",marginTop:3}}>💊 {h.treatment}</div>}
                                 {h.notes&&<div style={{fontSize:11,color:"#6B7280",fontStyle:"italic",marginTop:2}}>📝 {h.notes}</div>}
 
-                                {/* Kim açtı + ne zaman */}
-                                <div style={{marginTop:6,background:"#F8F9FA",borderRadius:8,padding:"5px 8px",fontSize:11,borderLeft:"3px solid "+breed.color}}>
+                                <div style={{marginTop:6,background:"#F8F9FA",borderRadius:"0 8px 8px 0",padding:"5px 9px",fontSize:11,borderLeft:`3px solid ${breed.color}`}}>
                                   <div style={{color:"#6B7280"}}>
                                     <span style={{fontWeight:700,color:"#374151"}}>👤 Açan:</span> {h.createdByName||"—"} · 📅 {fmt(h.date)}
                                   </div>
-                                  {lastLog ? (
+                                  {lastLog&&(
                                     <div style={{color:"#6B7280",marginTop:2}}>
                                       <span style={{fontWeight:700,color:"#374151"}}>🩺 Son işlem:</span> {lastLog.userName||"—"} · {fmtDT(lastLog.createdAt)}
                                     </div>
-                                  ) : null}
+                                  )}
                                 </div>
 
                                 {hDays.length>0&&(
-                                  <div style={{marginTop:4,display:"flex",gap:4,alignItems:"center"}}>
+                                  <div style={{marginTop:5,display:"flex",gap:4,alignItems:"center"}}>
                                     <span style={{fontSize:10,background:"rgba(74,124,63,.2)",color:"#10B981",padding:"2px 8px",borderRadius:8,fontWeight:700}}>
                                       📅 {doneDays}/{hDays.length} gün · {doneDays<hDays.length?`${doneDays+1}. günde`:"Tamamlandı"}
                                     </span>
