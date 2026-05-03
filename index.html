@@ -5330,21 +5330,51 @@ function App(){
         }
       </div>
 
-      <div
-        key={page}
-        className={isDragging?"":pageAnim}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        style={{
-          padding:"10px 14px "+(page==="home"?"20px":"84px"),
-          position:"relative",zIndex:1,
-          transform:isDragging?`translateX(${dragOffset}px)`:"none",
-          transition:isDragging?"none":"transform .25s cubic-bezier(.25,.46,.45,.94)",
-          willChange:"transform",
-          touchAction:"pan-y" // dikey scroll çalışsın, yatayı biz yönetiyoruz
-        }}
-        data-content>
+      {/* Sayfa kapsayıcı — swipe için overflow hidden */}
+      <div style={{position:"relative",overflow:"hidden",flex:1,touchAction:"pan-y"}}>
+
+        {/* Komşu sayfa — sürüklerken arkada görünür */}
+        {isDragging && (()=>{
+          const curIdx=PAGE_ORDER.indexOf(page);
+          const neighborPage=dragOffset<0
+            ? PAGE_ORDER.slice(curIdx+1).find(p=>p!=="game")
+            : [...PAGE_ORDER.slice(0,curIdx)].reverse().find(p=>p!=="game");
+          if(!neighborPage) return null;
+          const neighborOffset=dragOffset<0
+            ? window.innerWidth + dragOffset*0.45
+            : -window.innerWidth + dragOffset*0.45;
+          return (
+            <div style={{
+              position:"absolute",top:0,left:0,right:0,bottom:0,
+              padding:"10px 14px "+(neighborPage==="home"?"20px":"84px"),
+              transform:`translateX(${neighborOffset}px)`,
+              zIndex:0,pointerEvents:"none",
+              background:"var(--bg,#F5F0FF)"
+            }}>
+              <div style={{opacity:.7,fontSize:24,textAlign:"center",paddingTop:40,color:"#9CA3AF"}}>
+                {neighborPage==="home"?"🏠 Ana Sayfa":neighborPage==="health"?"🩺 Sağlık":neighborPage==="vaccines"?"💉 Aşı":neighborPage==="sut"?"🥛 Süt":neighborPage==="reports"?"📊 Raporlar":neighborPage==="goats"?"🐐 Sürü":neighborPage==="births"?"🐣 Doğum":neighborPage==="deaths"?"💀 Ölüm":neighborPage==="group_tx"?"🏥 Toplu Tedavi":neighborPage==="profile"?"👤 Profil":""}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Mevcut sayfa */}
+        <div
+          key={page}
+          className={isDragging?"":pageAnim}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          style={{
+            padding:"10px 14px "+(page==="home"?"20px":"84px"),
+            position:"relative",zIndex:1,
+            transform:isDragging?`translateX(${dragOffset}px)`:"none",
+            transition:isDragging?"none":"transform .28s cubic-bezier(.25,.46,.45,.94)",
+            willChange:"transform",
+            background:"var(--bg,#F5F0FF)",
+            minHeight:"100%"
+          }}
+          data-content>
 
         {/* HOME */}
         {page==="home" && (
@@ -5822,6 +5852,7 @@ function App(){
           </div>
         )}
       </div>
+      </div>{/* /swipe-container */}
 
       {/* Alt Nav - ana sayfa hariç */}
       {page!=="home" && (
