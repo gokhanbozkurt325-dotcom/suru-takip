@@ -1362,6 +1362,10 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
   const [status,    setStatus]    = useState(record.status);
   const [treatment, setTreatment] = useState(record.treatment||"");
   const [notes,     setNotes]     = useState(record.notes||"");
+  const [condition, setCondition] = useState(record.condition||"");
+  const [category,  setCategory]  = useState(record.category||"");
+  const [date,      setDate]      = useState(record.date||"");
+  const [earTag,    setEarTag]    = useState(record.goatEarTag||goat?.earTag||"");
   const [saving,    setSaving]    = useState(false);
   const [showClose, setShowClose] = useState(false);
   const [closeReason, setCloseReason] = useState("");
@@ -1369,9 +1373,10 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
   const [tab, setTab] = useState("detay");
   const [treatmentChanged, setTreatmentChanged] = useState(false);
   const [markingDay, setMarkingDay] = useState(null);
+  const [localDays, setLocalDays] = useState(treatmentDays.filter(d=>d.healthRecordId===record.id).sort((a,b)=>a.dayNumber-b.dayNumber));
+  const [addingDays, setAddingDays] = useState(false);
 
   const recLogs = logs.filter(l=>l.healthRecordId===record.id).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
-  const recDays = treatmentDays.filter(d=>d.healthRecordId===record.id).sort((a,b)=>a.dayNumber-b.dayNumber);
   const today = todayISO();
 
   const markDay = async (day) => {
@@ -1379,17 +1384,47 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
     setMarkingDay(day.id);
     const now = new Date().toISOString();
     await sb.from("treatment_days").update({done:true, done_by:currentUser, done_at:now}).eq("id",day.id);
-    onTreatmentDayUpdate({...day, done:true, doneBy:currentUser, doneAt:now});
+    const updated = {...day, done:true, doneBy:currentUser, doneAt:now};
+    onTreatmentDayUpdate(updated);
+    setLocalDays(p=>p.map(d=>d.id===day.id?updated:d));
     setMarkingDay(null);
+  };
+
+  const addDays = async (n) => {
+    setAddingDays(true);
+    const last = localDays.length>0 ? localDays[localDays.length-1] : null;
+    const startDate = last ? new Date(last.plannedDate) : new Date(date||record.date);
+    if(last) startDate.setDate(startDate.getDate()+1);
+    const newDays = [];
+    for(let i=0;i<n;i++){
+      const d = new Date(startDate);
+      d.setDate(d.getDate()+i);
+      newDays.push({
+        id:"td"+Date.now()+i,
+        health_record_id:record.id,
+        goat_id:goat?.id||record.goatId,
+        day_number:(last?last.dayNumber:0)+i+1,
+        planned_date:d.toISOString().split("T")[0],
+        done:false, done_by:null, done_at:null
+      });
+    }
+    await sb.from("treatment_days").insert(newDays);
+    const mapped = newDays.map(d=>({...d,healthRecordId:d.health_record_id,goatId:d.goat_id,dayNumber:d.day_number,plannedDate:d.planned_date,doneBy:d.done_by,doneAt:d.done_at}));
+    mapped.forEach(d=>onTreatmentDayUpdate(d));
+    setLocalDays(p=>[...p,...mapped]);
+    setAddingDays(false);
   };
 
   const save = async () => {
     setSaving(true);
     const changes = [];
-    if (status!==record.status) changes.push(`Durum değişti: "${record.status}" → "${status}"`);
-    if (treatment!==record.treatment) changes.push(`Tedavi güncellendi`);
-    if (notes!==record.notes && notes) changes.push(`Not eklendi`);
-    const { error } = await sb.from("health_records").update({ status, treatment, notes }).eq("id", record.id);
+    if(status!==record.status) changes.push(`Durum: "${record.status}" → "${status}"`);
+    if(treatment!==record.treatment) changes.push(`Tedavi güncellendi`);
+    if(notes!==record.notes && notes) changes.push(`Not eklendi`);
+    if(condition!==record.condition) changes.push(`Hastalık güncellendi`);
+    if(earTag!==record.goatEarTag) changes.push(`Küpe no güncellendi`);
+    if(date!==record.date) changes.push(`Tarih güncellendi`);
+    const { error } = await sb.from("health_records").update({ status, treatment, notes, condition, category, date, goat_ear_tag:earTag }).eq("id", record.id);
     if (!error) {
       const detail = changes.length>0 ? changes.join(" · ") : "Kayıt güncellendi";
       const gId = goat?.id || record.goatId;
@@ -1397,7 +1432,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
       await addLog(record.id, gId, gBreed, "güncelleme", detail, currentUser);
       const newLog = { id:"l"+Date.now(), healthRecordId:record.id, goatId:gId, breed:gBreed, action:"güncelleme", actionDetail:detail, userName:currentUser, createdAt:new Date().toISOString() };
       onLogsUpdate(newLog);
-      onUpdate({ ...record, status, treatment, notes });
+      onUpdate({ ...record, status, treatment, notes, condition, category, date, goatEarTag:earTag });
     }
     setSaving(false);
   };
@@ -1445,6 +1480,17 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
     </div>
 
     {tab==="detay" && <>
+      <FL>Küpe No</FL>
+      <EarTagInput value={earTag} onChange={setEarTag}/>
+      <FL>Hastalık / Durum</FL>
+      <VoiceInput value={condition} onChange={setCondition} placeholder="Hastalık adı..." multiline={false}/>
+      <FL>Kategori</FL>
+      <div style={{display:"flex",gap:6}}>
+        <button onClick={()=>setCategory("anac")} style={{flex:1,padding:"9px 0",borderRadius:8,border:`1.5px solid ${category==="anac"?"#4A7C3F":"#E5E7EB"}`,background:category==="anac"?"#E3F0DC":"#fff",color:category==="anac"?"#3D5A25":"#8c8c7e",fontWeight:category==="anac"?700:400,fontSize:13,cursor:"pointer"}}>🐐 Anaç</button>
+        <button onClick={()=>setCategory("oglak")} style={{flex:1,padding:"9px 0",borderRadius:8,border:`1.5px solid ${category==="oglak"?"#B8602A":"#E5E7EB"}`,background:category==="oglak"?"#FFF4E6":"#fff",color:category==="oglak"?"#8B5A1B":"#8c8c7e",fontWeight:category==="oglak"?700:400,fontSize:13,cursor:"pointer"}}>🍼 Oğlak</button>
+      </div>
+      <FL>Tarih</FL>
+      <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...S.input,marginBottom:8}}/>
       <FL>Durum</FL>
       <StatusPicker value={status} onChange={setStatus}/>
       <FL>Tedavi / Yapılan İşlem</FL>
@@ -1467,7 +1513,6 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
 
     {tab==="takvim" && (
       <div>
-        {/* Tedavi notu özeti */}
         {record.treatment && (
           <div style={{background:"#E8F5E9",border:"1px solid #D4E8C2",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
             <div style={{fontSize:11,fontWeight:700,color:"#10B981",marginBottom:2}}>💊 Tedavi</div>
@@ -1480,13 +1525,22 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
             <div style={{fontSize:12,color:"#6B7280"}}>{record.notes}</div>
           </div>
         )}
-        {recDays.length===0 && (
+        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
+          <div style={{fontSize:11,color:"#6B7280",width:"100%",marginBottom:4,fontWeight:600}}>+ Takvime gün ekle:</div>
+          {[1,2,3,5,7,10,14].map(n=>(
+            <button key={n} onClick={()=>addDays(n)} disabled={addingDays}
+              style={{padding:"5px 12px",borderRadius:8,border:"1.5px solid #4A7C3F",background:"rgba(74,124,63,.1)",color:"#4A7C3F",fontWeight:700,fontSize:12,cursor:"pointer",opacity:addingDays?.6:1}}>
+              +{n} gün
+            </button>
+          ))}
+        </div>
+        {localDays.length===0 && (
           <div style={{textAlign:"center",padding:20,color:"#9CA3AF",fontSize:13}}>
             <div style={{fontSize:32,marginBottom:8}}>📅</div>
             Bu kayıt için tedavi takvimi oluşturulmamış.
           </div>
         )}
-        {recDays.map(day=>{
+        {localDays.map(day=>{
           const isPast = day.plannedDate < today;
           const isToday = day.plannedDate === today;
           const isFuture = day.plannedDate > today;
@@ -1528,9 +1582,9 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
             </div>
           );
         })}
-        {recDays.length>0 && (
+        {localDays.length>0 && (
           <div style={{background:"#F5F5F5",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#6B7280",marginTop:4}}>
-            {recDays.filter(d=>d.done).length}/{recDays.length} gün tamamlandı
+            {localDays.filter(d=>d.done).length}/{localDays.length} gün tamamlandı
           </div>
         )}
       </div>
@@ -1554,7 +1608,6 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
     </div>}
   </ModalWrap>;
 }
-
 // ── Küpe No Tarayıcı ──
 // ── Küpe No Formatı: TR-xx-xxxxxx ──
 function EarTagInput({ value, onChange }) {
@@ -1758,13 +1811,14 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
   const [notes,setNotes]=useState("");
   const [treatmentDays,setTreatmentDays]=useState(0);
   const [audioBlobs,setAudioBlobs]=useState([]);
+  const [photoFiles,setPhotoFiles]=useState([]);
+  const [videoFiles,setVideoFiles]=useState([]);
   const [uploading,setUploading]=useState(false);
   const [recording,setRecording]=useState(false);
   const [mediaRecorder,setMediaRecorder]=useState(null);
   const audioChunksRef = useRef([]);
   const [err,setErr]=useState("");
   const [saving,setSaving]=useState(false);
-
 
   const startAudioRecording = async () => {
     try {
@@ -1773,7 +1827,6 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
         return;
       }
       const stream = await navigator.mediaDevices.getUserMedia({audio:true, video:false});
-      // iOS/Safari uyumlu format seç
       const mimeType = MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4"
                      : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm"
                      : "";
@@ -1785,14 +1838,13 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
         setAudioBlobs(p=>[...p, blob]);
         stream.getTracks().forEach(t=>t.stop());
       };
-      mr.start(1000); // Her saniye veri topla
+      mr.start(1000);
       setMediaRecorder(mr);
       setRecording(true);
     } catch(e) {
       setRecording(false);
-      if(e.name==="NotAllowedError"||e.name==="PermissionDeniedError") setErr("Mikrofon izni verilmedi. Tarayıcı ayarlarından izin verin.");
+      if(e.name==="NotAllowedError"||e.name==="PermissionDeniedError") setErr("Mikrofon izni verilmedi.");
       else if(e.name==="NotFoundError") setErr("Mikrofon bulunamadı.");
-      else if(e.name==="NotSupportedError") setErr("Bu tarayıcı ses kaydını desteklemiyor. Ses dosyası yükleyin.");
       else setErr("Ses hatası: " + (e.message||e.name));
     }
   };
@@ -1802,7 +1854,6 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
   };
 
   const uploadAudio = async (recId) => {
-    setUploading(true);
     const urls = [];
     for(let i=0;i<audioBlobs.length;i++){
       const path = `${recId}_audio_${Date.now()}_${i}.webm`;
@@ -1810,7 +1861,30 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
       const {data:ud} = sb.storage.from("health-audio").getPublicUrl(path);
       if(ud) urls.push(ud.publicUrl);
     }
-    setUploading(false);
+    return urls;
+  };
+
+  const uploadHealthPhotos = async (recId) => {
+    const urls = [];
+    for(let i=0;i<photoFiles.length;i++){
+      const f=photoFiles[i];
+      const path=`${recId}_photo_${Date.now()}_${i}.${f.name.split(".").pop()||"jpg"}`;
+      await sb.storage.from("health-photos").upload(path,f,{contentType:f.type});
+      const {data:ud}=sb.storage.from("health-photos").getPublicUrl(path);
+      if(ud) urls.push(ud.publicUrl);
+    }
+    return urls;
+  };
+
+  const uploadHealthVideos = async (recId) => {
+    const urls = [];
+    for(let i=0;i<videoFiles.length;i++){
+      const f=videoFiles[i];
+      const path=`${recId}_video_${Date.now()}_${i}.${f.name.split(".").pop()||"mp4"}`;
+      await sb.storage.from("health-videos").upload(path,f,{contentType:f.type});
+      const {data:ud}=sb.storage.from("health-videos").getPublicUrl(path);
+      if(ud) urls.push(ud.publicUrl);
+    }
     return urls;
   };
 
@@ -1820,18 +1894,18 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     if(!cleanTag || cleanTag==="TR-" || cleanTag==="TR--"){setErr("Küpe no giriniz");return;}
     const cond = condition==="Diğer"?condCustom.trim():condition;
     if(!cond){setErr("Hastalık/durum giriniz");return;}
-    setSaving(true);
+    setSaving(true); setUploading(true);
     const existingGoat = goats.find(g=>g.earTag===earTag.trim()&&!g.archived);
     const goatId = existingGoat ? existingGoat.id : "ext_"+earTag.trim().replace(/\s/g,"_");
     const rec = { id:"h"+Date.now(), goatId, goatEarTag:earTag.trim(), breed, date, condition:cond, treatment, status, veterinarian:currentUser, cost:"", createdByName:currentUser, notes, category };
     const { error } = await sb.from("health_records").insert({...fromHealth(rec), goat_ear_tag:earTag.trim()});
-    if(error){setErr("Kayıt hatası: "+error.message);setSaving(false);return;}
+    if(error){setErr("Kayıt hatası: "+error.message);setSaving(false);setUploading(false);return;}
     await addLog(rec.id, goatId, breed, "açılış", `${cond} — ${currentUser} tarafından açıldı`, currentUser);
     const mediaUrls = [];
-    if(audioBlobs.length>0){
-      const audioUrls = await uploadAudio(rec.id);
-      if(audioUrls) mediaUrls.push(...audioUrls);
-    }
+    if(audioBlobs.length>0){const au=await uploadAudio(rec.id);if(au)mediaUrls.push(...au);}
+    if(photoFiles.length>0){const pu=await uploadHealthPhotos(rec.id);if(pu)mediaUrls.push(...pu);}
+    if(videoFiles.length>0){const vu=await uploadHealthVideos(rec.id);if(vu)mediaUrls.push(...vu);}
+    setUploading(false);
     if(mediaUrls.length>0){
       await sb.from("health_records").update({media_urls: mediaUrls.join(",")}).eq("id", rec.id);
       rec.mediaUrls = mediaUrls.join(",");
@@ -1900,13 +1974,13 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
     <StatusPicker value={status} onChange={setStatus}/>
     <FL>Notlar</FL>
     <VoiceInput value={notes} onChange={setNotes} placeholder="Notlar..." multiline rows={2}/>
-        {/* Ses Kaydı */}
+        {/* Medya */}
     <div style={{display:"flex",gap:6,marginBottom:4}}>
       {typeof MediaRecorder !== "undefined" ? (
         !recording
           ? <button type="button" onClick={startAudioRecording}
               style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"rgba(239,68,68,.1)",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer"}}>
-              🎙️ Ses Kaydı Başlat
+              🎙️ Ses Kaydet
             </button>
           : <button type="button" onClick={stopAudioRecording}
               style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"#EF4444",color:"#fff",fontWeight:700,fontSize:12,cursor:"pointer"}}>
@@ -1914,13 +1988,21 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
             </button>
       ) : (
         <label style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #EF4444",background:"rgba(239,68,68,.1)",color:"#EF4444",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"center",display:"block"}}>
-          🎙️ Ses Dosyası Seç
+          🎙️ Ses Seç
           <input type="file" accept="audio/*" style={{display:"none"}} onChange={e=>{
             const files = Array.from(e.target.files||[]);
             files.forEach(f=>{ const reader = new FileReader(); reader.onload=ev=>{ const blob=new Blob([ev.target.result],{type:f.type}); setAudioBlobs(p=>[...p,blob]); }; reader.readAsArrayBuffer(f); });
           }}/>
         </label>
       )}
+      <label style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #0EA5E9",background:"rgba(14,165,233,.1)",color:"#0EA5E9",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"center",display:"block"}}>
+        📷 Fotoğraf
+        <input type="file" accept="image/*" multiple style={{display:"none"}} onChange={e=>setPhotoFiles(p=>[...p,...Array.from(e.target.files||[])])}/>
+      </label>
+      <label style={{flex:1,padding:"9px 0",borderRadius:10,border:"1.5px solid #8B5CF6",background:"rgba(139,92,246,.1)",color:"#8B5CF6",fontWeight:700,fontSize:12,cursor:"pointer",textAlign:"center",display:"block"}}>
+        🎥 Video
+        <input type="file" accept="video/*" style={{display:"none"}} onChange={e=>setVideoFiles(p=>[...p,...Array.from(e.target.files||[])])}/>
+      </label>
     </div>
     {audioBlobs.length>0&&<div style={{marginBottom:4}}>
       {audioBlobs.map((blob,i)=>(
@@ -1930,7 +2012,20 @@ function HealthModal({ goats, breedFilter, onSave, onClose, preGoatId, currentUs
         </div>
       ))}
     </div>}
-
+    {(photoFiles.length>0||videoFiles.length>0)&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:4}}>
+      {photoFiles.map((f,i)=>(
+        <div key={"p"+i} style={{position:"relative"}}>
+          <img src={URL.createObjectURL(f)} style={{width:56,height:56,objectFit:"cover",borderRadius:8,border:"1.5px solid #E5E7EB"}}/>
+          <button onClick={()=>setPhotoFiles(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:10,cursor:"pointer",padding:0,lineHeight:"18px",textAlign:"center"}}>×</button>
+        </div>
+      ))}
+      {videoFiles.map((f,i)=>(
+        <div key={"v"+i} style={{position:"relative",width:56,height:56,borderRadius:8,border:"1.5px solid #C4B5FD",background:"#EDE9FE",display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <span style={{fontSize:20}}>▶️</span>
+          <button onClick={()=>setVideoFiles(p=>p.filter((_,j)=>j!==i))} style={{position:"absolute",top:-5,right:-5,background:"#EF4444",border:"none",color:"#fff",borderRadius:"50%",width:18,height:18,fontSize:10,cursor:"pointer",padding:0,lineHeight:"18px",textAlign:"center"}}>×</button>
+        </div>
+      ))}
+    </div>}
     {uploading&&<div style={{fontSize:11,color:"var(--primary,#8B5CF6)",marginBottom:4}}>⏳ Medya yükleniyor...</div>}
     <div style={{display:"flex",gap:8,marginTop:4}}>
       <button onClick={onClose} style={{...S.btnOutline,flex:1,padding:12}}>İptal</button>
