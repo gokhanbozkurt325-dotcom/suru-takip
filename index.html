@@ -4558,6 +4558,7 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
 // ════════════ MAIN APP ════════════
 function App(){
   const [page,setPage]=useState("home");
+  const [pageAnim,setPageAnim]=useState("");
   const [selBreed,setSelBreed]=useState(null);
   const [breedTab,setBreedTab]=useState("surü");
   const [catTab,setCatTab]=useState("anac");
@@ -4703,7 +4704,13 @@ function App(){
     return r;
   },[goats,healthRecs]);
 
-  const navigate=p=>{setPage(p);setSelBreed(null);setSelGoat(null);setBreedTab("surü");setCatTab("anac");setDetailTab("info");};
+  const PAGE_ORDER=["home","health","vaccines","sut","reports","goats","births","deaths","group_tx","profile","game"];
+  const navigate=p=>{
+    const curIdx=PAGE_ORDER.indexOf(page);
+    const newIdx=PAGE_ORDER.indexOf(p);
+    setPageAnim(newIdx>curIdx?"page-slide-right":"page-slide-left");
+    setPage(p);setSelBreed(null);setSelGoat(null);setBreedTab("surü");setCatTab("anac");setDetailTab("info");
+  };
   const goBack=()=>{
     if(selGoat){setSelGoat(null);setDetailTab("info");}
     else if(selBreed){setSelBreed(null);}
@@ -5284,7 +5291,7 @@ function App(){
         }
       </div>
 
-      <div style={{padding:"10px 14px "+(page==="home"?"20px":"84px"),position:"relative",zIndex:1}} data-content>
+      <div key={page} className={pageAnim} style={{padding:"10px 14px "+(page==="home"?"20px":"84px"),position:"relative",zIndex:1}} data-content>
 
         {/* HOME */}
         {page==="home" && (
@@ -5766,7 +5773,7 @@ function App(){
       {/* Alt Nav - ana sayfa hariç */}
       {page!=="home" && (
         <div style={S.nav}>
-          {[["home","🏠","Ana"],["health","🩺","Sağlık"],["vaccines","💉","Aşı"],["sut","🥛","Süt"],["game","🐐","Oyun"]].map(([k,ic,l])=>(
+          {[["home","🏠","Ana"],["health","🩺","Sağlık"],["vaccines","💉","Aşı"],["sut","🥛","Süt"],["reports","📊","Rapor"]].map(([k,ic,l])=>(
             <button key={k} onClick={()=>navigate(k)} style={{...S.ghost,display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"6px 20px",color:page===k?theme.primary:"#9CA3AF",transition:"color .2s"}}>
               <span style={{fontSize:20}}>{ic}</span>
               <span style={{fontSize:9,fontWeight:page===k?700:500,letterSpacing:".3px",textTransform:"uppercase",color:page===k?theme.primary:"#9CA3AF"}}>{l}</span>
@@ -5782,12 +5789,16 @@ function App(){
 const css=`
   @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   @keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes slideFromLeft{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes slideFromRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
   @keyframes spin{to{transform:rotate(360deg)}}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   ::-webkit-scrollbar{width:0;height:0}
   .anim-fade{animation:fadeUp .3s cubic-bezier(.16,1,.3,1) both}
   .anim-slide{animation:slideIn .3s cubic-bezier(.16,1,.3,1) both}
+  .page-slide-right{animation:slideFromRight .28s cubic-bezier(.25,.46,.45,.94) both}
+  .page-slide-left{animation:slideFromLeft .28s cubic-bezier(.25,.46,.45,.94) both}
   input:focus,select:focus,textarea:focus{
     border-color:var(--primary)!important;
     box-shadow:0 0 0 3px rgba(var(--primary-rgb),.12)!important;
