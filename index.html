@@ -1362,6 +1362,10 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
   const [status,    setStatus]    = useState(record.status);
   const [treatment, setTreatment] = useState(record.treatment||"");
   const [notes,     setNotes]     = useState(record.notes||"");
+  const [condition, setCondition] = useState(record.condition||"");
+  const [category,  setCategory]  = useState(record.category||"");
+  const [date,      setDate]      = useState(record.date||"");
+  const [earTag,    setEarTag]    = useState(record.goatEarTag||goat?.earTag||"");
   const [saving,    setSaving]    = useState(false);
   const [showClose, setShowClose] = useState(false);
   const [closeReason, setCloseReason] = useState("");
@@ -1369,9 +1373,10 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
   const [tab, setTab] = useState("detay");
   const [treatmentChanged, setTreatmentChanged] = useState(false);
   const [markingDay, setMarkingDay] = useState(null);
+  const [localDays, setLocalDays] = useState(treatmentDays.filter(d=>d.healthRecordId===record.id).sort((a,b)=>a.dayNumber-b.dayNumber));
+  const [addingDays, setAddingDays] = useState(false);
 
   const recLogs = logs.filter(l=>l.healthRecordId===record.id).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
-  const recDays = treatmentDays.filter(d=>d.healthRecordId===record.id).sort((a,b)=>a.dayNumber-b.dayNumber);
   const today = todayISO();
 
   const markDay = async (day) => {
@@ -1379,17 +1384,47 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
     setMarkingDay(day.id);
     const now = new Date().toISOString();
     await sb.from("treatment_days").update({done:true, done_by:currentUser, done_at:now}).eq("id",day.id);
-    onTreatmentDayUpdate({...day, done:true, doneBy:currentUser, doneAt:now});
+    const updated = {...day, done:true, doneBy:currentUser, doneAt:now};
+    onTreatmentDayUpdate(updated);
+    setLocalDays(p=>p.map(d=>d.id===day.id?updated:d));
     setMarkingDay(null);
+  };
+
+  const addDays = async (n) => {
+    setAddingDays(true);
+    const last = localDays.length>0 ? localDays[localDays.length-1] : null;
+    const startDate = last ? new Date(last.plannedDate) : new Date(date);
+    if(last) startDate.setDate(startDate.getDate()+1);
+    const newDays = [];
+    for(let i=0;i<n;i++){
+      const d = new Date(startDate);
+      d.setDate(d.getDate()+i);
+      newDays.push({
+        id:"td"+Date.now()+i,
+        health_record_id:record.id,
+        goat_id:goat?.id||record.goatId,
+        day_number:(last?last.dayNumber:0)+i+1,
+        planned_date:d.toISOString().split("T")[0],
+        done:false, done_by:null, done_at:null
+      });
+    }
+    await sb.from("treatment_days").insert(newDays);
+    const mapped = newDays.map(d=>({...d,healthRecordId:d.health_record_id,goatId:d.goat_id,dayNumber:d.day_number,plannedDate:d.planned_date,doneBy:d.done_by,doneAt:d.done_at}));
+    mapped.forEach(d=>onTreatmentDayUpdate(d));
+    setLocalDays(p=>[...p,...mapped]);
+    setAddingDays(false);
   };
 
   const save = async () => {
     setSaving(true);
     const changes = [];
-    if (status!==record.status) changes.push(`Durum değişti: "${record.status}" → "${status}"`);
-    if (treatment!==record.treatment) changes.push(`Tedavi güncellendi`);
-    if (notes!==record.notes && notes) changes.push(`Not eklendi`);
-    const { error } = await sb.from("health_records").update({ status, treatment, notes }).eq("id", record.id);
+    if(status!==record.status) changes.push(`Durum: "${record.status}" → "${status}"`);
+    if(treatment!==record.treatment) changes.push(`Tedavi güncellendi`);
+    if(notes!==record.notes && notes) changes.push(`Not eklendi`);
+    if(condition!==record.condition) changes.push(`Hastalık güncellendi`);
+    if(earTag!==record.goatEarTag) changes.push(`Küpe no güncellendi`);
+    if(date!==record.date) changes.push(`Tarih güncellendi`);
+    const { error } = await sb.from("health_records").update({ status, treatment, notes, condition, category, date, goat_ear_tag:earTag }).eq("id", record.id);
     if (!error) {
       const detail = changes.length>0 ? changes.join(" · ") : "Kayıt güncellendi";
       const gId = goat?.id || record.goatId;
@@ -1397,7 +1432,7 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
       await addLog(record.id, gId, gBreed, "güncelleme", detail, currentUser);
       const newLog = { id:"l"+Date.now(), healthRecordId:record.id, goatId:gId, breed:gBreed, action:"güncelleme", actionDetail:detail, userName:currentUser, createdAt:new Date().toISOString() };
       onLogsUpdate(newLog);
-      onUpdate({ ...record, status, treatment, notes });
+      onUpdate({ ...record, status, treatment, notes, condition, category, date, goatEarTag:earTag });
     }
     setSaving(false);
   };
@@ -1445,6 +1480,16 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
     </div>
 
     {tab==="detay" && <>
+      <FL>Küpe No</FL>
+      <EarTagInput value={earTag} onChange={setEarTag}/>
+      <FL>Hastalık / Durum</FL>
+      <VoiceInput value={condition} onChange={setCondition} placeholder="Hastalık adı..." multiline={false}/>
+      <FL>Kategori</FL>
+      <select value={category} onChange={e=>setCategory(e.target.value)} style={S.select}>
+        {HEALTH_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
+      </select>
+      <FL>Tarih</FL>
+      <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...S.input,marginBottom:8}}/>
       <FL>Durum</FL>
       <StatusPicker value={status} onChange={setStatus}/>
       <FL>Tedavi / Yapılan İşlem</FL>
@@ -1467,7 +1512,6 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
 
     {tab==="takvim" && (
       <div>
-        {/* Tedavi notu özeti */}
         {record.treatment && (
           <div style={{background:"#E8F5E9",border:"1px solid #D4E8C2",borderRadius:8,padding:"8px 12px",marginBottom:10}}>
             <div style={{fontSize:11,fontWeight:700,color:"#10B981",marginBottom:2}}>💊 Tedavi</div>
@@ -1480,13 +1524,22 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
             <div style={{fontSize:12,color:"#6B7280"}}>{record.notes}</div>
           </div>
         )}
-        {recDays.length===0 && (
+        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
+          <div style={{fontSize:11,color:"#6B7280",width:"100%",marginBottom:4,fontWeight:600}}>+ Takvime gün ekle:</div>
+          {[1,2,3,5,7,10,14].map(n=>(
+            <button key={n} onClick={()=>addDays(n)} disabled={addingDays}
+              style={{padding:"5px 12px",borderRadius:8,border:"1.5px solid #4A7C3F",background:"rgba(74,124,63,.1)",color:"#4A7C3F",fontWeight:700,fontSize:12,cursor:"pointer",opacity:addingDays?.6:1}}>
+              +{n} gün
+            </button>
+          ))}
+        </div>
+        {localDays.length===0 && (
           <div style={{textAlign:"center",padding:20,color:"#9CA3AF",fontSize:13}}>
             <div style={{fontSize:32,marginBottom:8}}>📅</div>
             Bu kayıt için tedavi takvimi oluşturulmamış.
           </div>
         )}
-        {recDays.map(day=>{
+        {localDays.map(day=>{
           const isPast = day.plannedDate < today;
           const isToday = day.plannedDate === today;
           const isFuture = day.plannedDate > today;
@@ -1528,9 +1581,9 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
             </div>
           );
         })}
-        {recDays.length>0 && (
+        {localDays.length>0 && (
           <div style={{background:"#F5F5F5",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#6B7280",marginTop:4}}>
-            {recDays.filter(d=>d.done).length}/{recDays.length} gün tamamlandı
+            {localDays.filter(d=>d.done).length}/{localDays.length} gün tamamlandı
           </div>
         )}
       </div>
