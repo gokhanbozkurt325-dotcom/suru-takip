@@ -1485,9 +1485,10 @@ function HealthDetailModal({ record, goat, logs, treatmentDays, onUpdate, onClos
       <FL>Hastalık / Durum</FL>
       <VoiceInput value={condition} onChange={setCondition} placeholder="Hastalık adı..." multiline={false}/>
       <FL>Kategori</FL>
-      <select value={category} onChange={e=>setCategory(e.target.value)} style={S.select}>
-        {HEALTH_CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}
-      </select>
+      <div style={{display:"flex",gap:6}}>
+        <button onClick={()=>setCategory("anac")} style={{flex:1,padding:"9px 0",borderRadius:8,border:`1.5px solid ${category==="anac"?"#4A7C3F":"#E5E7EB"}`,background:category==="anac"?"#E3F0DC":"#fff",color:category==="anac"?"#3D5A25":"#8c8c7e",fontWeight:category==="anac"?700:400,fontSize:13,cursor:"pointer"}}>🐐 Anaç</button>
+        <button onClick={()=>setCategory("oglak")} style={{flex:1,padding:"9px 0",borderRadius:8,border:`1.5px solid ${category==="oglak"?"#B8602A":"#E5E7EB"}`,background:category==="oglak"?"#FFF4E6":"#fff",color:category==="oglak"?"#8B5A1B":"#8c8c7e",fontWeight:category==="oglak"?700:400,fontSize:13,cursor:"pointer"}}>🍼 Oğlak</button>
+      </div>
       <FL>Tarih</FL>
       <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...S.input,marginBottom:8}}/>
       <FL>Durum</FL>
