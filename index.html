@@ -249,144 +249,116 @@ function MediaCard({urls}) {
 }
 
 function SutOzetKarti({onNavigate}) {
-  const [son, setSon] = useState(null);
+  const [son,setSon]=useState(null);
   useEffect(()=>{
     sb.from("sut_kayitlari").select("*").order("tarih",{ascending:false}).limit(2).then(({data})=>{
       if(data&&data.length) setSon(data);
     });
   },[]);
   if(!son) return null;
-  const bugun = son[0];
-  const dun = son[1];
-  const SURUSLER = [{id:"saanen"},{id:"honamli"},{id:"halep"}];
-  const toplam = (k) => k?+SURUSLER.reduce((s,r)=>s+(parseFloat(k[r.id+"_s"])||0)+(parseFloat(k[r.id+"_a"])||0),0).toFixed(1):0;
-  const sagmal = (k) => k?SURUSLER.reduce((s,r)=>s+(parseInt(k[r.id+"_sagmal"])||0),0):0;
-  const bT = toplam(bugun), dT = toplam(dun);
-  const fark = dT>0?+((bT-dT)/dT*100).toFixed(1):0;
+  const b=son[0], d=son[1];
+  const IDS=["saanen","honamli","halep"];
+  const top=(k)=>k?+IDS.reduce((s,r)=>s+(parseFloat(k[r+"_s"])||0)+(parseFloat(k[r+"_a"])||0),0).toFixed(1):0;
+  const sag=(k)=>k?IDS.reduce((s,r)=>s+(parseInt(k[r+"_sagmal"])||0),0):0;
+  const bT=top(b),dT=top(d);
+  const fark=dT>0?+((bT-dT)/dT*100).toFixed(1):0;
   return (
     <div onClick={onNavigate} style={{background:"var(--color-background-primary)",border:"0.5px solid var(--color-border-tertiary)",borderRadius:12,padding:"12px 14px",marginBottom:10,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
       <div>
         <div style={{fontSize:11,color:"var(--color-text-secondary)",marginBottom:3}}>🥛 Bugün Süt</div>
         <div style={{fontSize:22,fontWeight:700,color:"#4A7C3F"}}>{bT} <span style={{fontSize:13,fontWeight:400,color:"var(--color-text-secondary)"}}>lt</span></div>
-        <div style={{fontSize:11,color:"var(--color-text-secondary)",marginTop:2}}>🐐 {sagmal(bugun)} sağmal baş</div>
+        <div style={{fontSize:11,color:"var(--color-text-secondary)",marginTop:2}}>🐐 {sag(b)} sağmal baş</div>
       </div>
       <div style={{textAlign:"right"}}>
-        <div style={{fontSize:11,color:fark>=0?"#10B981":"#EF4444",fontWeight:700,marginBottom:4}}>{fark>=0?"↑":"↓"} {Math.abs(fark)}% dün</div>
-        <div style={{fontSize:10,color:"var(--color-text-secondary)"}}>Detay için tıkla →</div>
+        <div style={{fontSize:12,color:fark>=0?"#10B981":"#EF4444",fontWeight:700,marginBottom:4}}>{fark>=0?"↑":"↓"} {Math.abs(fark)}% dün</div>
+        <div style={{fontSize:10,color:"var(--color-text-secondary)"}}>Detay →</div>
       </div>
     </div>
   );
 }
 
 function SutPage({currentUser}) {
-  const SURUSLER = [
-    {id:"saanen",  name:"Saanen",  emoji:"🤍", renk:"#8B5CF6"},
-    {id:"honamli", name:"Honamlı", emoji:"🤎", renk:"#3B82F6"},
-    {id:"halep",   name:"Halep",   emoji:"🐐", renk:"#F59E0B"},
+  const SURUSLER=[
+    {id:"saanen", name:"Saanen", emoji:"🤍", renk:"#8B5CF6"},
+    {id:"honamli",name:"Honamlı",emoji:"🤎", renk:"#3B82F6"},
+    {id:"halep",  name:"Halep",  emoji:"🐐", renk:"#F59E0B"},
   ];
-  const [kayitlar, setKayitlar] = useState([]);
-  const [yuklendi, setYuklendi] = useState(false);
-  const [aralik,   setAralik]   = useState(7);
-  const [aktifSuru,setAktifSuru]= useState("hepsi");
-  const [girisModu,setGirisModu]= useState(false);
-  const [bugun,    setBugun]    = useState({
+  const [kayitlar,setKayitlar]=useState([]);
+  const [yuklendi,setYuklendi]=useState(false);
+  const [aralik,setAralik]=useState(7);
+  const [aktifSuru,setAktifSuru]=useState("hepsi");
+  const [girisModu,setGirisModu]=useState(false);
+  const [kaydediyor,setKaydediyor]=useState(false);
+  const [bugun,setBugun]=useState({
     saanen_s:"",saanen_a:"",saanen_sagmal:"",
     honamli_s:"",honamli_a:"",honamli_sagmal:"",
     halep_s:"",halep_a:"",halep_sagmal:"",
     tarih:new Date().toISOString().slice(0,10)
   });
-  const [kaydediyor,setKaydediyor]=useState(false);
-  const chartRef = useRef(null);
-  const chartInstance = useRef(null);
+  const chartRef=useRef(null);
+  const chartInst=useRef(null);
 
   useEffect(()=>{
     sb.from("sut_kayitlari").select("*").order("tarih",{ascending:true}).then(({data})=>{
-      setKayitlar(data||[]);
-      setYuklendi(true);
+      setKayitlar(data||[]); setYuklendi(true);
     });
   },[]);
 
-  const aralikVeri = () => {
-    const son = [...kayitlar].sort((a,b)=>b.tarih.localeCompare(a.tarih)).slice(0,aralik).reverse();
-    return son;
-  };
-
-  const hesapla = (k, suru) => {
-    const s = parseFloat(k[suru+"_s"])||0;
-    const a = parseFloat(k[suru+"_a"])||0;
+  const hesapla=(k,id)=>{
+    const s=parseFloat(k[id+"_s"])||0,a=parseFloat(k[id+"_a"])||0;
     return +(s+a).toFixed(2);
   };
-
-  const ortalama = (suru) => {
-    const v = aralikVeri();
-    if(!v.length) return 0;
-    const top = v.reduce((s,k)=>s+hesapla(k,suru),0);
-    return +(top/v.length).toFixed(1);
-  };
-
-  const bugunkuToplam = () => {
-    const son = [...kayitlar].sort((a,b)=>b.tarih.localeCompare(a.tarih))[0];
-    if(!son) return {toplam:0, sagmal:0};
-    const toplam = SURUSLER.reduce((s,r)=>s+hesapla(son,r.id),0);
-    const sagmal = SURUSLER.reduce((s,r)=>s+(parseInt(son[r.id+"_sagmal"])||0),0);
-    return {toplam:+toplam.toFixed(1), sagmal};
-  };
+  const aralikVeri=()=>[...kayitlar].sort((a,b)=>b.tarih.localeCompare(a.tarih)).slice(0,aralik).reverse();
+  const ort=(id)=>{const v=aralikVeri();if(!v.length)return 0;return +(v.reduce((s,k)=>s+hesapla(k,id),0)/v.length).toFixed(1);};
+  const sonKayit=()=>[...kayitlar].sort((a,b)=>b.tarih.localeCompare(a.tarih))[0];
+  const bugunToplam=()=>{const k=sonKayit();if(!k)return{lt:0,sag:0};return{lt:+SURUSLER.reduce((s,r)=>s+hesapla(k,r.id),0).toFixed(1),sag:SURUSLER.reduce((s,r)=>s+(parseInt(k[r.id+"_sagmal"])||0),0)};};
 
   useEffect(()=>{
     if(!yuklendi||!chartRef.current) return;
-    if(chartInstance.current) chartInstance.current.destroy();
-    const v = aralikVeri();
-    const labels = v.map(k=>{ const d=new Date(k.tarih); return (d.getDate())+"."+(d.getMonth()+1); });
-    const datasets = [];
+    if(chartInst.current) chartInst.current.destroy();
+    const v=aralikVeri();
+    const labels=v.map(k=>{const d=new Date(k.tarih);return d.getDate()+"."+(d.getMonth()+1);});
+    const ds=[];
     if(aktifSuru==="hepsi"){
-      SURUSLER.forEach(r=>{
-        datasets.push({label:r.name,data:v.map(k=>hesapla(k,r.id)),borderColor:r.renk,backgroundColor:r.renk+"20",fill:false,tension:.3,borderWidth:2,pointRadius:3});
-      });
-      const toplamData = v.map(k=>+SURUSLER.reduce((s,r)=>s+hesapla(k,r.id),0).toFixed(1));
-      datasets.push({label:"Toplam",data:toplamData,borderColor:"#4A7C3F",borderDash:[5,3],fill:false,tension:.3,borderWidth:2,pointRadius:3});
+      SURUSLER.forEach(r=>ds.push({label:r.name,data:v.map(k=>hesapla(k,r.id)),borderColor:r.renk,backgroundColor:r.renk+"20",fill:false,tension:.3,borderWidth:2,pointRadius:3}));
+      ds.push({label:"Toplam",data:v.map(k=>+SURUSLER.reduce((s,r)=>s+hesapla(k,r.id),0).toFixed(1)),borderColor:"#4A7C3F",fill:false,tension:.3,borderWidth:2,pointRadius:3,borderDash:[5,3]});
     } else {
-      const r = SURUSLER.find(x=>x.id===aktifSuru);
+      const r=SURUSLER.find(x=>x.id===aktifSuru);
       if(r){
-        datasets.push({label:r.name+" (sabah)",data:v.map(k=>parseFloat(k[r.id+"_s"])||0),borderColor:r.renk,backgroundColor:r.renk+"20",fill:true,tension:.3,borderWidth:2,pointRadius:3});
-        datasets.push({label:r.name+" (akşam)",data:v.map(k=>parseFloat(k[r.id+"_a"])||0),borderColor:r.renk+"99",fill:false,tension:.3,borderWidth:1.5,pointRadius:3,borderDash:[4,2]});
-        datasets.push({label:r.name+" (toplam)",data:v.map(k=>hesapla(k,r.id)),borderColor:"#4A7C3F",fill:false,tension:.3,borderWidth:2,pointRadius:3,borderDash:[5,3]});
+        ds.push({label:"Sabah",data:v.map(k=>parseFloat(k[r.id+"_s"])||0),borderColor:r.renk,fill:true,backgroundColor:r.renk+"20",tension:.3,borderWidth:2,pointRadius:3});
+        ds.push({label:"Akşam",data:v.map(k=>parseFloat(k[r.id+"_a"])||0),borderColor:r.renk+"99",fill:false,tension:.3,borderWidth:1.5,pointRadius:3,borderDash:[4,2]});
+        ds.push({label:"Toplam",data:v.map(k=>hesapla(k,r.id)),borderColor:"#4A7C3F",fill:false,tension:.3,borderWidth:2,pointRadius:3,borderDash:[5,3]});
       }
     }
-    chartInstance.current = new window.Chart(chartRef.current,{
-      type:"line",
-      data:{labels,datasets},
-      options:{
-        responsive:true,maintainAspectRatio:false,
+    chartInst.current=new window.Chart(chartRef.current,{
+      type:"line",data:{labels,datasets:ds},
+      options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},tooltip:{mode:"index",intersect:false}},
-        scales:{
-          x:{ticks:{font:{size:10}},grid:{display:false}},
-          y:{ticks:{font:{size:10},callback:v=>v+"lt"},grid:{color:"rgba(128,128,128,.1)"},beginAtZero:true}
-        }
+        scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{ticks:{font:{size:10},callback:v=>v+"lt"},grid:{color:"rgba(128,128,128,.1)"},beginAtZero:true}}
       }
     });
   },[kayitlar,aralik,aktifSuru,yuklendi]);
 
-  const kaydet = async () => {
+  const kaydet=async()=>{
     if(!bugun.tarih) return;
     setKaydediyor(true);
-    const yeni = {
-      tarih:bugun.tarih,
-      saanen_s:parseFloat(bugun.saanen_s)||0, saanen_a:parseFloat(bugun.saanen_a)||0, saanen_sagmal:parseInt(bugun.saanen_sagmal)||0,
-      honamli_s:parseFloat(bugun.honamli_s)||0, honamli_a:parseFloat(bugun.honamli_a)||0, honamli_sagmal:parseInt(bugun.honamli_sagmal)||0,
-      halep_s:parseFloat(bugun.halep_s)||0, halep_a:parseFloat(bugun.halep_a)||0, halep_sagmal:parseInt(bugun.halep_sagmal)||0,
-      kaydeden:currentUser
-    };
-    const {data,error} = await sb.from("sut_kayitlari").upsert([yeni],{onConflict:"tarih"}).select();
+    const yeni={tarih:bugun.tarih,
+      saanen_s:parseFloat(bugun.saanen_s)||0,saanen_a:parseFloat(bugun.saanen_a)||0,saanen_sagmal:parseInt(bugun.saanen_sagmal)||0,
+      honamli_s:parseFloat(bugun.honamli_s)||0,honamli_a:parseFloat(bugun.honamli_a)||0,honamli_sagmal:parseInt(bugun.honamli_sagmal)||0,
+      halep_s:parseFloat(bugun.halep_s)||0,halep_a:parseFloat(bugun.halep_a)||0,halep_sagmal:parseInt(bugun.halep_sagmal)||0,
+      kaydeden:currentUser};
+    const {data,error}=await sb.from("sut_kayitlari").upsert([yeni],{onConflict:"tarih"}).select();
     if(!error&&data){
-      setKayitlar(p=>{const f=p.filter(k=>k.tarih!==yeni.tarih); return [...f,...data].sort((a,b)=>a.tarih.localeCompare(b.tarih));});
+      setKayitlar(p=>[...p.filter(k=>k.tarih!==yeni.tarih),...data].sort((a,b)=>a.tarih.localeCompare(b.tarih)));
       setGirisModu(false);
       setBugun({saanen_s:"",saanen_a:"",saanen_sagmal:"",honamli_s:"",honamli_a:"",honamli_sagmal:"",halep_s:"",halep_a:"",halep_sagmal:"",tarih:new Date().toISOString().slice(0,10)});
     }
     setKaydediyor(false);
   };
 
-  const {toplam:bugunToplam, sagmal:bugunSagmal} = bugunkuToplam();
-  const veri = aralikVeri();
+  const {lt:blt,sag:bsag}=bugunToplam();
+  const veri=aralikVeri();
+  const BTN={padding:"4px 9px",borderRadius:6,border:"1px solid",fontSize:11,cursor:"pointer",WebkitAppearance:"none"};
 
   return (
     <div className="anim-fade">
@@ -397,173 +369,134 @@ function SutPage({currentUser}) {
         </button>
       </div>
 
-      {/* Özet metrikler */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:12}}>
-        {[
-          ["Bugün toplam",bugunToplam+" lt",""],
-          ["Sağmal baş",bugunSagmal+" baş",""],
-          ...SURUSLER.map(r=>[r.emoji+" "+r.name+" ort.",ortalama(r.id)+" lt",r.renk]),
-        ].map(([lbl,val,renk],i)=>(
-          <div key={i} style={{background:"var(--color-background-secondary)",borderRadius:8,padding:"8px 10px",borderLeft:renk?`3px solid ${renk}`:"none"}}>
-            <div style={{fontSize:10,color:"var(--color-text-secondary)",marginBottom:2}}>{lbl}</div>
-            <div style={{fontSize:15,fontWeight:700,color:renk||"var(--color-text-primary)"}}>{val}</div>
-          </div>
-        ))}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:12}}>
+        <div style={{background:"var(--color-background-secondary)",borderRadius:8,padding:"9px 11px"}}>
+          <div style={{fontSize:10,color:"var(--color-text-secondary)",marginBottom:2}}>Bugün toplam</div>
+          <div style={{fontSize:20,fontWeight:700,color:"#4A7C3F"}}>{blt} lt</div>
+          <div style={{fontSize:10,color:"var(--color-text-secondary)"}}>🐐 {bsag} sağmal baş</div>
+        </div>
+        <div style={{background:"var(--color-background-secondary)",borderRadius:8,padding:"9px 11px"}}>
+          <div style={{fontSize:10,color:"var(--color-text-secondary)",marginBottom:2}}>Son {aralik}g ort./gün</div>
+          <div style={{fontSize:20,fontWeight:700,color:"#374151"}}>{+SURUSLER.reduce((s,r)=>s+(ort(r.id)||0),0).toFixed(1)} lt</div>
+          <div style={{fontSize:10,color:"var(--color-text-secondary)"}}>{SURUSLER.map(r=>r.emoji+ort(r.id)+"lt").join(" ")}</div>
+        </div>
       </div>
 
-      {/* Giriş formu */}
       {girisModu&&(
         <div style={{background:"var(--color-background-primary)",border:"1px solid var(--color-border-tertiary)",borderRadius:12,padding:14,marginBottom:12}}>
           <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#374151"}}>📅 Tarih</div>
+            <div style={{fontSize:12,fontWeight:700,color:"#374151",flexShrink:0}}>📅 Tarih</div>
             <input type="date" value={bugun.tarih} onChange={e=>setBugun(p=>({...p,tarih:e.target.value}))}
-              style={{flex:1,padding:"6px 10px",border:"1px solid var(--color-border-secondary)",borderRadius:8,fontSize:13,background:"var(--color-background-secondary)",WebkitAppearance:"none",color:"var(--color-text-primary)"}}/>
+              style={{flex:1,padding:"6px 10px",border:"1px solid var(--color-border-secondary)",borderRadius:8,fontSize:13,background:"var(--color-background-secondary)",color:"var(--color-text-primary)",WebkitAppearance:"none"}}/>
           </div>
           {SURUSLER.map(r=>(
-            <div key={r.id} style={{marginBottom:12,padding:"10px 12px",background:"var(--color-background-secondary)",borderRadius:10,borderLeft:`3px solid ${r.renk}`}}>
+            <div key={r.id} style={{marginBottom:10,padding:"10px 12px",background:"var(--color-background-secondary)",borderRadius:10,borderLeft:`3px solid ${r.renk}`}}>
               <div style={{fontSize:12,fontWeight:700,color:r.renk,marginBottom:8}}>{r.emoji} {r.name}</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-                <div>
-                  <div style={{fontSize:10,color:"var(--color-text-secondary)",marginBottom:3}}>🌅 Sabah (lt)</div>
-                  <input type="number" step="0.1" min="0" placeholder="0.0" value={bugun[r.id+"_s"]}
-                    onChange={e=>setBugun(p=>({...p,[r.id+"_s"]:e.target.value}))}
-                    style={{width:"100%",padding:"7px 10px",border:"1px solid var(--color-border-secondary)",borderRadius:8,fontSize:14,background:"var(--color-background-primary)",color:"var(--color-text-primary)"}}/>
-                </div>
-                <div>
-                  <div style={{fontSize:10,color:"var(--color-text-secondary)",marginBottom:3}}>🌙 Akşam (lt)</div>
-                  <input type="number" step="0.1" min="0" placeholder="0.0" value={bugun[r.id+"_a"]}
-                    onChange={e=>setBugun(p=>({...p,[r.id+"_a"]:e.target.value}))}
-                    style={{width:"100%",padding:"7px 10px",border:"1px solid var(--color-border-secondary)",borderRadius:8,fontSize:14,background:"var(--color-background-primary)",color:"var(--color-text-primary)"}}/>
-                </div>
-                <div>
-                  <div style={{fontSize:10,color:"var(--color-text-secondary)",marginBottom:3}}>🐐 Sağmal (baş)</div>
-                  <input type="number" min="0" placeholder="0" value={bugun[r.id+"_sagmal"]}
-                    onChange={e=>setBugun(p=>({...p,[r.id+"_sagmal"]:e.target.value}))}
-                    style={{width:"100%",padding:"7px 10px",border:"1px solid var(--color-border-secondary)",borderRadius:8,fontSize:14,background:"var(--color-background-primary)",color:"var(--color-text-primary)"}}/>
-                </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
+                {[["_s","🌅 Sabah (lt)","0.0","number","0.1"],["_a","🌙 Akşam (lt)","0.0","number","0.1"],["_sagmal","🐐 Sağmal (baş)","0","number","1"]].map(([suf,lbl,ph,tp,step])=>(
+                  <div key={suf}>
+                    <div style={{fontSize:10,color:"var(--color-text-secondary)",marginBottom:3}}>{lbl}</div>
+                    <input type={tp} step={step} min="0" placeholder={ph} value={bugun[r.id+suf]}
+                      onChange={e=>setBugun(p=>({...p,[r.id+suf]:e.target.value}))}
+                      style={{width:"100%",padding:"7px 8px",border:"1px solid var(--color-border-secondary)",borderRadius:8,fontSize:14,background:"var(--color-background-primary)",color:"var(--color-text-primary)",boxSizing:"border-box"}}/>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
           <button onClick={kaydet} disabled={kaydediyor}
-            style={{width:"100%",padding:"11px",background:"#4A7C3F",color:"#fff",border:"none",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer",opacity:kaydediyor?.6:1,WebkitAppearance:"none"}}>
+            style={{width:"100%",padding:11,background:"#4A7C3F",color:"#fff",border:"none",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer",opacity:kaydediyor?.6:1,WebkitAppearance:"none"}}>
             {kaydediyor?"Kaydediliyor...":"💾 Kaydet"}
           </button>
         </div>
       )}
 
-      {/* Grafik */}
       <div style={{background:"var(--color-background-primary)",border:"0.5px solid var(--color-border-tertiary)",borderRadius:12,padding:14,marginBottom:12}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:8}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:6}}>
           <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-            <button onClick={()=>setAktifSuru("hepsi")} style={{padding:"4px 10px",borderRadius:6,border:"1px solid",borderColor:aktifSuru==="hepsi"?"#4A7C3F":"var(--color-border-tertiary)",background:aktifSuru==="hepsi"?"rgba(74,124,63,.12)":"transparent",color:aktifSuru==="hepsi"?"#3A6B30":"var(--color-text-secondary)",fontSize:11,fontWeight:aktifSuru==="hepsi"?700:400,cursor:"pointer",WebkitAppearance:"none"}}>Tümü</button>
+            <button onClick={()=>setAktifSuru("hepsi")} style={{...BTN,borderColor:aktifSuru==="hepsi"?"#4A7C3F":"var(--color-border-tertiary)",background:aktifSuru==="hepsi"?"rgba(74,124,63,.12)":"transparent",color:aktifSuru==="hepsi"?"#3A6B30":"var(--color-text-secondary)",fontWeight:aktifSuru==="hepsi"?700:400}}>Tümü</button>
             {SURUSLER.map(r=>(
-              <button key={r.id} onClick={()=>setAktifSuru(r.id)}
-                style={{padding:"4px 10px",borderRadius:6,border:"1px solid",borderColor:aktifSuru===r.id?r.renk:"var(--color-border-tertiary)",background:aktifSuru===r.id?r.renk+"18":"transparent",color:aktifSuru===r.id?r.renk:"var(--color-text-secondary)",fontSize:11,fontWeight:aktifSuru===r.id?700:400,cursor:"pointer",WebkitAppearance:"none"}}>
+              <button key={r.id} onClick={()=>setAktifSuru(r.id)} style={{...BTN,borderColor:aktifSuru===r.id?r.renk:"var(--color-border-tertiary)",background:aktifSuru===r.id?r.renk+"18":"transparent",color:aktifSuru===r.id?r.renk:"var(--color-text-secondary)",fontWeight:aktifSuru===r.id?700:400}}>
                 {r.emoji} {r.name}
               </button>
             ))}
           </div>
           <div style={{display:"flex",gap:4}}>
             {[3,7,10,21,30].map(n=>(
-              <button key={n} onClick={()=>setAralik(n)}
-                style={{padding:"4px 9px",borderRadius:6,border:"1px solid",borderColor:aralik===n?"#4A7C3F":"var(--color-border-tertiary)",background:aralik===n?"rgba(74,124,63,.12)":"transparent",color:aralik===n?"#3A6B30":"var(--color-text-secondary)",fontSize:11,fontWeight:aralik===n?700:400,cursor:"pointer",WebkitAppearance:"none"}}>
+              <button key={n} onClick={()=>setAralik(n)} style={{...BTN,borderColor:aralik===n?"#4A7C3F":"var(--color-border-tertiary)",background:aralik===n?"rgba(74,124,63,.12)":"transparent",color:aralik===n?"#3A6B30":"var(--color-text-secondary)",fontWeight:aralik===n?700:400}}>
                 {n}g
               </button>
             ))}
           </div>
         </div>
         <div style={{position:"relative",width:"100%",height:200}}>
-          <canvas ref={chartRef} role="img" aria-label="Süt miktarı grafiği">Günlük süt verileri</canvas>
+          <canvas ref={chartRef} role="img" aria-label="Süt grafiği">Günlük süt verileri</canvas>
         </div>
-        {/* Legend */}
-        <div style={{display:"flex",gap:12,marginTop:8,flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:10,marginTop:8,flexWrap:"wrap"}}>
           {aktifSuru==="hepsi"?(
             <>
               {SURUSLER.map(r=><span key={r.id} style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"var(--color-text-secondary)"}}><span style={{width:10,height:3,background:r.renk,borderRadius:2,display:"inline-block"}}></span>{r.name}</span>)}
-              <span style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"var(--color-text-secondary)"}}><span style={{width:12,height:0,borderTop:"2px dashed #4A7C3F",display:"inline-block"}}></span>Toplam</span>
+              <span style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"var(--color-text-secondary)"}}><span style={{width:12,borderTop:"2px dashed #4A7C3F",display:"inline-block"}}></span>Toplam</span>
             </>
           ):(()=>{const r=SURUSLER.find(x=>x.id===aktifSuru);return r?<>
             <span style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"var(--color-text-secondary)"}}><span style={{width:10,height:3,background:r.renk,borderRadius:2,display:"inline-block"}}></span>Sabah</span>
-            <span style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"var(--color-text-secondary)"}}><span style={{width:10,height:0,borderTop:"2px dashed "+r.renk+"99",display:"inline-block",width:12}}></span>Akşam</span>
-            <span style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"var(--color-text-secondary)"}}><span style={{width:12,height:0,borderTop:"2px dashed #4A7C3F",display:"inline-block"}}></span>Toplam</span>
+            <span style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"var(--color-text-secondary)"}}><span style={{width:12,borderTop:"2px dashed "+r.renk+"99",display:"inline-block"}}></span>Akşam</span>
+            <span style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:"var(--color-text-secondary)"}}><span style={{width:12,borderTop:"2px dashed #4A7C3F",display:"inline-block"}}></span>Toplam</span>
           </>:null;})()}
         </div>
       </div>
 
-      {/* Sürü bazında detay tablosu */}
-      <div style={{background:"var(--color-background-primary)",border:"0.5px solid var(--color-border-tertiary)",borderRadius:12,padding:14,marginBottom:12}}>
-        <div style={{fontSize:12,fontWeight:700,color:"var(--color-text-primary)",marginBottom:10}}>Sürü Karşılaştırması — son {aralik} gün</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-          {SURUSLER.map(r=>{
-            const v = aralikVeri();
-            const gunlukler = v.map(k=>hesapla(k,r.id));
-            const ort = gunlukler.length?+(gunlukler.reduce((a,b)=>a+b,0)/gunlukler.length).toFixed(1):0;
-            const maks = gunlukler.length?+Math.max(...gunlukler).toFixed(1):0;
-            const min = gunlukler.length?+Math.min(...gunlukler).toFixed(1):0;
-            const sonSagmal = v.length?(parseInt(v[v.length-1][r.id+"_sagmal"])||0):0;
-            const basiBasi = sonSagmal>0?+(ort/sonSagmal).toFixed(2):0;
-            return (
-              <div key={r.id} style={{background:"var(--color-background-secondary)",borderRadius:10,padding:"10px 12px",borderLeft:`3px solid ${r.renk}`}}>
-                <div style={{fontSize:12,fontWeight:700,color:r.renk,marginBottom:8}}>{r.emoji} {r.name}</div>
-                <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
-                    <span style={{color:"var(--color-text-secondary)"}}>Ortalama</span>
-                    <span style={{fontWeight:700,color:"var(--color-text-primary)"}}>{ort} lt</span>
-                  </div>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
-                    <span style={{color:"var(--color-text-secondary)"}}>En yüksek</span>
-                    <span style={{fontWeight:600,color:"#10B981"}}>{maks} lt</span>
-                  </div>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
-                    <span style={{color:"var(--color-text-secondary)"}}>En düşük</span>
-                    <span style={{fontWeight:600,color:"#EF4444"}}>{min} lt</span>
-                  </div>
-                  <div style={{borderTop:"0.5px solid var(--color-border-tertiary)",paddingTop:4,marginTop:2}}>
-                    <div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
-                      <span style={{color:"var(--color-text-secondary)"}}>Sağmal</span>
-                      <span style={{fontWeight:700,color:"var(--color-text-primary)"}}>{sonSagmal} baş</span>
-                    </div>
-                    <div style={{display:"flex",justifyContent:"space-between",fontSize:11}}>
-                      <span style={{color:"var(--color-text-secondary)"}}>Baş/ort.</span>
-                      <span style={{fontWeight:700,color:r.renk}}>{basiBasi} lt</span>
-                    </div>
-                  </div>
-                </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
+        {SURUSLER.map(r=>{
+          const v=aralikVeri();
+          const gnlk=v.map(k=>hesapla(k,r.id));
+          const o=gnlk.length?+(gnlk.reduce((a,b)=>a+b,0)/gnlk.length).toFixed(1):0;
+          const mx=gnlk.length?+Math.max(...gnlk).toFixed(1):0;
+          const mn=gnlk.length?+Math.min(...gnlk).toFixed(1):0;
+          const sg=v.length?(parseInt(v[v.length-1][r.id+"_sagmal"])||0):0;
+          const bb=sg>0?+(o/sg).toFixed(2):0;
+          return (
+            <div key={r.id} style={{background:"var(--color-background-secondary)",borderRadius:10,padding:"10px 12px",borderLeft:`3px solid ${r.renk}`}}>
+              <div style={{fontSize:12,fontWeight:700,color:r.renk,marginBottom:6}}>{r.emoji} {r.name}</div>
+              <div style={{fontSize:11,display:"flex",justifyContent:"space-between"}}><span style={{color:"var(--color-text-secondary)"}}>Ort.</span><b>{o} lt</b></div>
+              <div style={{fontSize:11,display:"flex",justifyContent:"space-between"}}><span style={{color:"var(--color-text-secondary)"}}>Max</span><span style={{color:"#10B981",fontWeight:600}}>{mx} lt</span></div>
+              <div style={{fontSize:11,display:"flex",justifyContent:"space-between"}}><span style={{color:"var(--color-text-secondary)"}}>Min</span><span style={{color:"#EF4444",fontWeight:600}}>{mn} lt</span></div>
+              <div style={{borderTop:"0.5px solid var(--color-border-tertiary)",marginTop:5,paddingTop:5}}>
+                <div style={{fontSize:11,display:"flex",justifyContent:"space-between"}}><span style={{color:"var(--color-text-secondary)"}}>Sağmal</span><b>{sg} baş</b></div>
+                <div style={{fontSize:11,display:"flex",justifyContent:"space-between"}}><span style={{color:"var(--color-text-secondary)"}}>Baş/ort.</span><span style={{color:r.renk,fontWeight:700}}>{bb} lt</span></div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Son kayıtlar */}
       {veri.length>0&&(
         <div style={{background:"var(--color-background-primary)",border:"0.5px solid var(--color-border-tertiary)",borderRadius:12,padding:14}}>
           <div style={{fontSize:12,fontWeight:700,color:"var(--color-text-primary)",marginBottom:10}}>Son Kayıtlar</div>
           {[...veri].reverse().slice(0,5).map(k=>{
             const d=new Date(k.tarih);
-            const toplamK=+SURUSLER.reduce((s,r)=>s+hesapla(k,r.id),0).toFixed(1);
-            const toplamSagmal=SURUSLER.reduce((s,r)=>s+(parseInt(k[r.id+"_sagmal"])||0),0);
+            const tlt=+SURUSLER.reduce((s,r)=>s+hesapla(k,r.id),0).toFixed(1);
+            const tsg=SURUSLER.reduce((s,r)=>s+(parseInt(k[r.id+"_sagmal"])||0),0);
             return (
               <div key={k.id||k.tarih} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"0.5px solid var(--color-border-tertiary)"}}>
                 <div>
                   <div style={{fontSize:12,fontWeight:600,color:"var(--color-text-primary)"}}>{d.getDate()}.{d.getMonth()+1}.{d.getFullYear()}</div>
-                  <div style={{fontSize:10,color:"var(--color-text-secondary)",marginTop:2}}>
-                    {SURUSLER.map(r=>`${r.emoji}${hesapla(k,r.id)}lt`).join(" · ")} · 🐐{toplamSagmal}baş
+                  <div style={{fontSize:10,color:"var(--color-text-secondary)",marginTop:1}}>
+                    {SURUSLER.map(r=>`${r.emoji}${hesapla(k,r.id)}lt`).join(" · ")} · 🐐{tsg}
                   </div>
                 </div>
-                <div style={{fontSize:16,fontWeight:700,color:"#4A7C3F"}}>{toplamK} lt</div>
+                <div style={{fontSize:16,fontWeight:700,color:"#4A7C3F"}}>{tlt} lt</div>
               </div>
             );
           })}
         </div>
       )}
 
-      {!yuklendi&&<div style={{textAlign:"center",padding:40,color:"var(--color-text-secondary)"}}>⏳ Yükleniyor...</div>}
       {yuklendi&&kayitlar.length===0&&!girisModu&&(
         <div style={{textAlign:"center",padding:40,color:"var(--color-text-secondary)"}}>
           <div style={{fontSize:32,marginBottom:8}}>🥛</div>
           <div style={{fontSize:13,marginBottom:12}}>Henüz süt kaydı yok.</div>
-          <button onClick={()=>setGirisModu(true)} style={{background:"#4A7C3F",color:"#fff",border:"none",borderRadius:10,padding:"10px 20px",fontSize:13,fontWeight:700,cursor:"pointer"}}>İlk kaydı gir</button>
+          <button onClick={()=>setGirisModu(true)} style={{background:"#4A7C3F",color:"#fff",border:"none",borderRadius:10,padding:"10px 20px",fontSize:13,fontWeight:700,cursor:"pointer",WebkitAppearance:"none"}}>İlk kaydı gir</button>
         </div>
       )}
     </div>
@@ -5536,7 +5469,6 @@ function App(){
 
             {/* Süt Özet */}
             <SutOzetKarti onNavigate={()=>navigate("sut")}/>
-
             {/* Hava Durumu */}
             <WeatherWidget/>
 
@@ -5899,7 +5831,7 @@ function App(){
           onTreatmentDayUpdate={day=>setTreatmentDaysData(p=>p.map(d=>d.id===day.id?day:{...d,...(d.id===day.id?day:{})}))}
         />}
 
-        {page==="sut" && <SutPage currentUser={currentUser}/>}
+        {page==="sut"&&<SutPage currentUser={currentUser}/>}
         {page==="vaccines" && <GlobalVaccinePage
           vaccineGroups={vaccineGroups}
           vaccineReports={vaccineReports}
