@@ -255,22 +255,21 @@ function SutOzetKarti({onNavigate}) {
       if(data&&data.length) setSon(data);
     });
   },[]);
-  if(!son) return null;
-  const b=son[0], d=son[1];
   const IDS=["saanen","honamli","halep"];
   const top=(k)=>k?+IDS.reduce((s,r)=>s+(parseFloat(k[r+"_s"])||0)+(parseFloat(k[r+"_a"])||0),0).toFixed(1):0;
   const sag=(k)=>k?IDS.reduce((s,r)=>s+(parseInt(k[r+"_sagmal"])||0),0):0;
-  const bT=top(b),dT=top(d);
-  const fark=dT>0?+((bT-dT)/dT*100).toFixed(1):0;
+  const b=son?son[0]:null, d=son?son[1]:null;
+  const bT=top(b), dT=top(d);
+  const fark=dT>0?+((bT-dT)/dT*100).toFixed(1):null;
   return (
     <div onClick={onNavigate} style={{background:"var(--color-background-primary)",border:"0.5px solid var(--color-border-tertiary)",borderRadius:12,padding:"12px 14px",marginBottom:10,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
       <div>
-        <div style={{fontSize:11,color:"var(--color-text-secondary)",marginBottom:3}}>🥛 Bugün Süt</div>
-        <div style={{fontSize:22,fontWeight:700,color:"#4A7C3F"}}>{bT} <span style={{fontSize:13,fontWeight:400,color:"var(--color-text-secondary)"}}>lt</span></div>
-        <div style={{fontSize:11,color:"var(--color-text-secondary)",marginTop:2}}>🐐 {sag(b)} sağmal baş</div>
+        <div style={{fontSize:11,color:"var(--color-text-secondary)",marginBottom:3}}>🥛 Süt Takibi</div>
+        <div style={{fontSize:22,fontWeight:700,color:"#4A7C3F"}}>{b?bT:"—"} <span style={{fontSize:13,fontWeight:400,color:"var(--color-text-secondary)"}}>lt</span></div>
+        <div style={{fontSize:11,color:"var(--color-text-secondary)",marginTop:2}}>{b?"🐐 "+sag(b)+" sağmal baş":"Henüz kayıt yok"}</div>
       </div>
       <div style={{textAlign:"right"}}>
-        <div style={{fontSize:12,color:fark>=0?"#10B981":"#EF4444",fontWeight:700,marginBottom:4}}>{fark>=0?"↑":"↓"} {Math.abs(fark)}% dün</div>
+        {fark!==null&&<div style={{fontSize:12,color:fark>=0?"#10B981":"#EF4444",fontWeight:700,marginBottom:4}}>{fark>=0?"↑":"↓"} {Math.abs(fark)}% dün</div>}
         <div style={{fontSize:10,color:"var(--color-text-secondary)"}}>Detay →</div>
       </div>
     </div>
