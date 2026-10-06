@@ -2537,7 +2537,7 @@ function ModalWrap({title,onClose,children}){
     };
   },[el]);
   return ReactDOM.createPortal(
-    <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,overflowY:"auto",backgroundColor:"rgba(0,0,0,.65)",WebkitOverflowScrolling:"touch"}}>
+    <div data-noswipe="1" style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,overflowY:"auto",backgroundColor:"rgba(0,0,0,.65)",WebkitOverflowScrolling:"touch"}}>
       <div style={{minHeight:"100%",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px 100px"}}>
         <div onClick={e=>e.stopPropagation()} style={{background:"#FFFFFF",borderRadius:16,width:"100%",maxWidth:456,marginTop:8}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 20px 14px",borderBottom:"1px solid rgba(212,175,55,.1)",position:"sticky",top:0,background:"#FFFFFF",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderRadius:"24px 24px 0 0",zIndex:1}}>
@@ -4034,7 +4034,7 @@ function FullScreenPortal({children}){
     return ()=>{ document.body.removeChild(el); document.body.style.overflow=''; };
   },[el]);
   return ReactDOM.createPortal(
-    <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"#FFFFFF",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>{children}</div>,
+    <div data-noswipe="1" style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"#FFFFFF",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>{children}</div>,
     el
   );
 }
@@ -4570,6 +4570,9 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
   );
 }
 
+// Form alanı veya açık pencere içindeki dokunuşlar sayfa kaydırmasını tetiklemesin
+const isNoSwipeTarget = t => !!(t && t.closest && t.closest('input,select,textarea,[data-noswipe]'));
+
 // ════════════ MAIN APP ════════════
 function App(){
   const [page,setPage]=useState("home");
@@ -4735,6 +4738,7 @@ function App(){
   const [isDragging,setIsDragging]=useState(false);
 
   const onTouchStart=e=>{
+    if(isNoSwipeTarget(e.target)){ touchStartX.current=null; dragX.current=0; return; }
     touchStartX.current=e.touches[0].clientX;
     touchStartY.current=e.touches[0].clientY;
     dragX.current=0;
@@ -4830,8 +4834,10 @@ function App(){
   // Swipe ile geri
   useEffect(()=>{
     let startX=0;
-    const onStart = e=>{ startX=e.touches[0].clientX; };
+    let ignore=false;
+    const onStart = e=>{ ignore=isNoSwipeTarget(e.target); startX=e.touches[0].clientX; };
     const onEnd = e=>{
+      if(ignore || isNoSwipeTarget(e.target)) return;
       const dx = e.changedTouches[0].clientX - startX;
       if(dx>80 && startX<60) goBack();
     };
