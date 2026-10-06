@@ -4025,6 +4025,20 @@ function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCr
   );
 }
 
+// ── Tam ekran katman (body'ye portal) ──
+function FullScreenPortal({children}){
+  const el = React.useMemo(()=>document.createElement('div'),[]);
+  React.useEffect(()=>{
+    document.body.appendChild(el);
+    document.body.style.overflow='hidden';
+    return ()=>{ document.body.removeChild(el); document.body.style.overflow=''; };
+  },[el]);
+  return ReactDOM.createPortal(
+    <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:9999,background:"#FFFFFF",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>{children}</div>,
+    el
+  );
+}
+
 // ── Aşı Takvim Kaydı Ekle Modal ──
 function VaccineScheduleModal({ breed, vaccineGroups, onSave, onClose, currentUser, editData }) {
   const breedGroups = vaccineGroups.filter(g=>g.breed===breed.id);
@@ -4089,7 +4103,7 @@ function VaccineScheduleModal({ breed, vaccineGroups, onSave, onClose, currentUs
           {VACCINE_TYPES_EXT.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}
         </select>
         <FL>Tarih * (ileri tarih girilebilir)</FL>
-        <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={S.input}/>
+        <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{...S.input,minHeight:46,display:"block"}}/>
         <FL>Parti / Seri No</FL>
         <input value={batchNo} onChange={e=>setBatchNo(e.target.value)} style={S.input} placeholder="örn. VAK-2026-A1"/>
         <FL>Notlar</FL>
@@ -4187,16 +4201,16 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
 
     return (
       <div className="anim-slide">
-        {showSchedule && <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:500,background:"#FFFFFF"}}>
+        {showSchedule && <FullScreenPortal>
           <VaccineScheduleModal breed={breed} vaccineGroups={vaccineGroups}
             onSave={r=>{onScheduleAdded(r);setLocalReports(p=>[r,...p]);setShowSchedule(false);}}
             onClose={()=>setShowSchedule(false)} currentUser={currentUser}/>
-        </div>}
-        {editSchedule && <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,zIndex:500,background:"#FFFFFF"}}>
+        </FullScreenPortal>}
+        {editSchedule && <FullScreenPortal>
           <VaccineScheduleModal breed={breed} vaccineGroups={vaccineGroups} editData={editSchedule}
             onSave={r=>{setLocalReports(p=>p.map(x=>x.id===editSchedule.id?r:x));setEditSchedule(null);}}
             onClose={()=>setEditSchedule(null)} currentUser={currentUser}/>
-        </div>}
+        </FullScreenPortal>}
 
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
           <button onClick={()=>setSelBreed(null)} style={{...S.ghost,fontSize:22,color:"#6B7280",padding:0}}>‹</button>
@@ -4414,7 +4428,7 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
           <div style={{fontWeight:700,fontSize:13,color:"#374151",marginBottom:10}}>🎙️ Ses Kayıtları</div>
           {(()=>{
             const allMedia = healthRecs
-              .filter(h=>h.mediaUrls&&h.mediaUrls.length>0)
+              .filter(h=>h.goatId===goat.id&&h.mediaUrls&&h.mediaUrls.length>0)
               .flatMap(h=>h.mediaUrls.split(",").map(url=>({url,condition:h.condition,date:h.date})));
             return allMedia.length === 0 ? (
               <div style={{textAlign:"center",color:"#9CA3AF",padding:"30px 0",fontSize:13}}>
@@ -4435,7 +4449,7 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
         </div>
       )}
 
-      detailTab==="health" && (
+      {detailTab==="health" && (
         <div>
           {!goat.archived && <button onClick={onAddHealth} style={{...S.btnPrimary,width:"100%",marginBottom:8,fontSize:13}}>+ Sağlık Kaydı Ekle</button>}
           {activeRecs.length===0 && <Empty text="Aktif sağlık kaydı yok"/>}
@@ -4469,7 +4483,7 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
                   {mediaList.length>0&&<span style={{fontSize:11,color:"var(--primary,#8B5CF6)",fontWeight:600}}>📎 {mediaList.length} medya</span>}
                 </div>
                 {lastLog&&<div style={{fontSize:11,color:"#9CA3AF"}}>
-                  🕐 Son işlem: <span style={{fontWeight:600,color:"#374151"}}>{lastLog.createdBy||""}</span> — {fmtDT(lastLog.createdAt)}
+                  🕐 Son işlem: <span style={{fontWeight:600,color:"#374151"}}>{lastLog.userName||""}</span> — {fmtDT(lastLog.createdAt)}
                 </div>}
                 {healthPhotos[h.id]&&healthPhotos[h.id].length>0&&(
                   <button onClick={function(e){e.stopPropagation();setViewHealthPhotos(healthPhotos[h.id]);}}
@@ -4521,6 +4535,7 @@ function GoatDetail({goat,goats,healthRecs,vaccines,logs,treatmentDays,onAddHeal
             );
           })}
         </div>
+      )}
       {detailTab==="vaccines" && (
         <div>
           {vaccines.filter(v=>v.goatId===goat.id).length===0 && <Empty text="Aşı kaydı yok"/>}
