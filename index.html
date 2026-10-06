@@ -109,7 +109,7 @@ function VaccineCalendar({ vaccineReports }) {
   const month = curDate.getMonth();
   const monthNames = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
   const dayNames   = ["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];
-  const todayStr   = new Date().toISOString().slice(0,10);
+  const todayStr   = todayISO();
 
   // date alanı: planlanan gün — status: "bekliyor"|"uygulandı"
   const dayMap = {};
@@ -337,7 +337,7 @@ function SutPage({currentUser}) {
   const [aktifSuru,setAktifSuru]=useState("hepsi");
   const [girisModu,setGirisModu]=useState(false);
   const [kaydediyor,setKaydediyor]=useState(false);
-  const [bugun,setBugun]=useState({saanen_s:"",saanen_a:"",saanen_sagmal:"",honamli_s:"",honamli_a:"",honamli_sagmal:"",halep_s:"",halep_a:"",halep_sagmal:"",tarih:new Date().toISOString().slice(0,10)});
+  const [bugun,setBugun]=useState({saanen_s:"",saanen_a:"",saanen_sagmal:"",honamli_s:"",honamli_a:"",honamli_sagmal:"",halep_s:"",halep_a:"",halep_sagmal:"",tarih:todayISO()});
   const chartRef=useRef(null),chartInst=useRef(null);
   useEffect(()=>{sb.from("sut_kayitlari").select("*").order("tarih",{ascending:true}).then(({data})=>{setKayitlar(data||[]);setYuklendi(true);});},[]);
   const hesapla=(k,id)=>+((parseFloat(k[id+"_s"])||0)+(parseFloat(k[id+"_a"])||0)).toFixed(2);
@@ -356,7 +356,7 @@ function SutPage({currentUser}) {
     if(!bugun.tarih)return;setKaydediyor(true);
     const yeni={tarih:bugun.tarih,saanen_s:parseFloat(bugun.saanen_s)||0,saanen_a:parseFloat(bugun.saanen_a)||0,saanen_sagmal:parseInt(bugun.saanen_sagmal)||0,honamli_s:parseFloat(bugun.honamli_s)||0,honamli_a:parseFloat(bugun.honamli_a)||0,honamli_sagmal:parseInt(bugun.honamli_sagmal)||0,halep_s:parseFloat(bugun.halep_s)||0,halep_a:parseFloat(bugun.halep_a)||0,halep_sagmal:parseInt(bugun.halep_sagmal)||0,kaydeden:currentUser};
     const {data,error}=await sb.from("sut_kayitlari").upsert([yeni],{onConflict:"tarih"}).select();
-    if(!error&&data){setKayitlar(p=>[...p.filter(k=>k.tarih!==yeni.tarih),...data].sort((a,b)=>a.tarih.localeCompare(b.tarih)));setGirisModu(false);setBugun({saanen_s:"",saanen_a:"",saanen_sagmal:"",honamli_s:"",honamli_a:"",honamli_sagmal:"",halep_s:"",halep_a:"",halep_sagmal:"",tarih:new Date().toISOString().slice(0,10)});}
+    if(!error&&data){setKayitlar(p=>[...p.filter(k=>k.tarih!==yeni.tarih),...data].sort((a,b)=>a.tarih.localeCompare(b.tarih)));setGirisModu(false);setBugun({saanen_s:"",saanen_a:"",saanen_sagmal:"",honamli_s:"",honamli_a:"",honamli_sagmal:"",halep_s:"",halep_a:"",halep_sagmal:"",tarih:todayISO()});}
     setKaydediyor(false);
   };
   const {lt:blt,sag:bsag}=bugunToplam();
@@ -366,7 +366,7 @@ function SutPage({currentUser}) {
     <div className="anim-fade">
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <div style={{fontSize:16,fontWeight:700,color:"#1A1A2E"}}>🥛 Süt Takibi</div>
-        <button onClick={()=>setGirisModu(m=>!m)} style={{background:"#4A7C3F",color:"#fff",border:"none",borderRadius:10,padding:"8px 16px",fontSize:12,fontWeight:700,cursor:"pointer",WebkitAppearance:"none"}}>{girisModu?"✕ İptal":"+ Giriş Yap"}</button>
+        {currentUser!=="Misafir"&&<button onClick={()=>setGirisModu(m=>!m)} style={{background:"#4A7C3F",color:"#fff",border:"none",borderRadius:10,padding:"8px 16px",fontSize:12,fontWeight:700,cursor:"pointer",WebkitAppearance:"none"}}>{girisModu?"✕ İptal":"+ Giriş Yap"}</button>}
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:12}}>
         <div style={{background:"var(--color-background-secondary,#F5F5F5)",borderRadius:8,padding:"9px 11px"}}><div style={{fontSize:10,color:"#6B7280",marginBottom:2}}>Bugün toplam</div><div style={{fontSize:20,fontWeight:700,color:"#4A7C3F"}}>{blt} lt</div><div style={{fontSize:10,color:"#6B7280"}}>🐐 {bsag} sağmal</div></div>
@@ -404,7 +404,7 @@ function SutPage({currentUser}) {
         <div style={{fontSize:12,fontWeight:700,color:"#1A1A2E",marginBottom:10}}>Son Kayıtlar</div>
         {[...veri].reverse().slice(0,5).map(k=>{const d=new Date(k.tarih),tlt=+SURUSLER.reduce((s,r)=>s+hesapla(k,r.id),0).toFixed(1),tsg=SURUSLER.reduce((s,r)=>s+(parseInt(k[r.id+"_sagmal"])||0),0);return(<div key={k.id||k.tarih} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"0.5px solid #F3F4F6"}}><div><div style={{fontSize:12,fontWeight:600,color:"#1A1A2E"}}>{d.getDate()}.{d.getMonth()+1}.{d.getFullYear()}</div><div style={{fontSize:10,color:"#9CA3AF",marginTop:1}}>{SURUSLER.map(r=>`${r.emoji}${hesapla(k,r.id)}lt`).join(" · ")} · 🐐{tsg}</div></div><div style={{fontSize:16,fontWeight:700,color:"#4A7C3F"}}>{tlt} lt</div></div>);})}
       </div>)}
-      {yuklendi&&kayitlar.length===0&&!girisModu&&(<div style={{textAlign:"center",padding:40,color:"#9CA3AF"}}><div style={{fontSize:32,marginBottom:8}}>🥛</div><div style={{fontSize:13,marginBottom:12}}>Henüz süt kaydı yok.</div><button onClick={()=>setGirisModu(true)} style={{background:"#4A7C3F",color:"#fff",border:"none",borderRadius:10,padding:"10px 20px",fontSize:13,fontWeight:700,cursor:"pointer",WebkitAppearance:"none"}}>İlk kaydı gir</button></div>)}
+      {yuklendi&&kayitlar.length===0&&!girisModu&&(<div style={{textAlign:"center",padding:40,color:"#9CA3AF"}}><div style={{fontSize:32,marginBottom:8}}>🥛</div><div style={{fontSize:13,marginBottom:12}}>Henüz süt kaydı yok.</div>{currentUser!=="Misafir"&&<button onClick={()=>setGirisModu(true)} style={{background:"#4A7C3F",color:"#fff",border:"none",borderRadius:10,padding:"10px 20px",fontSize:13,fontWeight:700,cursor:"pointer",WebkitAppearance:"none"}}>İlk kaydı gir</button>}</div>)}
     </div>
   );
 }
@@ -1321,7 +1321,11 @@ const toLog     = r => ({ id:r.id, healthRecordId:r.health_record_id, goatId:r.g
 
 const fmt       = d => d ? new Date(d).toLocaleDateString("tr-TR") : "—";
 const fmtDT     = d => d ? new Date(d).toLocaleString("tr-TR", {day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—";
-const todayISO  = () => new Date().toISOString().split("T")[0];
+const todayISO  = () => { const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().split("T")[0]; };
+// Küpe kutusu boş mu? ("", "TR--", "TR-15-" gibi)
+const tagEmpty  = t => { const m=(t||"").trim().replace(/^TR/i,""); const parts=m.split("-").filter(x=>x.trim()); return parts.length===0 || (/^TR-/i.test((t||"").trim()) && parts.length<2); };
+// Aşı kaydı uygulanmış mı (takvim kaydı değil)
+const isAppliedVR = r => r.recordType==="uygulama" || r.record_type==="uygulama" || r.status==="uygulandı";
 const daysUntil = d => d ? Math.ceil((new Date(d)-new Date())/86400000) : Infinity;
 const getAge    = bd => {
   if (!bd) return "—";
@@ -2314,7 +2318,7 @@ function BulkEarTagInput({ tags, onTagsChange }) {
 }
 
 
-function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser }) {
+function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser, goats }) {
   const [category, setCategory] = useState(defaultCategory||"anac");
   const [gender, setGender] = useState("dişi");
   const [tags, setTags] = useState([]); // [{p1,p2,full}]
@@ -2392,6 +2396,10 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
 
   const save = async () => {
     if(validCount===0) { setErr("Eklenecek geçerli küpe no yok"); return; }
+    const tagList = tab==="elle" ? validTags.map(t=>t.full) : validTags.map(r=>r.earTag);
+    const existingTags = new Set((goats||[]).filter(x=>!x.archived).map(x=>x.earTag));
+    const dupTags = tagList.filter((t,i)=>existingTags.has(t)||tagList.indexOf(t)!==i);
+    if(dupTags.length>0) { setErr("Bu küpe numaraları zaten kayıtlı ya da listede tekrar ediyor: "+[...new Set(dupTags)].join(", ")); return; }
     setSaving(true);
     setDone(0);
     setErr("");
@@ -2483,7 +2491,7 @@ function BulkAddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser
   );
 }
 
-function AddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser }) {
+function AddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser, goats }) {
   const [earTag,setEarTag]=useState("TR--");
   const [gender,setGender]=useState("dişi");
   const [category,setCategory]=useState(defaultCategory||"anac");
@@ -2495,7 +2503,8 @@ function AddGoatModal({ breed, defaultCategory, onSave, onClose, currentUser }) 
   const [saving,setSaving]=useState(false);
 
   const save=async()=>{
-    if(!earTag){setErr("Küpe no giriniz");return;}
+    if(tagEmpty(earTag)){setErr("Küpe no giriniz");return;}
+    if((goats||[]).some(x=>!x.archived&&x.earTag===earTag.trim())){setErr("Bu küpe numarası zaten kayıtlı: "+earTag.trim());return;}
     setSaving(true);
     const g={id:"g"+Date.now(),name:"",earTag,gender,breed:breed.id,category,birthDate,weight,color,motherTag:"",fatherTag:"",abortHistory:"hayır",reproductionStatus:"",kidCount:"0",notes,abortDetails:"",archived:false,archiveReason:""};
     const {error}=await sb.from("goats").insert(fromGoat(g));
@@ -2620,7 +2629,7 @@ function AnnouncementBox({ announcements, setAnnouncements, currentUser, vaccine
   const [newMsg, setNewMsg] = useState("");
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(true);
-  const isVet = currentUser === "Veteriner Hekim" || currentUser === "Şef";
+  const isVet = currentUser === "Veteriner Hekim" || currentUser === "Şef" || currentUser === "Bekir Zengin" || currentUser === "Ali Özen";
 
   const today = todayISO();
   const urgentVaccines = (vaccineReports||[]).filter(r=>{
@@ -2672,13 +2681,13 @@ function AnnouncementBox({ announcements, setAnnouncements, currentUser, vaccine
           );
         })}
         {/* Yeni duyuru */}
-        <div style={{display:"flex",gap:6,marginBottom:10}}>
+        {currentUser!=="Misafir"&&<div style={{display:"flex",gap:6,marginBottom:10}}>
           <input value={newMsg} onChange={e=>setNewMsg(e.target.value)} onKeyDown={e=>e.key==="Enter"&&save()}
             placeholder="Duyuru yaz..." style={{...S.input,flex:1,fontSize:13,padding:"8px 12px"}}/>
           <button onClick={save} disabled={saving||!newMsg.trim()} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13,opacity:(!newMsg.trim()||saving)?.5:1}}>
             {saving?"...":"Gönder"}
           </button>
-        </div>
+        </div>}
         {announcements.length===0 && urgentVaccines.length===0 && <div style={{fontSize:12,color:"#6B7280",textAlign:"center",padding:"8px 0"}}>Henüz duyuru yok</div>}
         {announcements.map(a=>(
           <div key={a.id} style={{display:"flex",alignItems:"start",gap:8,padding:"8px 10px",background:"rgba(var(--primary-rgb),.08)",borderRadius:8,marginBottom:6,border:"1px solid #F5E0A0"}}>
@@ -2699,7 +2708,7 @@ function AnnouncementBox({ announcements, setAnnouncements, currentUser, vaccine
 function Empty({text}){return <div style={{textAlign:"center",padding:40,color:"#9CA3AF",fontSize:13,fontWeight:500}}><div style={{fontSize:36,marginBottom:10,opacity:.5}}>🐐</div>{text}</div>;}
 const DEATH_CAUSES = ["Pnömoni","Doğum komplikasyonu","Yaralanma","Zehirlenme","Parazit","Bilinmiyor","Diğer"];
 
-function DeathsPage({ deaths, currentUser, onDelete }) {
+function DeathsPage({ deaths, currentUser, onDelete, onUpdate }) {
   const [local, setLocal] = useState(deaths);
   const [showForm, setShowForm] = useState(false);
   const [editDeath, setEditDeath] = useState(null);
@@ -2771,7 +2780,7 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
 
   const save = async () => {
     if(!breed){setErr("Irk seçiniz");return;}
-    if(!earTag.trim()){setErr("Küpe no giriniz");return;}
+    if(tagEmpty(earTag)){setErr("Küpe no giriniz");return;}
     if(!cause){setErr("Ölüm sebebi seçiniz");return;}
     setSaving(true);
     const finalCause = cause==="Diğer" ? causeCustom.trim() : cause;
@@ -2780,6 +2789,7 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
       const updated = {...editDeath,breed,category,earTag:earTag.trim(),deathDate,deathTime,cause:finalCause,notes};
       if(photos.length>0) await uploadPhotos(editDeath.id, photos);
       setLocal(p=>p.map(x=>x.id===editDeath.id?updated:x));
+      onUpdate&&onUpdate(updated);
       setShowForm(false);reset();setSaving(false);return;
     }
     const rec = {id:"d"+Date.now(), breed, category, ear_tag:earTag.trim(), death_date:deathDate, death_time:deathTime||null, cause:finalCause, notes:notes||null, created_by:currentUser};
@@ -2819,9 +2829,9 @@ function DeathsPage({ deaths, currentUser, onDelete }) {
       )}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <h2 style={S.title}>💀 Ölüm Kayıtları</h2>
-        <button onClick={()=>setShowForm(!showForm)} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13}}>
+        {currentUser!=="Misafir"&&<button onClick={()=>setShowForm(!showForm)} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13}}>
           {showForm?"✕ Kapat":"+ Ekle"}
-        </button>
+        </button>}
       </div>
 
       {showForm && (
@@ -3001,7 +3011,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
     <div className="anim-fade">
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <h2 style={S.title}>🏥 Toplu Tedavi</h2>
-        <button onClick={()=>setShowForm(!showForm)} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13}}>{showForm?"✕ Kapat":"+ Ekle"}</button>
+        {currentUser!=="Misafir"&&<button onClick={()=>setShowForm(!showForm)} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13}}>{showForm?"✕ Kapat":"+ Ekle"}</button>}
       </div>
 
       {showForm && (
@@ -3085,7 +3095,7 @@ function GroupTreatmentsPage({ groupTreatments, treatmentDaysData, currentUser, 
                           {day.done?"✅":isToday?"🔵":isPast?"⚠️":"⏳"} {day.dayNumber}.gün
                         </div>
                         {day.done&&<div style={{fontSize:9,color:"#10B981"}}>{day.doneBy}</div>}
-                        {!day.done&&!isFuture&&(
+                        {!day.done&&!isFuture&&currentUser!=="Misafir"&&(
                           <button onClick={()=>markDay(day)} disabled={markingDay===day.id}
                             style={{marginTop:4,padding:"3px 6px",borderRadius:6,background:"#4A7C3F",color:"#fff",border:"none",fontSize:9,cursor:"pointer",width:"100%"}}>
                             {markingDay===day.id?"...":"Yapıldı"}
@@ -3204,7 +3214,7 @@ function BirthModal({ onSave, onClose, currentUser, editData }) {
 }
 
 // ── Doğum Kayıtları Sayfası ──
-function BirthsPage({ births, currentUser, onDelete, onAdd }) {
+function BirthsPage({ births, currentUser, onDelete, onAdd, onUpdate }) {
   const [selBreed, setSelBreed] = useState("all");
   const [showModal, setShowModal] = useState(false);
   const [editBirth, setEditBirth] = useState(null);
@@ -3240,13 +3250,14 @@ function BirthsPage({ births, currentUser, onDelete, onAdd }) {
       {editBirth && <BirthModal currentUser={currentUser} editData={editBirth}
         onSave={b=>{
           setLocalBirths(p=>p.map(x=>x.id===editBirth.id?{...b,id:editBirth.id}:x));
+          onUpdate&&onUpdate({...b,id:editBirth.id});
           setEditBirth(null);
         }}
         onClose={()=>setEditBirth(null)}/>}
 
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
         <h2 style={S.title}>🐣 Doğum Kayıtları</h2>
-        <button onClick={()=>setShowModal(true)} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13}}>+ Ekle</button>
+        {currentUser!=="Misafir"&&<button onClick={()=>setShowModal(true)} style={{...S.btnPrimary,padding:"8px 14px",fontSize:13}}>+ Ekle</button>}
       </div>
 
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6,marginBottom:12}}>
@@ -3604,8 +3615,8 @@ function ReportsPage({reports, goats, logs, vaccineReports, births, deaths, grou
       {mainTab==="asi" && (
         <div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:6,marginBottom:12}}>
-            <Stat v={vaccineReports.length} l="Toplam Uygulama" bg="#EEF6FC" c="#2873A8"/>
-            <Stat v={vaccineReports.reduce((s,r)=>s+(r.goatCount||0),0)} l="Toplam Doz" bg="rgba(16,185,129,.12)" c="#10B981"/>
+            <Stat v={vaccineReportsLocal.filter(isAppliedVR).length} l="Toplam Uygulama" bg="#EEF6FC" c="#2873A8"/>
+            <Stat v={vaccineReportsLocal.filter(isAppliedVR).reduce((s,r)=>s+(r.goatCount||0),0)} l="Toplam Doz" bg="rgba(16,185,129,.12)" c="#10B981"/>
           </div>
           {sortedVR.length===0 && <Empty text="Henüz aşı raporu yok"/>}
           {sortedVR.map(r=>{
@@ -3919,7 +3930,7 @@ function BreedVaccineTab({breed, goats, vaccineGroups, vaccineReports, onGroupCr
   const isVet = currentUser==="Veteriner Hekim"||currentUser==="Bekir Zengin"||currentUser==="Ali Özen";
 
   const breedGroups = vaccineGroups.filter(g=>g.breed===breed.id);
-  const breedReports = [...vaccineReports].filter(r=>r.breed===breed.id).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const breedReports = [...vaccineReports].filter(r=>r.breed===breed.id&&isAppliedVR(r)).sort((a,b)=>new Date(b.date)-new Date(a.date));
 
   const activeGroup = activeGroupVaccine ? breedGroups.find(g=>g.id===activeGroupVaccine) : null;
   const editGroup = editMembersGroup ? breedGroups.find(g=>g.id===editMembersGroup) : null;
@@ -4120,7 +4131,7 @@ function VaccineScheduleModal({ breed, vaccineGroups, onSave, onClose, currentUs
 }
 
 // ── Global Aşı Sayfası ──
-function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onScheduleDeleted, onVaccineApplied, currentUser}){
+function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onScheduleDeleted, onScheduleUpdated, onVaccineApplied, currentUser}){
   const [selBreed, setSelBreed] = useState(null);
   const [showSchedule, setShowSchedule] = useState(null);
   const [editSchedule, setEditSchedule] = useState(null);
@@ -4143,7 +4154,7 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
   const markApplied = async (r) => {
     setApplyingId(r.id);
     const now = new Date().toISOString();
-    const appliedDate = now.split("T")[0];
+    const appliedDate = todayISO();
 
     // Yeni uygulama kaydı oluştur (rapor için)
     const newReport = {
@@ -4208,7 +4219,7 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
         </FullScreenPortal>}
         {editSchedule && <FullScreenPortal>
           <VaccineScheduleModal breed={breed} vaccineGroups={vaccineGroups} editData={editSchedule}
-            onSave={r=>{setLocalReports(p=>p.map(x=>x.id===editSchedule.id?r:x));setEditSchedule(null);}}
+            onSave={r=>{setLocalReports(p=>p.map(x=>x.id===editSchedule.id?r:x));onScheduleUpdated&&onScheduleUpdated(r);setEditSchedule(null);}}
             onClose={()=>setEditSchedule(null)} currentUser={currentUser}/>
         </FullScreenPortal>}
 
@@ -4218,9 +4229,9 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
           <h2 style={{...S.title,margin:0}}>{breed.name} — Aşı Takvimi</h2>
         </div>
 
-        <button onClick={()=>setShowSchedule(true)} style={{...S.btnPrimary,width:"100%",marginBottom:12,fontSize:13}}>
+        {currentUser!=="Misafir"&&<button onClick={()=>setShowSchedule(true)} style={{...S.btnPrimary,width:"100%",marginBottom:12,fontSize:13}}>
           + Takvime Aşı Ekle
-        </button>
+        </button>}
 
         <div style={{fontWeight:700,fontSize:13,color:"#0EA5E9",marginBottom:8}}>📅 Yaklaşan / Planlanan</div>
         {upcoming.length===0 && <div style={{...S.card,padding:10,marginBottom:8,textAlign:"center",color:"#6B7280",fontSize:12}}>Planlanan aşı yok</div>}
@@ -4244,7 +4255,7 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
                     <div style={{fontSize:9,color:isUrgent?"#BE3B31":"#2873A8",fontWeight:700}}>gün kaldı</div>
                   </div>}
                   {isApplied && <PillTag bg="#E3F0DC" color="#3D5A25" text="✅ Uygulandı"/>}
-                  {!isApplied && <button onClick={()=>markApplied(r)} disabled={applyingId===r.id}
+                  {!isApplied && currentUser!=="Misafir"&&<button onClick={()=>markApplied(r)} disabled={applyingId===r.id}
                     style={{...S.btnPrimary,fontSize:11,padding:"5px 10px",opacity:applyingId===r.id?.6:1}}>
                     {applyingId===r.id?"...":"✅ Uygulandı"}
                   </button>}
@@ -4272,7 +4283,7 @@ function GlobalVaccinePage({vaccineGroups, vaccineReports, onScheduleAdded, onSc
                     {isApplied && <div style={{fontSize:10,color:"#10B981",fontWeight:700}}>✅ Uygulandı · {r.appliedBy}</div>}
                   </div>
                   <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
-                    {!isApplied && <button onClick={()=>markApplied(r)} disabled={applyingId===r.id}
+                    {!isApplied && currentUser!=="Misafir"&&<button onClick={()=>markApplied(r)} disabled={applyingId===r.id}
                       style={{...S.btnOutline,fontSize:11,padding:"5px 10px",opacity:applyingId===r.id?.6:1}}>
                       {applyingId===r.id?"...":"✅ Uygulandı"}
                     </button>}
@@ -4822,6 +4833,14 @@ function App(){
     addActivity("asi_takvim","Aşı takvime eklendi",`${r.groupName} · ${r.vaccineType||""}`,r.breed);
   };
 
+  const archiveDeadGoat=async(d)=>{
+    const g=goats.find(x=>x.earTag===d.earTag&&!x.archived);
+    if(!g) return;
+    const reason="Hayvan öldü — "+d.deathDate;
+    const {error}=await sb.from("goats").update({archived:true,archive_reason:reason}).eq("id",g.id);
+    if(!error) setGoats(p=>p.map(x=>x.id===g.id?{...x,archived:true,archiveReason:reason}:x));
+  };
+
   const archiveGoat=async(goatId, reason)=>{
     const g=goats.find(x=>x.id===goatId);
     const archiveReason=reason||"Manuel arşivleme — "+todayISO();
@@ -5247,8 +5266,8 @@ function App(){
       <style>{":root{--primary:"+theme.primary+";--primary-rgb:"+(theme.primaryRgb||"139,92,246")+";}body{background-color:"+(theme.bg||"#F5F0FF")+";color:"+(theme.textColor||"#1A1A2E")+";"+( theme.photo?"background-image:url("+theme.photo+");background-size:cover;background-position:center top;background-repeat:no-repeat;":"")+"}"}</style>
       {hModal&&!isGuest&&<HealthModal goats={goats} breedFilter={hModal.breedId||null} preGoatId={hModal.goatId||""} onSave={saveHealth} onClose={()=>setHModal(null)} currentUser={currentUser}/>}
       {vModal&&!isGuest&&<VaccineModal breed={BREEDS.find(b=>b.id===vModal)} goats={goats} onSave={saveVaccines} onClose={()=>setVModal(null)} currentUser={currentUser}/>}
-      {addGoatModal&&!isGuest&&<AddGoatModal breed={BREEDS.find(b=>b.id===(addGoatModal.breedId||addGoatModal))} defaultCategory={addGoatModal.defaultCategory||"anac"} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser}/>}
-      {bulkAddModal&&!isGuest&&<BulkAddGoatModal breed={BREEDS.find(b=>b.id===bulkAddModal.breedId)} defaultCategory={bulkAddModal.defaultCategory||"anac"} onSave={saveBulkGoats} onClose={()=>setBulkAddModal(null)} currentUser={currentUser}/>}
+      {addGoatModal&&!isGuest&&<AddGoatModal breed={BREEDS.find(b=>b.id===(addGoatModal.breedId||addGoatModal))} defaultCategory={addGoatModal.defaultCategory||"anac"} onSave={saveGoat} onClose={()=>setAddGoatModal(null)} currentUser={currentUser} goats={goats}/>}
+      {bulkAddModal&&!isGuest&&<BulkAddGoatModal breed={BREEDS.find(b=>b.id===bulkAddModal.breedId)} defaultCategory={bulkAddModal.defaultCategory||"anac"} onSave={saveBulkGoats} onClose={()=>setBulkAddModal(null)} currentUser={currentUser} goats={goats}/>}
       {saglikGonderRec&&<SaglikGonderModal record={saglikGonderRec} goat={goats.find(g=>g.id===saglikGonderRec.goatId)||null} onClose={()=>setSaglikGonderRec(null)}/>}
       {selHealthRec&&<HealthDetailModal
         record={selHealthRec}
@@ -5257,7 +5276,7 @@ function App(){
         onUpdate={updated=>{updateHealth(updated);setSelHealthRec(null);}}
         onFinalize={(id,report)=>{finalizeHealth(id,report);setSelHealthRec(null);}}
         onLogsUpdate={addLogToState}
-        onTreatmentDayUpdate={day=>setTreatmentDaysData(p=>p.map(d=>d.id===day.id?day:d))}
+        onTreatmentDayUpdate={day=>setTreatmentDaysData(p=>p.some(d=>d.id===day.id)?p.map(d=>d.id===day.id?day:d):[...p,day])}
         onClose={()=>setSelHealthRec(null)}
       />}
 
@@ -5651,7 +5670,7 @@ function App(){
             onAddHealth={()=>setHModal({breedId:goat.breed,goatId:goat.id})}
             onUpdateHealth={updateHealth} onFinalizeHealth={finalizeHealth}
             onLogsUpdate={addLogToState}
-            onTreatmentDayUpdate={day=>setTreatmentDaysData(p=>p.map(d=>d.id===day.id?day:d))}
+            onTreatmentDayUpdate={day=>setTreatmentDaysData(p=>p.some(d=>d.id===day.id)?p.map(d=>d.id===day.id?day:d):[...p,day])}
             detailTab={detailTab} setDetailTab={setDetailTab} currentUser={currentUser}/>
         )}
 
@@ -5728,14 +5747,16 @@ function App(){
         )}
 
         {page==="births" && <BirthsPage births={births} currentUser={currentUser}
+          onUpdate={b=>setBirths(p=>p.map(x=>x.id===b.id?b:x))}
           onAdd={b=>{ setBirths(p=>[b,...p]); addActivity("dogum_eklendi","Doğum kaydedildi",`Ana: ${b.motherEarTag} · ${b.birthType==="normal"?"Normal":b.birthType==="gunsuz"?"Günsüz":"Atık"}`,b.breed); }}
           onDelete={id=>setBirths(p=>p.filter(b=>b.id!==id))}/>}
 
         {page==="deaths" && <DeathsPage deaths={deaths} currentUser={currentUser}
           onDelete={(id,obj)=>{
             if(id) setDeaths(p=>p.filter(d=>d.id!==id));
-            else if(obj){ setDeaths(p=>[obj,...p]); addActivity("olum_eklendi","Ölüm kaydedildi",`${obj.earTag} · ${obj.cause}`,obj.breed); }
-          }}/>}
+            else if(obj){ setDeaths(p=>[obj,...p]); addActivity("olum_eklendi","Ölüm kaydedildi",`${obj.earTag} · ${obj.cause}`,obj.breed); archiveDeadGoat(obj); }
+          }}
+          onUpdate={d=>setDeaths(p=>p.map(x=>x.id===d.id?d:x))}/>}
 
         {page==="group_tx" && <GroupTreatmentsPage
           groupTreatments={groupTreatments}
@@ -5744,7 +5765,7 @@ function App(){
           onAdd={g=>{ setGroupTreatments(p=>[g,...p]); addActivity("toplu_tedavi","Toplu tedavi eklendi",`${g.groupName} · ${g.condition}`,g.breed); }}
           onUpdate={g=>setGroupTreatments(p=>p.map(x=>x.id===g.id?g:x))}
           onDelete={id=>setGroupTreatments(p=>p.filter(x=>x.id!==id))}
-          onTreatmentDayUpdate={day=>setTreatmentDaysData(p=>p.map(d=>d.id===day.id?day:{...d,...(d.id===day.id?day:{})}))}
+          onTreatmentDayUpdate={day=>setTreatmentDaysData(p=>p.some(d=>d.id===day.id)?p.map(d=>d.id===day.id?day:d):[...p,day])}
         />}
 
         {page==="sut"&&<SutPage currentUser={currentUser}/>}
@@ -5753,6 +5774,7 @@ function App(){
           vaccineReports={vaccineReports}
           onScheduleAdded={saveVaccineReport}
           onScheduleDeleted={id=>setVaccineReports(p=>p.filter(x=>x.id!==id))}
+          onScheduleUpdated={r=>setVaccineReports(p=>p.map(x=>x.id===r.id?r:x))}
           onVaccineApplied={r=>{
             setVaccineReports(p=>[r,...p.filter(x=>x.id!==r.id)]);
             addActivity("asi_uygulandı","Aşı uygulandı",`${r.groupName} · ${r.vaccineType||""}`,r.breed);
